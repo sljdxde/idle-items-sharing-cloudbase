@@ -4,50 +4,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>发布闲置 - 同小区闲置好物互助</title>
+    <title>发布闲置 — 邻里好物</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <h1 class="logo">邻里闲置分享</h1>
+            <h1 class="logo">🏘️ 邻里好物</h1>
             <div class="nav-links">
                 <a href="index.html">首页</a>
-                <a href="publish.html" class="btn-publish active">发布闲置</a>
+                <a href="publish.html" class="btn-publish active">✨ 发布闲置</a>
             </div>
         </div>
     </nav>
 
     <main class="container form-container">
-        <div class="card form-card">
-            <h2>发布闲置物品</h2>
+        <div class="form-card">
+            <h2>📦 发布闲置物品</h2>
             <form id="publish-form">
+
                 <div class="form-group">
                     <label for="itemName">物品名称 <span class="required">*</span></label>
-                    <input type="text" id="itemName" placeholder="例如：九成新机械键盘" required maxlength="50">
+                    <input type="text" id="itemName" placeholder="例如：九成新戴森吸尘器" required maxlength="50">
                 </div>
 
                 <div class="form-group">
                     <label for="itemDesc">详细描述 <span class="required">*</span></label>
-                    <textarea id="itemDesc" rows="4" placeholder="描述一下物品的新旧程度、购买时间、转手原因等" required></textarea>
+                    <textarea id="itemDesc" rows="3" placeholder="描述一下物品的新旧程度、可借/可送等" required></textarea>
                 </div>
 
+                <!-- 定位 -->
                 <div class="form-group">
-                    <label for="itemContact">联系方式 <span class="required">*</span></label>
-                    <input type="text" id="itemContact" placeholder="例如：微信 xxx 或 手机号" required>
+                    <label>📍 您的位置 <span class="required">*</span></label>
+                    <div class="location-group">
+                        <button type="button" id="btnLocate" class="btn-locate" onclick="doLocate()">点击获取位置</button>
+                        <span id="locateStatus" class="location-text">未定位</span>
+                    </div>
+                    <input type="hidden" id="itemLat">
+                    <input type="hidden" id="itemLng">
                 </div>
 
+                <!-- 联系方式: 楼号 或 手机号/微信 二选一 -->
                 <div class="form-group">
-                    <label for="itemPin">管理密码 (PIN)</label>
-                    <input type="text" id="itemPin" placeholder="4位数字 (不填则自动生成)" maxlength="4" pattern="\d{4}">
-                    <div class="file-help">日后凭此密码下架或修改物品状态。发布后将自动保存在本设备。</div>
+                    <label for="itemBuilding">🏠 楼号门牌 <small
+                            style="color: var(--text-light);">(与联系方式二选一)</small></label>
+                    <input type="text" id="itemBuilding" placeholder="例如：3栋2单元1801">
                 </div>
 
+                <div class="or-divider">或</div>
+
                 <div class="form-group">
-                    <label for="itemImage">上传图片 <span class="required">*</span></label>
+                    <label for="itemContact">📱 联系方式 <small style="color: var(--text-light);">(微信/手机号)</small></label>
+                    <input type="text" id="itemContact" placeholder="例如：微信 xxx 或 手机号">
+                </div>
+
+                <!-- PIN -->
+                <div class="form-group">
+                    <label for="itemPin">🔑 管理密码 (PIN)</label>
+                    <input type="text" id="itemPin" placeholder="4位数字 (不填则自动生成)" maxlength="4">
+                    <div class="file-help">日后凭此密码下架或修改状态，将自动保存在本设备</div>
+                </div>
+
+                <!-- 图片 -->
+                <div class="form-group">
+                    <label for="itemImage">🖼️ 物品照片 <span class="required">*</span></label>
                     <input type="file" id="itemImage" accept="image/jpeg, image/png, image/webp" required>
-                    <div class="file-help">仅支持 jpg/png 格式，不超过 5MB</div>
+                    <div class="file-help">支持 jpg/png/webp，不超过 5MB</div>
                     <div id="imagePreview" class="image-preview" style="display:none;">
                         <img id="previewImg" src="" alt="预览图">
                     </div>
@@ -57,10 +80,10 @@
                     <div class="progress-bar">
                         <div id="progressFill" class="progress-fill" style="width: 0%"></div>
                     </div>
-                    <p id="progressText" class="progress-text">上传中: 0%</p>
+                    <p id="progressText" class="progress-text">准备中...</p>
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn-primary btn-block">发布物品</button>
+                <button type="submit" id="submitBtn" class="btn-primary btn-block">🚀 发布物品</button>
             </form>
         </div>
     </main>

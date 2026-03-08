@@ -4,27 +4,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>同小区闲置好物互助</title>
+  <title>邻里好物 — 社区闲置互助</title>
+  <meta name="description" content="让好物在邻里间流转，发现小区邻居的闲置好物">
   <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
   <nav class="navbar">
     <div class="nav-container">
-      <h1 class="logo">邻里闲置分享</h1>
+      <h1 class="logo">🏘️ 邻里好物</h1>
       <div class="nav-links">
         <a href="index.html" class="active">首页</a>
-        <a href="publish.html" class="btn-publish">发布闲置</a>
+        <a href="publish.html" class="btn-publish">✨ 发布闲置</a>
       </div>
     </div>
   </nav>
 
-  <main class="container">
-    <header class="page-header">
-      <h2>最新发布</h2>
-      <p>发现小区邻居的好闲置，让物品继续发光发热</p>
-    </header>
+  <!-- Hero 区域 -->
+  <section class="hero">
+    <h2>让好物在邻里间流转</h2>
+    <p>发现小区邻居的闲置好物，借用或分享，让物品继续发光发热</p>
+  </section>
 
+  <!-- 距离筛选栏 -->
+  <div class="filter-bar">
+    <div class="location-status">
+      <span class="icon">📍</span>
+      <span id="locationText">正在定位...</span>
+    </div>
+    <div class="filter-pills">
+      <span class="filter-pill" data-range="500" onclick="setRange(500)">500m</span>
+      <span class="filter-pill active" data-range="1000" onclick="setRange(1000)">1km</span>
+      <span class="filter-pill" data-range="3000" onclick="setRange(3000)">3km</span>
+      <span class="filter-pill" data-range="0" onclick="setRange(0)">全部</span>
+    </div>
+  </div>
+
+  <main class="container">
     <div id="loading" class="loading-spinner">
       <div class="spinner"></div>
       <p>正在加载物品列表...</p>
@@ -35,22 +51,24 @@
     </div>
 
     <div id="empty-state" class="empty-state" style="display: none;">
-      <p>暂无闲置物品，去<a href="publish.html">发布第一件</a>吧！</p>
+      <p style="font-size: 1.2rem; margin-bottom: 8px;">📦</p>
+      <p>附近暂无闲置物品</p>
+      <p>去<a href="publish.html">发布第一件</a>吧！</p>
     </div>
   </main>
 
   <!-- 管理弹窗 -->
   <div id="manageModal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-      <h3>物品管理</h3>
-      <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 1rem;">需验证本物品的 4 位管理密码 (PIN) 才能继续操作。</p>
-      <input type="text" id="managePinInput" placeholder="输入 4 位 PIN (自动记忆)" maxlength="4" pattern="\d{4}">
+      <h3>⚙️ 物品管理</h3>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 14px;">输入发布时设置的 4 位管理密码 (PIN)</p>
+      <input type="text" id="managePinInput" placeholder="• • • •" maxlength="4">
 
       <div class="modal-actions">
-        <button id="btnSetLent" class="btn-warning" onclick="executeManageAction('lent')">标记为借出</button>
+        <button id="btnSetLent" class="btn-warning" onclick="executeManageAction('lent')">🤝 标记为借出</button>
         <button id="btnSetAvailable" class="btn-success" onclick="executeManageAction('available')"
-          style="display:none;">恢复闲置</button>
-        <button class="btn-danger" onclick="executeManageAction('delete')">永久下架</button>
+          style="display:none;">✨ 恢复闲置</button>
+        <button class="btn-danger" onclick="executeManageAction('delete')">❌ 永久下架</button>
         <button class="btn-cancel" onclick="closeManageModal()">取消</button>
       </div>
     </div>
