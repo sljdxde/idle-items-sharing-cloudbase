@@ -75,6 +75,7 @@ function renderItems(items, container) {
 
         card.innerHTML = `
       <img class="card-img lazy" src="${defaultImg}" data-src="${item.imgUrl || defaultImg}" alt="${safeName}">
+      ${item.isLent ? '<div class="lent-stamp">已借出</div>' : ''}
       <div class="card-content">
         <h3 class="card-title" title="${safeName}">${safeName}</h3>
         <p class="card-desc" title="${safeDesc}">${safeDesc}</p>
@@ -82,8 +83,14 @@ function renderItems(items, container) {
         <div class="contact-area">
           <div class="contact-btn" onclick="showContact(this, '${safeContact}')">点击查看联系方式</div>
         </div>
+        <div class="manage-area">
+           <span class="manage-btn" onclick="openManageModal(${item.id}, ${item.isLent}, '${item.pin || ''}')">管理</span>
+        </div>
       </div>
     `;
+        if (item.isLent) {
+            card.classList.add('is-lent');
+        }
         container.appendChild(card);
     });
 }
@@ -182,6 +189,11 @@ function initPublishPage() {
         const contact = document.getElementById('itemContact').value.trim();
         const file = fileInput.files[0];
 
+        let pin = document.getElementById('itemPin').value.trim();
+        if (!pin) {
+            pin = Math.floor(1000 + Math.random() * 9000).toString(); // 自动生成4位
+        }
+
         if (!file) {
             alert("请选择要上传的图片！");
             return;
@@ -191,7 +203,7 @@ function initPublishPage() {
         submitBtn.innerText = '正在发布...';
         progressContainer.style.display = 'block';
         progressFill.style.width = '0%';
-        progressText.innerText = '上传图\片: 0%';
+        progressText.innerText = '上传图片: 0%';
 
         try {
             // 1. 压缩图片并转为 Base64
@@ -201,9 +213,12 @@ function initPublishPage() {
             progressText.innerText = '图片上传完成，正在保存信息...';
 
             // 2. 将数据写入数据库
-            await addItem(name, desc, contact, imgUrl);
+            const newIssueId = await addItem(name, desc, contact, imgUrl, pin);
 
-            alert("发布成功！");
+            // 3. 将 PIN 存入本地缓存
+            localStorage.setItem(`pin_${newIssueId}`, pin);
+
+            alert(`发布成功！\n您的管理 PIN 码为: ${pin} \n(已自动保存在本浏览器中)`);
             window.location.href = 'index.html'; // 跳转回首页
         } catch (err) {
             alert("发布失败：" + err.message);
@@ -212,4 +227,81 @@ function initPublishPage() {
             progressContainer.style.display = 'none';
         }
     });
+}
+
+/**
+ * 物品管理相关交互
+ */
+let currentManageIssueId = null;
+let currentManagePin = null;
+
+window.openManageModal = function (issueId, isLent, realPin) {
+    currentManageIssueId = issueId;
+    currentManagePin = realPin;
+
+    document.getElementById('manageModal').style.display = 'flex';
+
+    // 初始化按钮状态
+    const btnLent = document.getElementById('btnSetLent');
+    const btnAvailable = document.getElementById('btnSetAvailable');
+    if (isLent) {
+        btnLent.style.display = 'none';
+        btnAvailable.style.display = 'block';
+    } else {
+        btnLent.style.display = 'block';
+        btnAvailable.style.display = 'none';
+    }
+
+    // 如果本地有缓存密码，直接填入
+    const localPin = localStorage.getItem(`pin_${issueId}`);
+    if (localPin) {
+        document.getElementById('managePinInput').value = localPin;
+    } else {
+        document.getElementById('managePinInput').value = '';
+    }
+}
+
+window.closeManageModal = function () {
+    document.getElementById('manageModal').style.display = 'none';
+}
+
+window.executeManageAction = async function (actionType) {
+    const inputPin = document.getElementById('managePinInput').value.trim();
+    if (!inputPin) {
+        alert("请输入 4 位管理密码 (PIN)！");
+        return;
+    }
+
+    if (currentManagePin && inputPin !== currentManagePin) {
+        alert("管理密码 (PIN) 错误！无法操作。");
+        return;
+    }
+
+    // 密码正确，开始操作
+    const btn = document.querySelector(`.modal-content button`);
+    const originalText = btn.innerText;
+    btn.innerText = '正在处理...';
+
+    try {
+        if (actionType === 'lent') {
+            await updateItemStatus(currentManageIssueId, 'lent');
+            alert("已成功标记为【借出】！");
+        } else if (actionType === 'available') {
+            await updateItemStatus(currentManageIssueId, 'item');
+            alert("已成功恢复为【闲置中】！");
+        } else if (actionType === 'delete') {
+            if (!confirm("确定要永久下架并删除该物品吗？")) return;
+            await closeItem(currentManageIssueId);
+            localStorage.removeItem(`pin_${currentManageIssueId}`);
+            alert("物品已永久下架！");
+        }
+
+        // 刷新页面
+        window.location.reload();
+    } catch (err) {
+        alert("操作失败: " + err.message);
+    } finally {
+        btn.innerText = originalText;
+        closeManageModal();
+    }
 }

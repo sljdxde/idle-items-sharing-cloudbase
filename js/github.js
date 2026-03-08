@@ -40,6 +40,9 @@ async function loadItems() {
             try {
                 // 从 Issue body 中解析 JSON 数据
                 const dataStr = issue.body.match(/<!--DATA_START([\s\S]*?)DATA_END-->/);
+                // 解析标签状态
+                const isLent = issue.labels.some(label => label.name === 'lent');
+
                 if (dataStr && dataStr[1]) {
                     const itemData = JSON.parse(dataStr[1]);
                     items.push({
@@ -48,6 +51,8 @@ async function loadItems() {
                         desc: itemData.desc,
                         contact: itemData.contact,
                         imgUrl: itemData.imgUrl,
+                        pin: itemData.pin, // 用于管理权限校验
+                        isLent: isLent,
                         createTime: issue.created_at
                     });
                 }
@@ -68,8 +73,9 @@ async function loadItems() {
  * @param {string} desc 
  * @param {string} contact 
  * @param {string} imgUrl 
+ * @param {string} pin
  */
-async function addItem(name, desc, contact, imgUrl) {
+async function addItem(name, desc, contact, imgUrl, pin) {
     if (!GITHUB_TOKEN) {
         throw new Error("请先在 js/github.js 中配置 GITHUB_TOKEN！");
     }
@@ -77,13 +83,16 @@ async function addItem(name, desc, contact, imgUrl) {
     // 构建被隐藏在 Markdown 注释中的纯数据
     // 由于 GitHub Issue 有个 65536 字符长度限制
     // 必须保证图片压缩得非常小，或者描述非常精简。
-    const dataPayload = JSON.stringify({ name, desc, contact, imgUrl });
+    const dataPayload = JSON.stringify({ name, desc, contact, imgUrl, pin });
 
     // 给后台管理员看的可读内容
     const readableBody = `## 闲置物品：${name}
 
 **描述**：
 ${desc}
+
+**管理 PIN 码**：
+*** (出于安全考虑不在正文显示，已隐藏在下方数据中)
 
 **联系方式**：
 ${contact}
@@ -120,6 +129,61 @@ DATA_END-->`;
         console.error("添加物品出错:", err);
         throw err;
     }
+}
+
+/**
+ * 更改物品状态（借出或恢复闲置）
+ * 本质是覆盖 Issue 的标签 (labels)
+ * @param {number} issueId 
+ * @param {string} newStatus 只能是 'item' (闲置) 或 'lent' (借出)
+ */
+async function updateItemStatus(issueId, newStatus) {
+    if (!GITHUB_TOKEN) throw new Error("缺少 Token");
+
+    // 如果是借出，我们在 issue 上打上 'item' 和 'lent' 两个标签
+    // 如果是恢复闲置，我们只保留 'item' 标签
+    const labels = newStatus === 'lent' ? ['item', 'lent'] : ['item'];
+
+    const url = `${API_BASE}/${issueId}/labels`;
+    const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ labels: labels })
+    });
+
+    if (!res.ok) {
+        throw new Error("更新状态失败");
+    }
+    return true;
+}
+
+/**
+ * 永久下架物品
+ * 本质是关闭 (Close) 该 GitHub Issue
+ * @param {number} issueId 
+ */
+async function closeItem(issueId) {
+    if (!GITHUB_TOKEN) throw new Error("缺少 Token");
+
+    const url = `${API_BASE}/${issueId}`;
+    const res = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ state: 'closed' })
+    });
+
+    if (!res.ok) {
+        throw new Error("下架失败");
+    }
+    return true;
 }
 
 /**

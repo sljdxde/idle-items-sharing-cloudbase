@@ -39,6 +39,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="itemPin">管理密码 (PIN)</label>
+                    <input type="text" id="itemPin" placeholder="4位数字 (不填则自动生成)" maxlength="4" pattern="\d{4}">
+                    <div class="file-help">日后凭此密码下架或修改物品状态。发布后将自动保存在本设备。</div>
+                </div>
+
+                <div class="form-group">
                     <label for="itemImage">上传图片 <span class="required">*</span></label>
                     <input type="file" id="itemImage" accept="image/jpeg, image/png, image/webp" required>
                     <div class="file-help">仅支持 jpg/png 格式，不超过 5MB</div>
