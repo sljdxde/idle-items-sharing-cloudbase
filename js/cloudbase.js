@@ -7,25 +7,23 @@ let app;
 let db;
 
 /**
- * 初始化 CloudBase
+ * 初始化 CloudBase (Web SDK v2)
  */
-function initCloudBase() {
+async function initCloudBase() {
   if (!app) {
     try {
       // 1. 初始化
       app = cloudbase.init({
         env: ENV_ID
       });
-      // 2. 匿名登录 (应用级)
-      app.auth({ persistence: 'local' }).anonymousAuthProvider().signIn().then(() => {
-        console.log("云开发匿名登录成功");
-      }).catch(err => {
-        console.error("云开发登录失败:", err);
-      });
+      // 2. 匿名登录
+      const auth = app.auth({ persistence: 'local' });
+      await auth.anonymousAuthProvider().signIn();
+      console.log("云开发 v2 匿名登录成功");
 
       db = app.database();
     } catch (e) {
-      console.error("SDK 加载或初始化失败:", e);
+      console.error("SDK 加载或登录失败:", e);
     }
   }
 }
@@ -35,7 +33,7 @@ function initCloudBase() {
  * @returns {Promise<Array>}
  */
 async function loadItems() {
-  if (!db) return [];
+  await ensureInit();
   try {
     const res = await db.collection('items')
       .orderBy('createTime', 'desc')
@@ -56,7 +54,7 @@ async function loadItems() {
  * @param {string} imgUrl 
  */
 async function addItem(name, desc, contact, imgUrl) {
-  if (!db) throw new Error("数据库未初始化");
+  await ensureInit();
   try {
     const res = await db.collection('items').add({
       name,
@@ -117,13 +115,22 @@ function compressImageToBase64(file, maxWidth = 800, quality = 0.6) {
   });
 }
 
+let initPromise = null;
+
 // 自动初始化
-// 注意：如果页面上没有引入 cloudbase-js-sdk，这里会抛错并被 catch 捕获
-// 我们在 HTML 中使用了 tcb.js 或者 cloudbase.full.js
 if (typeof cloudbase !== 'undefined') {
-  initCloudBase();
+  initPromise = initCloudBase();
 } else if (typeof tcb !== 'undefined') {
-  // 兼容老版本 tcb 对象
   window.cloudbase = tcb;
-  initCloudBase();
+  initPromise = initCloudBase();
+}
+
+/**
+ * 确保初始化完成的辅助函数
+ */
+async function ensureInit() {
+  if (initPromise) {
+    await initPromise;
+  }
+  if (!db) throw new Error("数据库未初始化");
 }
