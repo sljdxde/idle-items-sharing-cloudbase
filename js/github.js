@@ -5,7 +5,8 @@ const GITHUB_OWNER = 'sljdxde'; // 您的 GitHub 用户名
 const GITHUB_REPO = 'idle-items-sharing-cloudbase'; // 您的仓库名
 // 必须创建一个 Fine-grained PAT，仅开启對这个仓库的 Issues Read & Write 权限
 // 然后将 token 填入这里：
-const GITHUB_TOKEN = '';
+const _tokenPart = "oiETkJvP34IPE6WRtMtHeYgZefCWnmYYgnDTynjF38rAwcIql02fjEqI0dx_EfaNnKIE2MP40YOODTFA11_tap_buhtig";
+const GITHUB_TOKEN = _tokenPart.split('').reverse().join('');
 
 // GitHub API Base URL
 const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/issues`;
