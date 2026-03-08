@@ -17,8 +17,8 @@ const API_BASE = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/is
  */
 async function loadItems() {
     try {
-        // 拉取具有特定 label 的 open issues，用来作为合法数据
-        const url = `${API_BASE}?state=open&per_page=100&sort=created&direction=desc&labels=item`;
+        // 拉取具有特定 label 的 open issues，用来作为合法数据，并通过 _t 参数禁用缓存
+        const url = `${API_BASE}?state=open&per_page=100&sort=created&direction=desc&labels=item&_t=${Date.now()}`;
 
         // 如果没有配置 Token，也可以只读访问（但有更严格的速率限制：一小时 60 次）
         // 为了更稳定，建议始终带上 token
