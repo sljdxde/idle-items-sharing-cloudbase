@@ -147,6 +147,14 @@ function renderItems(items, container) {
         const borrowBtnClass = item.isLent ? 'btn-borrow disabled' : 'btn-borrow';
         const borrowBtnText = item.isLent ? '已借出' : '我想借';
 
+        // 构建详情面板数据
+        const detailRows = [];
+        if (safeBuilding) detailRows.push(`<div class="detail-row"><span class="detail-label">🏠 楼号</span><span class="detail-value">${safeBuilding}</span></div>`);
+        if (safeContact) detailRows.push(`<div class="detail-row"><span class="detail-label">📱 联系方式</span><span class="detail-value">${safeContact}</span></div>`);
+        if (distStr) detailRows.push(`<div class="detail-row"><span class="detail-label">📍 距您</span><span class="detail-value">${distStr}</span></div>`);
+        detailRows.push(`<div class="detail-row"><span class="detail-label">📅 发布</span><span class="detail-value">${dateStr}</span></div>`);
+        detailRows.push(`<div class="detail-row"><span class="detail-label">📝 描述</span><span class="detail-value">${safeDesc}</span></div>`);
+
         card.innerHTML = `
       <div class="card-img-wrapper">
         <img class="card-img lazy" src="${defaultImg}" data-src="${item.imgUrl || defaultImg}" alt="${safeName}">
@@ -161,8 +169,12 @@ function renderItems(items, container) {
           ${distStr ? '<span style="color:var(--primary)">' + distStr + '</span>' : ''}
         </div>
         <div class="card-actions">
-          <button class="${borrowBtnClass}" ${item.isLent ? 'disabled' : ''} onclick="showContact(this, '${contactDisplay}')">${borrowBtnText}</button>
+          <button class="${borrowBtnClass}" ${item.isLent ? 'disabled' : ''} onclick="toggleDetail(this)">${borrowBtnText}</button>
           <button class="btn-manage" onclick="openManageModal(${item.id}, ${item.isLent}, '${item.pin || ''}')">管理</button>
+        </div>
+        <div class="detail-panel" style="display:none;">
+          ${detailRows.join('')}
+          <button class="btn-collapse" onclick="toggleDetail(this)">收起 ▲</button>
         </div>
       </div>`;
 
@@ -170,12 +182,19 @@ function renderItems(items, container) {
     });
 }
 
-// ─── 显示联系方式 ───
-window.showContact = function (btnEl, contactText) {
+// ─── 展开/收起详情面板 ───
+window.toggleDetail = function (btnEl) {
     if (btnEl.classList.contains('disabled')) return;
     const card = btnEl.closest('.card');
-    const actionsDiv = card.querySelector('.card-actions');
-    actionsDiv.innerHTML = `<div class="contact-info" style="width:100%">${contactText}</div>`;
+    const panel = card.querySelector('.detail-panel');
+    const borrowBtn = card.querySelector('.btn-borrow');
+    if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        if (borrowBtn) borrowBtn.innerText = '收起详情';
+    } else {
+        panel.style.display = 'none';
+        if (borrowBtn && !borrowBtn.classList.contains('disabled')) borrowBtn.innerText = '我想借';
+    }
 }
 
 // ─── XSS 转义 ───
@@ -304,7 +323,32 @@ window.doLocate = async function () {
         document.getElementById('itemLng').value = pos.lng;
         btn.innerText = '已定位 ✓';
         btn.classList.add('located');
-        status.textContent = `坐标: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
+
+        // 反向地理编码 (Nominatim, 免费无需密钥)
+        status.textContent = '正在获取地址...';
+        try {
+            const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json&accept-language=zh`, {
+                headers: { 'User-Agent': 'NeighborhoodSharing/1.0' }
+            });
+            const geoData = await geoRes.json();
+            const addr = geoData.display_name || `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
+            // 提取简短地名
+            const parts = addr.split(',').map(s => s.trim());
+            const shortAddr = parts.slice(0, 3).join(', ');
+            status.textContent = `📍 ${shortAddr}`;
+        } catch (e) {
+            status.textContent = `📍 ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
+        }
+
+        // 展示小地图 (OpenStreetMap embed, 完全免费)
+        const mapContainer = document.getElementById('miniMap');
+        if (mapContainer) {
+            mapContainer.style.display = 'block';
+            mapContainer.innerHTML = `<iframe 
+                width="100%" height="180" style="border:none; border-radius: 10px;" loading="lazy" 
+                src="https://www.openstreetmap.org/export/embed.html?bbox=${pos.lng - 0.005},${pos.lat - 0.003},${pos.lng + 0.005},${pos.lat + 0.003}&layer=mapnik&marker=${pos.lat},${pos.lng}">
+            </iframe>`;
+        }
     } catch (err) {
         btn.innerText = '定位失败，重试';
         status.textContent = '请允许浏览器定位权限';
