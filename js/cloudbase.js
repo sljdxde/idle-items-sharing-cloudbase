@@ -1,7 +1,7 @@
 // ===============
 // 1. 请替换为你的真实环境 ID
 // ===============
-const ENV_ID = 'YOUR_ENV_ID';
+const ENV_ID = 'env-1-6gx1jn85f3b12d80';
 
 let app;
 let db;
@@ -22,7 +22,7 @@ function initCloudBase() {
       }).catch(err => {
         console.error("云开发登录失败:", err);
       });
-      
+
       db = app.database();
     } catch (e) {
       console.error("SDK 加载或初始化失败:", e);
@@ -80,11 +80,11 @@ async function addItem(name, desc, contact, imgUrl) {
  */
 async function uploadImage(file, onProgress) {
   if (!app) throw new Error("CloudBase 未初始化");
-  
+
   // 生成随机文件名，避免重名
   const ext = file.name.split('.').pop() || 'png';
   const fileName = `images/${Date.now()}_${Math.random().toString(36).substring(2)}.${ext}`;
-  
+
   try {
     // 1. 上传文件
     await app.uploadFile({
@@ -97,12 +97,12 @@ async function uploadImage(file, onProgress) {
         }
       }
     });
-    
+
     // 2. 获取临时下载链接 (如果你配置了云存储公开访问，也可以直接拼接云存储域名)
     const res = await app.getTempFileURL({
       fileList: [fileName]
     });
-    
+
     if (res.fileList && res.fileList.length > 0) {
       return res.fileList[0].tempFileURL;
     } else {
