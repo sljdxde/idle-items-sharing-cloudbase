@@ -73,45 +73,48 @@ async function addItem(name, desc, contact, imgUrl) {
 }
 
 /**
- * 上传图片到云存储
+ * 前端压缩图片并转为 Base64 字符串 (替代云存储方案)
  * @param {File} file - 图片文件对象
- * @param {Function} onProgress - 进度回调 (0-100)
- * @returns {Promise<string>} 图片下载链接
+ * @param {number} maxWidth - 最大宽度 (默认 800)
+ * @param {number} quality - 压缩质量 (0-1，默认 0.6)
+ * @returns {Promise<string>} Base64 字符串
  */
-async function uploadImage(file, onProgress) {
-  if (!app) throw new Error("CloudBase 未初始化");
+function compressImageToBase64(file, maxWidth = 800, quality = 0.6) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
 
-  // 生成随机文件名，避免重名
-  const ext = file.name.split('.').pop() || 'png';
-  const fileName = `images/${Date.now()}_${Math.random().toString(36).substring(2)}.${ext}`;
-
-  try {
-    // 1. 上传文件
-    await app.uploadFile({
-      cloudPath: fileName,
-      filePath: file,
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total > 0) {
-          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100);
-          onProgress(percent);
+        // 等比例缩放计算
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
         }
-      }
-    });
 
-    // 2. 获取临时下载链接 (如果你配置了云存储公开访问，也可以直接拼接云存储域名)
-    const res = await app.getTempFileURL({
-      fileList: [fileName]
-    });
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
 
-    if (res.fileList && res.fileList.length > 0) {
-      return res.fileList[0].tempFileURL;
-    } else {
-      throw new Error("获取图片链接失败");
-    }
-  } catch (err) {
-    console.error("上传图片失败:", err);
-    throw err;
-  }
+        const ctx = canvas.getContext('2d');
+        // 绘制白色背景（防止透明PNG转JPG变黑）
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 导出压缩后的 dataURL，统一为 jpeg 减小体积
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
 }
 
 // 自动初始化

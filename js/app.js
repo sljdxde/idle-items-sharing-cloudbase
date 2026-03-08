@@ -194,11 +194,9 @@ function initPublishPage() {
         progressText.innerText = '上传图\片: 0%';
 
         try {
-            // 1. 上传图片
-            const imgUrl = await uploadImage(file, (percent) => {
-                progressFill.style.width = percent + '%';
-                progressText.innerText = `上传中: ${percent}%`;
-            });
+            // 1. 压缩图片并转为 Base64
+            progressText.innerText = '正在压缩处理图片...';
+            const imgUrl = await compressImageToBase64(file);
 
             progressText.innerText = '图片上传完成，正在保存信息...';
 
