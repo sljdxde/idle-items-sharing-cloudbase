@@ -1,0 +1,7 @@
+name = "neighborhood-share-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# 部署后你会得到一个地址，例如：
+#   https://neighborhood-share-proxy.<你的子域>.workers.dev
+# 把该地址填入 js/store.js 顶部的 API_PROXY 常量。

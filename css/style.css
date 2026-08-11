@@ -238,6 +238,16 @@ body {
   color: #fff;
 }
 
+.status-badge.requested {
+  background: rgba(245, 158, 11, 0.92);
+  color: #fff;
+}
+
+/* ── 待确认卡片轻微着色 ── */
+.card.is-requested .card-img {
+  filter: sepia(35%) brightness(0.95);
+}
+
 /* ── 距离标签 ── */
 .distance-tag {
   position: absolute;
@@ -680,6 +690,51 @@ select:focus {
   background: var(--border);
   color: var(--text-secondary);
 }
+
+/* ── 借阅请求列表（管理弹窗内） ── */
+.req-list {
+  margin: 6px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.req-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+
+.req-meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.req-msg {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin: 4px 0 8px;
+  word-break: break-all;
+}
+
+.req-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-sm.btn-success { background: var(--primary); color: #fff; }
+.btn-sm.btn-danger { background: var(--danger); color: #fff; }
 
 /* ── 详情面板 ── */
 .detail-panel {
