@@ -91,20 +91,17 @@
         <div class="modal-title-wrap">
           <svg class="modal-icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
           <div>
-            <h3>借阅申请</h3>
-            <div class="modal-sub">填写联系方式，物主会收到通知</div>
+            <h3>联系物主</h3>
+            <div class="modal-sub">直接联系取物，或在 GitHub 沟通</div>
           </div>
         </div>
         <button type="button" class="modal-close" onclick="closeBorrowModal()" aria-label="关闭">×</button>
       </div>
       <div class="modal-body">
-        <input type="text" id="borrowName" placeholder="你的昵称" maxlength="20">
-        <input type="text" id="borrowContact" placeholder="联系方式（微信 / 楼号）" maxlength="40">
-        <textarea id="borrowMsg" rows="3" placeholder="留言（可选）"></textarea>
+        <div id="borrowBody"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-cancel" onclick="closeBorrowModal()">取消</button>
-        <button class="btn btn-primary" onclick="submitBorrow()">提交申请</button>
+        <button class="btn btn-cancel" onclick="closeBorrowModal()">关闭</button>
       </div>
     </div>
   </div>
@@ -117,13 +114,12 @@
           <svg class="modal-icon" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6Z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
           <div>
             <h3>物品管理</h3>
-            <div class="modal-sub">输入发布时设置的 4 位管理密码 (PIN)</div>
+            <div class="modal-sub">在 GitHub 完成借出 / 归还 / 下架</div>
           </div>
         </div>
         <button type="button" class="modal-close" onclick="closeManageModal()" aria-label="关闭">×</button>
       </div>
       <div class="modal-body">
-        <input type="text" id="managePinInput" placeholder="• • • •" maxlength="4">
         <div id="manageBody"></div>
       </div>
       <div class="modal-footer">

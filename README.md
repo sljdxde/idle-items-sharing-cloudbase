@@ -23,7 +23,7 @@
 - **无框架依赖**：没有任何 React / Vue 负担，只有极致的原生页面加载速度。
 - **高性能图片呈现**：集成原生 `IntersectionObserver` 图片懒加载技术。
 - **GitHub 免费后端**：所有的数据请求都被转化为 GitHub API 调用。发布物品即发送 Issue，拉取列表即拉取 Issues 列表。
-- **高压图片直存**：突破 GitHub Issue 长度限制，通过 HTML5 前端直接将用户上传的图片超级压缩并转为 Base64 后直接存入 Issue 内容区。不用图床，不要外链。
+- **图片外链优先**：发布表单支持粘贴图片链接；也可发布后在 GitHub 编辑上传图片，由 Actions 自动抓取为封面。
 
 ---
 
@@ -32,24 +32,20 @@
 * **核心结构**: Semantic HTML5
 * **样式布局**: 原生 CSS3, Flexbox & CSS Grid
 * **逻辑控制**: Vanilla ECMAScript 6+
-* **后端支撑**: GitHub REST API (Issues) + Cloudflare Worker 薄代理
+* **后端支撑**: GitHub Issues + GitHub Actions 自动同步（零服务器）
 
 ---
 
 ## 部署指南 (零成本两步走)
 
-### 步骤一：创建 GitHub API 访问令牌 (Token)
-1. 登录 GitHub，点击右上角头像 -> **Settings**。
-2. 在左侧菜单最下方找到 **Developer settings** -> **Personal access tokens** -> **Fine-grained tokens**。
-3. 点击 **Generate new token**，随意填写名称和有效期（建议设置长一点）。
-4. **Repository access (仓库访问)**：选择 **Only select repositories**，并选择你用来部署这个代码的仓库名称。
-5. **Permissions (权限配置)**：展开 **Repository permissions**，找到 **Issues**，将其修改为 `Read and write`（读写权限）。
-6. 点击最下方生成 Token，并**复制好不要丢了**。
+### 步骤一：开启 Pages 与同步
+1. 拉取本项目代码至本地（或直接在 GitHub 网页编辑）。
+2. 仓库 **Settings -> Pages**：Source 选 `Deploy from a branch`，Branch 选 `master` 并保存，即可得到免费可访问的 GitHub Pages 外网域名。
+3. 确认 **Actions** 页 `Sync Items JSON` 工作流为 **Enabled**（公开仓库免费）。它会在 Issue 变更时即时同步，并每 15 分钟兜底；若曾被停用，手动 Enable 并 Run workflow 一次即可恢复。
 
-### 步骤二：配置代理并上线
-1. 拉取本项目代码至本地。
-2. 写入链路通过 Cloudflare Worker 薄代理持有 Token（详见 `DEPLOY.md` 与 `cloudflare-worker/`）；读取链路由 GitHub Action 定时生成同源 `items.json` 静态快照，彻底避开匿名 API 限流。
-3. **部署网站**: 在 GitHub 仓库的 **Settings -> Pages** 中，将 Source 选为 `Deploy from a branch`，Branch 选择 `master` 并保存。稍等片刻，即可得到免费可访问的 GitHub Pages 外网域名。
+### 步骤二：发布与管理（零服务器）
+- **发布**：打开 `publish.html` 填表，提交后会跳转 GitHub 预填发布页，登录后点 Submit 即上架，本站自动同步展示。
+- **管理**：物主在 GitHub 给对应 Issue 添加 / 移除 `lent` 标签表示借出 / 归还，关闭 Issue 即下架。详见 `DEPLOY.md`。
 
 > **本地预览测试：**
 > 在代码推送到 GitHub 之前，可以通过任何本地服务器进行预览测试：
@@ -67,7 +63,7 @@
 ├── js/
 │   ├── app.js          # 页面的 DOM 交互及视图渲染逻辑
 │   └── store.js        # 数据存储适配层（ItemStore + GitHubIssuesAdapter）
-├── cloudflare-worker/  # 薄代理（持有 Token，加密 PIN）
+├── cloudflare-worker/  # 可选：前端静默写代理（非必需）
 ├── .github/workflows/  # 定时生成 items.json 快照
 ├── index.html          # 平台首页
 ├── publish.html        # 发布信息页

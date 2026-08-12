@@ -52,12 +52,9 @@
           </div>
 
           <div class="form-group" style="margin-bottom:0;">
-            <label for="itemImage">物品照片 <span class="required">*</span></label>
-            <input type="file" id="itemImage" accept="image/jpeg, image/png, image/webp" required>
-            <div class="file-help">支持 jpg / png / webp，不超过 5MB</div>
-            <div id="imagePreview" class="image-preview" style="display:none;">
-              <img id="previewImg" src="" alt="预览图">
-            </div>
+            <label for="itemImage">物品照片链接 <span class="req-note">（选填）</span></label>
+            <input type="url" id="itemImage" placeholder="粘贴图片链接，例如图床 / 相册分享链接" inputmode="url">
+            <div class="file-help">支持 jpg / png / webp 外链；也可先发布，再在 GitHub 编辑上传图片</div>
           </div>
         </div>
 
@@ -94,28 +91,6 @@
             <label for="itemContact">联系方式 <span class="req-note">（微信 / 手机号）</span></label>
             <input type="text" id="itemContact" placeholder="例如：微信 xxx 或 手机号">
           </div>
-        </div>
-
-        <!-- 分区三：管理设置 -->
-        <div class="form-section">
-          <div class="form-section-title">
-            <span class="step">3</span>
-            <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-            管理设置
-          </div>
-
-          <div class="form-group" style="margin-bottom:0;">
-            <label for="itemPin">管理密码 (PIN)</label>
-            <input type="text" id="itemPin" placeholder="4 位数字（不填则自动生成）" maxlength="4">
-            <div class="file-help">日后凭此密码下架或修改状态，将自动保存在本设备</div>
-          </div>
-        </div>
-
-        <div id="uploadProgress" class="progress-container" style="display:none;">
-          <div class="progress-bar">
-            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
-          </div>
-          <p id="progressText" class="progress-text">准备中…</p>
         </div>
 
         <button type="submit" id="submitBtn" class="btn btn-primary btn-block btn-lg">发布物品</button>

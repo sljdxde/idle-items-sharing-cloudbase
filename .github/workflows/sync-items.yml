@@ -54,7 +54,11 @@ jobs:
                   building: d.building || '',
                   lat: d.lat || null,
                   lng: d.lng || null,
-                  imgUrl: d.imgUrl || '',
+                  imgUrl: (function () {
+                    if (d.imgUrl) return d.imgUrl;
+                    const _im = issue.body && issue.body.match(/https:\/\/user-images\.githubusercontent\.com\/[^\s)>"']+/);
+                    return _im ? _im[0] : '';
+                  })(),
                   status: d.status || (isLent ? 'borrowed' : 'available'),
                   requests: Array.isArray(d.requests) ? d.requests : [],
                   pinCipher: d.pinCipher || '',

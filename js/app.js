@@ -141,12 +141,7 @@ function statusBadge(item) {
 }
 
 function borrowBtnHtml(item) {
-  const reqId = sessionStorage.getItem('req_' + item.id);
   if (item.status === 'borrowed') return '<button class="btn-borrow disabled" disabled>已借出</button>';
-  if (item.status === 'requested') {
-    if (reqId) return `<button class="btn-borrow" onclick="cancelMyRequest(${item.id})">已申请 · 取消</button>`;
-    return '<button class="btn-borrow disabled" disabled>已被申请</button>';
-  }
   return `<button class="btn-borrow" onclick="openBorrowModal(${item.id})">我想借</button>`;
 }
 
@@ -257,112 +252,46 @@ function initLazyLoad() {
 }
 
 // ═══════════════════════════════
-// 借阅弹窗
+// 联系物主（方案 1：展示联系方式 + 跳转 GitHub 沟通）
 // ═══════════════════════════════
 window.openBorrowModal = function (id) {
   currentBorrowId = id;
+  const item = allItems.find(x => x.id === id);
+  const body = document.getElementById('borrowBody');
+  if (item) {
+    const contact = item.contact ? `<div class="detail-row"><span class="detail-label">${ICONS.phone}联系方式</span><span class="detail-value">${escapeHtml(item.contact)}</span></div>` : '';
+    const building = item.building ? `<div class="detail-row"><span class="detail-label">${ICONS.home}楼号</span><span class="detail-value">${escapeHtml(item.building)}</span></div>` : '';
+    body.innerHTML = `
+      <p class="contact-tip">联系物主取物，或在 GitHub 留言沟通。</p>
+      ${contact}
+      ${building}
+      <a class="btn btn-primary btn-block" href="${ItemStore.issueUrl(id)}" target="_blank" rel="noopener">在 GitHub 查看 / 沟通</a>`;
+  }
   document.getElementById('borrowModal').style.display = 'flex';
-  document.getElementById('borrowName').value = '';
-  document.getElementById('borrowContact').value = '';
-  document.getElementById('borrowMsg').value = '';
 };
 window.closeBorrowModal = function () {
   document.getElementById('borrowModal').style.display = 'none';
 };
 
-window.submitBorrow = async function () {
-  const id = currentBorrowId;
-  const fromName = document.getElementById('borrowName').value.trim();
-  const contact = document.getElementById('borrowContact').value.trim();
-  const message = document.getElementById('borrowMsg').value.trim();
-  if (!fromName || !contact) { showToast('请填写完整', '昵称和联系方式不能为空', 'warning'); return; }
-  try {
-    const r = await ItemStore.requestBorrow(id, { fromName, contact, message });
-    const rid = r.id || r.requestId;
-    sessionStorage.setItem('req_' + id, rid);
-    const item = allItems.find(x => x.id === id);
-    if (item) {
-      item.requests.push({ id: rid, fromName, contact, message, createdAt: new Date().toISOString(), status: 'pending' });
-      if (item.status === 'available') item.status = 'requested';
-    }
-    closeBorrowModal();
-    renderFilteredItems(document.getElementById('item-list'), document.getElementById('empty-state'));
-    showToast('申请已发送', '物主会收到 GitHub 通知', 'success');
-  } catch (e) { showToast('申请失败', e.message, 'error'); }
-};
-
-window.cancelMyRequest = async function (id) {
-  const rid = sessionStorage.getItem('req_' + id);
-  if (!rid) return;
-  try {
-    await ItemStore.cancelRequest(id, rid);
-    sessionStorage.removeItem('req_' + id);
-    const item = allItems.find(x => x.id === id);
-    if (item) {
-      const req = item.requests.find(r => r.id === rid);
-      if (req) req.status = 'cancelled';
-      if (!item.requests.some(r => r.status === 'pending')) item.status = 'available';
-    }
-    renderFilteredItems(document.getElementById('item-list'), document.getElementById('empty-state'));
-    showToast('已取消申请', '', 'info');
-  } catch (e) { showToast('取消失败', e.message, 'error'); }
-};
-
 // ═══════════════════════════════
-// 管理弹窗（物主，PIN 校验在服务端代理）
+// 管理弹窗（方案 1：在 GitHub 完成借出 / 归还 / 下架）
 // ═══════════════════════════════
 const STATUS_TEXT = { available: '闲置中', requested: '待确认', borrowed: '已借出' };
 
 window.openManageModal = function (id) {
   currentManageItem = allItems.find(x => x.id === id);
   if (!currentManageItem) return;
-  document.getElementById('manageModal').style.display = 'flex';
-  const localPin = localStorage.getItem(`pin_${id}`);
-  document.getElementById('managePinInput').value = localPin || '';
-  renderManageBody(currentManageItem);
-};
-
-function renderManageBody(item) {
+  const item = currentManageItem;
   const body = document.getElementById('manageBody');
-  let html = `<p style="font-size:var(--fs-sm);color:var(--text-3);margin-bottom:var(--sp-3);">当前状态：<b style="color:var(--text-1)">${STATUS_TEXT[item.status] || item.status}</b></p>`;
-  const pend = (item.requests || []).filter(r => r.status === 'pending');
-  if (pend.length) {
-    html += '<div class="req-list">';
-    pend.forEach(r => {
-      const rid = escapeHtml(r.id);
-      html += `<div class="req-item">
-        <div class="req-meta">${ICONS.phone}<b>${escapeHtml(r.fromName)}</b> · ${escapeHtml(r.contact || '')}</div>
-        <div class="req-msg">${escapeHtml(r.message || '（无留言）')}</div>
-        <div class="req-actions">
-          <button class="btn-sm btn-success" onclick="manageAct('confirm', ${item.id}, '${rid}')">${ICONS.check}确认借出</button>
-          <button class="btn-sm btn-danger" onclick="manageAct('reject', ${item.id}, '${rid}')">${ICONS.xCircle}拒绝</button>
-        </div></div>`;
-    });
-    html += '</div>';
-  }
-  if (item.status === 'borrowed') {
-    html += `<button class="btn btn-success btn-block" style="margin-top:var(--sp-3);" onclick="manageAct('return', ${item.id})">${ICONS.checkCircle}确认归还</button>`;
-  }
-  html += `<button class="btn btn-danger btn-block" style="margin-top:var(--sp-3);" onclick="manageAct('delete', ${item.id})">${ICONS.trash}永久下架</button>`;
-  body.innerHTML = html;
-}
-
-window.manageAct = async function (action, id, requestId) {
-  const pin = document.getElementById('managePinInput').value.trim();
-  if (!pin) { showToast('请输入管理密码', '请填写 4 位 PIN', 'warning'); return; }
-  try {
-    if (action === 'confirm') await ItemStore.confirmBorrow(id, pin, requestId);
-    else if (action === 'reject') await ItemStore.rejectRequest(id, requestId, pin);
-    else if (action === 'return') await ItemStore.confirmReturn(id, pin);
-    else if (action === 'delete') {
-      if (!confirm('确定永久下架？此操作不可恢复。')) return;
-      await ItemStore.remove(id, pin);
-      sessionStorage.removeItem('req_' + id);
-    }
-    showToast('操作成功', '', 'success');
-    closeManageModal();
-    await reloadList();
-  } catch (e) { showToast('操作失败', e.message, 'error'); }
+  body.innerHTML = `
+    <p style="font-size:var(--fs-sm);color:var(--text-3);margin-bottom:var(--sp-3);">当前状态：<b style="color:var(--text-1)">${STATUS_TEXT[item.status] || item.status}</b></p>
+    <div class="manage-guide">
+      <div class="guide-item"><span class="guide-dot"></span><b>借出</b>：在 GitHub 给该 Issue 添加 <code>lent</code> 标签</div>
+      <div class="guide-item"><span class="guide-dot"></span><b>归还</b>：移除 <code>lent</code> 标签</div>
+      <div class="guide-item"><span class="guide-dot"></span><b>下架</b>：关闭该 Issue</div>
+    </div>
+    <a class="btn btn-primary btn-block" href="${ItemStore.issueUrl(id)}" target="_blank" rel="noopener">在 GitHub 管理此物品</a>`;
+  document.getElementById('manageModal').style.display = 'flex';
 };
 
 window.closeManageModal = function () {
@@ -374,23 +303,7 @@ window.closeManageModal = function () {
 // ═══════════════════════════════
 function initPublishPage() {
   const form = document.getElementById('publish-form');
-  const fileInput = document.getElementById('itemImage');
-  const previewImg = document.getElementById('previewImg');
-  const previewContainer = document.getElementById('imagePreview');
   const submitBtn = document.getElementById('submitBtn');
-  const progressContainer = document.getElementById('uploadProgress');
-  const progressFill = document.getElementById('progressFill');
-  const progressText = document.getElementById('progressText');
-
-  fileInput.addEventListener('change', function () {
-    const file = this.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { showToast('图片过大', '图片不能超过 5MB', 'warning'); this.value = ''; previewContainer.style.display = 'none'; return; }
-      const reader = new FileReader();
-      reader.onload = e => { previewImg.src = e.target.result; previewContainer.style.display = 'block'; };
-      reader.readAsDataURL(file);
-    } else { previewContainer.style.display = 'none'; }
-  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -400,38 +313,22 @@ function initPublishPage() {
     const building = document.getElementById('itemBuilding').value.trim();
     const lat = parseFloat(document.getElementById('itemLat').value) || null;
     const lng = parseFloat(document.getElementById('itemLng').value) || null;
-    const file = fileInput.files[0];
+    const imgUrl = document.getElementById('itemImage').value.trim();
 
+    if (!name || !desc) { showToast('请填写完整', '物品名称和描述为必填项', 'warning'); return; }
     if (!contact && !building) { showToast('请填写联系方式', '楼号与联系方式至少填写一项', 'warning'); return; }
     if (!lat || !lng) { showToast('请先定位', '点击「获取位置」完成定位', 'warning'); return; }
-    let pin = document.getElementById('itemPin').value.trim();
-    if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-      pin = Math.floor(1000 + Math.random() * 9000).toString();
-    }
-    if (!file) { showToast('请选择照片', '物品照片为必填项', 'warning'); return; }
 
-    if (!ItemStore.proxyReady()) {
-      showToast('代理未部署', '暂时无法发布。请按 DEPLOY.md 部署 Cloudflare Worker 后填入 API_PROXY（js/store.js 顶部）。', 'warning', 7000);
+    // 方案 1：拼出预填的 GitHub Issue 创建页，由用户登录后提交（前端不持有任何写凭证）
+    const url = ItemStore.buildPublishUrl({ name, desc, contact, building, lat, lng, imgUrl });
+    const win = window.open(url, '_blank', 'noopener');
+    if (!win) {
+      let copied = false;
+      try { await navigator.clipboard.writeText(url); copied = true; } catch (_) {}
+      showToast('跳转被拦截', copied ? '发布链接已复制，请粘贴到浏览器打开' : '请允许弹出窗口后重试', 'warning', 6000);
       return;
     }
-
-    submitBtn.disabled = true;
-    submitBtn.innerText = '正在发布…';
-    progressContainer.style.display = 'block';
-    try {
-      progressText.innerText = '正在压缩图片…';
-      const imgUrl = await compressImageToBase64(file);
-      progressText.innerText = '正在保存信息…';
-      const newId = await ItemStore.create({ name, desc, contact, building, lat, lng, imgUrl, pin });
-      localStorage.setItem(`pin_${newId}`, pin);
-      showToast('发布成功', `管理 PIN：${pin}（已自动保存在本设备）`, 'success', 7000);
-      window.location.href = 'index.html';
-    } catch (err) {
-      showToast('发布失败', err.message, 'error');
-      submitBtn.disabled = false;
-      submitBtn.innerText = '发布物品';
-      progressContainer.style.display = 'none';
-    }
+    showToast('已在 GitHub 打开发布页', '登录后点击 Submit 即上架，本站将自动同步展示', 'success', 6000);
   });
 }
 
