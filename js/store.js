@@ -41,30 +41,37 @@ async function proxyFetch(path, body) {
   return res.json().catch(() => ({}));
 }
 
-// ─── 读取（优先走代理绕过匿名限流；未部署时降级直连 GitHub API） ───
+// ─── 读取 ───
+// 优先级：① 同源静态快照 items.json（GitHub Action 定时生成，无速率限制、无 CORS）
+//         ② 代理 GET /api/items（若已部署 Worker）
+//         ③ 匿名直连 GitHub API（60/hr 限制，易 403，仅作最后兜底）
 async function list() {
-  // 代理可用时走 GET /api/items（Worker 持有 Token → 5000 req/hr + 边缘缓存）
+  // ① 同源静态快照：前端最稳的读路径，彻底避开共享 IP 限流
+  try {
+    const res = await fetch(`items.json?t=${Date.now()}`, { cache: 'no-store' });
+    if (res.ok) {
+      const arr = await res.json();
+      if (Array.isArray(arr)) return arr;
+    }
+  } catch (e) {
+    console.warn('items.json 读取失败，尝试降级:', e.message);
+  }
+  // ② 代理（若已部署）
   if (proxyReady()) {
     try {
       const res = await fetch(`${API_PROXY}/api/items`, {
         headers: { 'Accept': 'application/json', 'x-site-key': SITE_KEY },
       });
       if (res.ok) return await res.json();
-      // 代理返回错误时降级到直连，不阻断用户
       console.warn('代理读取失败，降级直连:', res.status);
     } catch (e) {
       console.warn('代理不可达，降级直连:', e.message);
     }
   }
-  // 降级：无鉴权直连（60 req/hr 匿名限制，容易 403）
+  // ③ 兜底：匿名直连（易 403）
   const url = `${GH_API}/issues?state=open&per_page=100&labels=item&sort=updated`;
-  const res = await fetch(url, {
-    headers: {
-      'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'neighborhood-share/1.0',
-    },
-  });
-  if (!res.ok) throw new Error(`加载失败: ${res.status}（如持续 403，请按 DEPLOY.md 部署代理）`);
+  const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+  if (!res.ok) throw new Error(`加载失败: ${res.status}（如持续 403，请等待配额恢复或部署代理）`);
   const issues = await res.json();
   return issues.map(parseIssue).filter(Boolean);
 }
