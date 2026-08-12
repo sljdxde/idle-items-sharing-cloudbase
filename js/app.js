@@ -152,7 +152,7 @@ function renderItems(items, container) {
     const safeDesc = escapeHtml(item.desc || '无描述');
     const safeContact = escapeHtml(item.contact || '');
     const safeBuilding = escapeHtml(item.building || '');
-    const defaultImg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22%23f3efe7%22%2F%3E%3Cpath%20d%3D%22M8%2024%2032%2010l24%2014%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M12%2022v22l20%2012%2020-12V22%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M32%2034v22%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E';
+    const defaultImg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22none%22%2F%3E%3Cpath%20d%3D%22M8%2024%2032%2010l24%2014%22%20stroke%3D%22%23c8c8c8%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M12%2022v22l20%2012%2020-12V22%22%20stroke%3D%22%23c8c8c8%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M32%2034v22%22%20stroke%3D%22%23c8c8c8%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E';
 
     let distStr = '';
     if (userLat && userLng && item.lat && item.lng) {
@@ -304,6 +304,23 @@ window.closeManageModal = function () {
 function initPublishPage() {
   const form = document.getElementById('publish-form');
   const submitBtn = document.getElementById('submitBtn');
+
+  // 图片链接即时预览（TDesign 风格反馈：合法 http(s) 才显示缩略图，加载失败隐藏）
+  const imgInput = document.getElementById('itemImage');
+  const previewBox = document.getElementById('imagePreview');
+  const previewImg = document.getElementById('previewImg');
+  const updateImgPreview = () => {
+    const v = imgInput.value.trim();
+    if (v && /^https?:\/\//i.test(v)) {
+      previewImg.src = v;
+      previewBox.style.display = 'block';
+    } else {
+      previewBox.style.display = 'none';
+      previewImg.removeAttribute('src');
+    }
+  };
+  imgInput.addEventListener('input', updateImgPreview);
+  previewImg.addEventListener('error', () => { previewBox.style.display = 'none'; });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();

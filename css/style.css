@@ -1126,3 +1126,77 @@ input:focus, textarea:focus, select:focus {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   深色模式（TDesign Dark 规范：中性格度翻转 + 品牌色轻微提亮）
+   跟随系统 @media (prefers-color-scheme: dark) 自动切换
+   ============================================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* ── 品牌色：在暗底上轻微提亮，保证对比度 ── */
+    --primary: #4583ee;
+    --primary-hover: #6699f2;
+    --primary-active: #3a76e0;
+    --primary-light: rgba(69, 131, 238, 0.16);
+    --primary-light-hover: rgba(69, 131, 238, 0.26);
+    --primary-disabled: rgba(69, 131, 238, 0.4);
+    --info: #4583ee;
+
+    /* ── 语义色：暗底上提亮 ── */
+    --success: #2ba471;
+    --success-hover: #3fbf86;
+    --success-bg: rgba(43, 164, 113, 0.16);
+    --warning: #e37318;
+    --warning-hover: #f08627;
+    --warning-bg: rgba(227, 115, 24, 0.16);
+    --error: #f6685d;
+    --error-hover: #fb8278;
+    --error-bg: rgba(246, 104, 93, 0.16);
+
+    /* ── 文字：白底 opacity 梯度 ── */
+    --text-1: rgba(255, 255, 255, 0.9);
+    --text-2: rgba(255, 255, 255, 0.6);
+    --text-3: rgba(255, 255, 255, 0.4);
+    --text-4: rgba(255, 255, 255, 0.26);
+
+    /* ── 背景：灰阶翻转 ── */
+    --bg-page: #181818;
+    --bg-container: #1f1f1f;
+    --bg-muted: #2a2a2a;
+    --bg-hover: #333333;
+    --bg-component: #2a2a2a;
+
+    /* ── 边框：提亮以在暗底可辨 ── */
+    --border: #3a3a3a;
+    --border-strong: #464646;
+    --border-2: #555555;
+
+    /* ── 阴影：更深更柔 ── */
+    --shadow-1: 0 1px 10px rgba(0, 0, 0, 0.4), 0 4px 5px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.6);
+    --shadow-2: 0 3px 14px 2px rgba(0, 0, 0, 0.45), 0 8px 10px 1px rgba(0, 0, 0, 0.5), 0 5px 5px -3px rgba(0, 0, 0, 0.55);
+    --shadow-3: 0 6px 30px 5px rgba(0, 0, 0, 0.5), 0 16px 24px 2px rgba(0, 0, 0, 0.45), 0 8px 10px -5px rgba(0, 0, 0, 0.5);
+    --ring: 0 0 0 3px rgba(69, 131, 238, 0.3);
+  }
+
+  /* 深色下图片占位区透出暗底，无需暖色 */
+  .distance-tag { background: rgba(0, 0, 0, 0.65); }
+  .modal-overlay { background: rgba(0, 0, 0, 0.65); }
+}
+
+/* ============================================================
+   发布页 TDesign 细节打磨
+   ============================================================ */
+/* 输入框 hover：边框加深（TDesign Input hover 态） */
+input[type="text"]:hover,
+input[type="url"]:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--border-strong);
+}
+
+/* 导航当前页高亮（发布页 btn-publish 处于 active） */
+.btn-publish.active { background: var(--primary-active); }
+
+/* 图片链接预览 */
+.image-preview img { background: var(--bg-muted); }
+
