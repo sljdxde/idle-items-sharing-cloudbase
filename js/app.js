@@ -1,7 +1,24 @@
 // ================================================
 // js/app.js — 前端交互（视图层）
 // 依赖 js/store.js 暴露的 ItemStore 接口；不直接碰 GitHub。
+// 全程零 emoji：图标统一走内联 SVG（ICONS），提示走 Toast。
 // ================================================
+
+// ─── 内联 SVG 图标（stroke=currentColor，随文字着色） ───
+const ICONS = {
+  pin: '<svg class="icon" viewBox="0 0 24 24"><path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  home: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>',
+  phone: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 3h3l2 5-2 1a11 11 0 0 0 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2Z"/></svg>',
+  calendar: '<svg class="icon" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></svg>',
+  doc: '<svg class="icon" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7Z"/><path d="M14 3v5h5"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24"><path d="M5 13l4 4 10-11"/></svg>',
+  chevron: '<svg class="icon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>',
+  trash: '<svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+  xCircle: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>',
+  checkCircle: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.2 2.2L15.5 10"/></svg>',
+  infoCircle: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  alertCircle: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>',
+};
 
 let userLat = null;
 let userLng = null;
@@ -45,13 +62,16 @@ async function initIndexPage() {
   const listEl = document.getElementById('item-list');
   const emptyEl = document.getElementById('empty-state');
   const locationTextEl = document.getElementById('locationText');
+  const locationStatusEl = document.getElementById('locationStatus');
 
   try {
     const pos = await getLocation();
     userLat = pos.lat; userLng = pos.lng;
-    locationTextEl.textContent = '已定位 ✓';
+    locationTextEl.textContent = '已定位';
+    if (locationStatusEl) locationStatusEl.classList.add('is-ready');
   } catch (e) {
-    locationTextEl.textContent = '未授权定位 (显示全部)';
+    locationTextEl.textContent = '未授权定位（显示全部）';
+    if (locationStatusEl) locationStatusEl.classList.add('is-off');
     currentRange = 0;
     document.querySelectorAll('.filter-pill').forEach(p => {
       p.classList.toggle('active', p.dataset.range === '0');
@@ -63,7 +83,7 @@ async function initIndexPage() {
     loadingEl.style.display = 'none';
     renderFilteredItems(listEl, emptyEl);
   } catch (err) {
-    loadingEl.innerHTML = `<p style="color:#ef4444">加载失败: ${escapeHtml(err.message)}</p>`;
+    loadingEl.innerHTML = `<p style="color:var(--error)">加载失败：${escapeHtml(err.message)}</p>`;
   }
 }
 
@@ -79,7 +99,7 @@ async function reloadList() {
   const listEl = document.getElementById('item-list');
   const emptyEl = document.getElementById('empty-state');
   try { allItems = await ItemStore.list(); renderFilteredItems(listEl, emptyEl); }
-  catch (e) { alert('刷新失败: ' + e.message); }
+  catch (e) { showToast('刷新失败', e.message, 'error'); }
 }
 
 function renderFilteredItems(listEl, emptyEl) {
@@ -90,9 +110,13 @@ function renderFilteredItems(listEl, emptyEl) {
       return calcDistance(userLat, userLng, item.lat, item.lng) <= currentRange;
     });
   }
+
+  const rc = document.getElementById('resultsCount');
+  if (rc) rc.innerHTML = `共 <b>${filtered.length}</b> 件闲置`;
+
   if (!filtered || filtered.length === 0) {
     listEl.style.display = 'none';
-    emptyEl.style.display = 'block';
+    emptyEl.style.display = 'flex';
   } else {
     emptyEl.style.display = 'none';
     listEl.style.display = 'grid';
@@ -124,7 +148,7 @@ function renderItems(items, container) {
     const safeDesc = escapeHtml(item.desc || '无描述');
     const safeContact = escapeHtml(item.contact || '');
     const safeBuilding = escapeHtml(item.building || '');
-    const defaultImg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2216%22%20text-anchor%3D%22middle%22%20alignment-baseline%3D%22middle%22%20font-family%3D%22sans-serif%22%20fill%3D%22%2394a3b8%22%3E%E5%9B%BE%E7%89%87%3C%2Ftext%3E%3C%2Fsvg%3E';
+    const defaultImg = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%22400%22%20height%3D%22300%22%20fill%3D%22%23f3efe7%22%2F%3E%3Cpath%20d%3D%22M8%2024%2032%2010l24%2014%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M12%2022v22l20%2012%2020-12V22%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3Cpath%20d%3D%22M32%2034v22%22%20stroke%3D%22%23cfc9bd%22%20fill%3D%22none%22%20stroke-width%3D%222%22%2F%3E%3C%2Fsvg%3E';
 
     let distStr = '';
     if (userLat && userLng && item.lat && item.lng) {
@@ -136,16 +160,22 @@ function renderItems(items, container) {
       const d = new Date(item.createTime);
       if (!isNaN(d.getTime())) dateStr = `${d.getMonth() + 1}月${d.getDate()}日`;
     }
-    const contactDisplay = safeContact || (safeBuilding ? `🏠 ${safeBuilding}` : '未提供');
-    const distTag = distStr ? `<span class="distance-tag">📍 ${distStr}</span>` : '';
+    const distTag = distStr
+      ? `<span class="distance-tag">${ICONS.pin}${distStr}</span>`
+      : '';
     const cardClass = 'card' + (item.status === 'borrowed' ? ' is-lent' : (item.status === 'requested' ? ' is-requested' : ''));
 
     const detailRows = [];
-    if (safeBuilding) detailRows.push(`<div class="detail-row"><span class="detail-label">🏠 楼号</span><span class="detail-value">${safeBuilding}</span></div>`);
-    if (safeContact) detailRows.push(`<div class="detail-row"><span class="detail-label">📱 联系方式</span><span class="detail-value">${safeContact}</span></div>`);
-    if (distStr) detailRows.push(`<div class="detail-row"><span class="detail-label">📍 距您</span><span class="detail-value">${distStr}</span></div>`);
-    detailRows.push(`<div class="detail-row"><span class="detail-label">📅 发布</span><span class="detail-value">${dateStr}</span></div>`);
-    detailRows.push(`<div class="detail-row"><span class="detail-label">📝 描述</span><span class="detail-value">${safeDesc}</span></div>`);
+    if (safeBuilding) detailRows.push(`<div class="detail-row"><span class="detail-label">${ICONS.home}楼号</span><span class="detail-value">${safeBuilding}</span></div>`);
+    if (safeContact) detailRows.push(`<div class="detail-row"><span class="detail-label">${ICONS.phone}联系方式</span><span class="detail-value">${safeContact}</span></div>`);
+    if (distStr) detailRows.push(`<div class="detail-row"><span class="detail-label">${ICONS.pin}距您</span><span class="detail-value">${distStr}</span></div>`);
+    detailRows.push(`<div class="detail-row"><span class="detail-label">${ICONS.calendar}发布</span><span class="detail-value">${dateStr}</span></div>`);
+    detailRows.push(`<div class="detail-row"><span class="detail-label">${ICONS.doc}描述</span><span class="detail-value">${safeDesc}</span></div>`);
+
+    const metaLeft = safeBuilding
+      ? `<span class="meta-left">${ICONS.home}<span class="building-info">${safeBuilding}</span></span>`
+      : `<span class="meta-left">${dateStr}</span>`;
+    const metaDist = distStr ? `<span class="meta-dist">${distStr}</span>` : '';
 
     const card = document.createElement('div');
     card.className = cardClass;
@@ -159,16 +189,19 @@ function renderItems(items, container) {
         <h3 class="card-title" title="${safeName}">${safeName}</h3>
         <p class="card-desc" title="${safeDesc}">${safeDesc}</p>
         <div class="card-meta">
-          <span>${safeBuilding ? '🏠 ' + safeBuilding : dateStr}</span>
-          ${distStr ? '<span style="color:var(--primary)">' + distStr + '</span>' : ''}
+          ${metaLeft}
+          ${metaDist}
         </div>
         <div class="card-actions">
           ${borrowBtnHtml(item)}
-          <button class="btn-manage" onclick="openManageModal(${item.id})">管理</button>
+          <button class="btn-manage" onclick="openManageModal(${item.id})">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6Z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+            管理
+          </button>
         </div>
         <div class="detail-panel" style="display:none;">
           ${detailRows.join('')}
-          <button class="btn-collapse" onclick="toggleDetail(this)">收起 ▲</button>
+          <button class="btn-collapse" onclick="toggleDetail(this)">收起${ICONS.chevron}</button>
         </div>
       </div>`;
     container.appendChild(card);
@@ -181,9 +214,11 @@ window.toggleDetail = function (btnEl) {
   const borrowBtn = card.querySelector('.btn-borrow');
   if (panel.style.display === 'none') {
     panel.style.display = 'block';
+    btnEl.classList.add('is-open');
     if (borrowBtn && !borrowBtn.classList.contains('disabled') && borrowBtn.textContent === '我想借') borrowBtn.innerText = '收起详情';
   } else {
     panel.style.display = 'none';
+    btnEl.classList.remove('is-open');
     if (borrowBtn && borrowBtn.textContent === '收起详情') borrowBtn.innerText = '我想借';
   }
 };
@@ -231,7 +266,7 @@ window.submitBorrow = async function () {
   const fromName = document.getElementById('borrowName').value.trim();
   const contact = document.getElementById('borrowContact').value.trim();
   const message = document.getElementById('borrowMsg').value.trim();
-  if (!fromName || !contact) { alert('请填写昵称和联系方式'); return; }
+  if (!fromName || !contact) { showToast('请填写完整', '昵称和联系方式不能为空', 'warning'); return; }
   try {
     const r = await ItemStore.requestBorrow(id, { fromName, contact, message });
     const rid = r.id || r.requestId;
@@ -243,8 +278,8 @@ window.submitBorrow = async function () {
     }
     closeBorrowModal();
     renderFilteredItems(document.getElementById('item-list'), document.getElementById('empty-state'));
-    alert('申请已发送，物主会收到 GitHub 通知');
-  } catch (e) { alert('申请失败: ' + e.message); }
+    showToast('申请已发送', '物主会收到 GitHub 通知', 'success');
+  } catch (e) { showToast('申请失败', e.message, 'error'); }
 };
 
 window.cancelMyRequest = async function (id) {
@@ -260,8 +295,8 @@ window.cancelMyRequest = async function (id) {
       if (!item.requests.some(r => r.status === 'pending')) item.status = 'available';
     }
     renderFilteredItems(document.getElementById('item-list'), document.getElementById('empty-state'));
-    alert('已取消申请');
-  } catch (e) { alert('取消失败: ' + e.message); }
+    showToast('已取消申请', '', 'info');
+  } catch (e) { showToast('取消失败', e.message, 'error'); }
 };
 
 // ═══════════════════════════════
@@ -280,45 +315,45 @@ window.openManageModal = function (id) {
 
 function renderManageBody(item) {
   const body = document.getElementById('manageBody');
-  let html = `<p style="font-size:.82rem;color:#64748b;margin-bottom:10px;">当前状态：<b>${STATUS_TEXT[item.status] || item.status}</b></p>`;
+  let html = `<p style="font-size:var(--fs-sm);color:var(--text-3);margin-bottom:var(--sp-3);">当前状态：<b style="color:var(--text-1)">${STATUS_TEXT[item.status] || item.status}</b></p>`;
   const pend = (item.requests || []).filter(r => r.status === 'pending');
   if (pend.length) {
     html += '<div class="req-list">';
     pend.forEach(r => {
       const rid = escapeHtml(r.id);
       html += `<div class="req-item">
-        <div class="req-meta"><b>${escapeHtml(r.fromName)}</b> · ${escapeHtml(r.contact || '')}</div>
+        <div class="req-meta">${ICONS.phone}<b>${escapeHtml(r.fromName)}</b> · ${escapeHtml(r.contact || '')}</div>
         <div class="req-msg">${escapeHtml(r.message || '（无留言）')}</div>
         <div class="req-actions">
-          <button class="btn-success btn-sm" onclick="manageAct('confirm', ${item.id}, '${rid}')">确认借出</button>
-          <button class="btn-danger btn-sm" onclick="manageAct('reject', ${item.id}, '${rid}')">拒绝</button>
+          <button class="btn-sm btn-success" onclick="manageAct('confirm', ${item.id}, '${rid}')">${ICONS.check}确认借出</button>
+          <button class="btn-sm btn-danger" onclick="manageAct('reject', ${item.id}, '${rid}')">${ICONS.xCircle}拒绝</button>
         </div></div>`;
     });
     html += '</div>';
   }
   if (item.status === 'borrowed') {
-    html += `<button class="btn-success" style="width:100%;margin-top:8px;" onclick="manageAct('return', ${item.id})">✨ 确认归还</button>`;
+    html += `<button class="btn btn-success btn-block" style="margin-top:var(--sp-3);" onclick="manageAct('return', ${item.id})">${ICONS.checkCircle}确认归还</button>`;
   }
-  html += `<button class="btn-danger" style="width:100%;margin-top:8px;" onclick="manageAct('delete', ${item.id})">❌ 永久下架</button>`;
+  html += `<button class="btn btn-danger btn-block" style="margin-top:var(--sp-3);" onclick="manageAct('delete', ${item.id})">${ICONS.trash}永久下架</button>`;
   body.innerHTML = html;
 }
 
 window.manageAct = async function (action, id, requestId) {
   const pin = document.getElementById('managePinInput').value.trim();
-  if (!pin) { alert('请输入管理密码 PIN'); return; }
+  if (!pin) { showToast('请输入管理密码', '请填写 4 位 PIN', 'warning'); return; }
   try {
     if (action === 'confirm') await ItemStore.confirmBorrow(id, pin, requestId);
     else if (action === 'reject') await ItemStore.rejectRequest(id, requestId, pin);
     else if (action === 'return') await ItemStore.confirmReturn(id, pin);
     else if (action === 'delete') {
-      if (!confirm('确定永久下架？')) return;
+      if (!confirm('确定永久下架？此操作不可恢复。')) return;
       await ItemStore.remove(id, pin);
       sessionStorage.removeItem('req_' + id);
     }
-    alert('操作成功');
+    showToast('操作成功', '', 'success');
     closeManageModal();
     await reloadList();
-  } catch (e) { alert('操作失败: ' + e.message); }
+  } catch (e) { showToast('操作失败', e.message, 'error'); }
 };
 
 window.closeManageModal = function () {
@@ -341,7 +376,7 @@ function initPublishPage() {
   fileInput.addEventListener('change', function () {
     const file = this.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); this.value = ''; previewContainer.style.display = 'none'; return; }
+      if (file.size > 5 * 1024 * 1024) { showToast('图片过大', '图片不能超过 5MB', 'warning'); this.value = ''; previewContainer.style.display = 'none'; return; }
       const reader = new FileReader();
       reader.onload = e => { previewImg.src = e.target.result; previewContainer.style.display = 'block'; };
       reader.readAsDataURL(file);
@@ -358,50 +393,54 @@ function initPublishPage() {
     const lng = parseFloat(document.getElementById('itemLng').value) || null;
     const file = fileInput.files[0];
 
-    if (!contact && !building) { alert('请至少填写 楼号 或 联系方式 中的一个！'); return; }
-    if (!lat || !lng) { alert('请先点击「获取位置」完成定位！'); return; }
+    if (!contact && !building) { showToast('请填写联系方式', '楼号与联系方式至少填写一项', 'warning'); return; }
+    if (!lat || !lng) { showToast('请先定位', '点击「获取位置」完成定位', 'warning'); return; }
     let pin = document.getElementById('itemPin').value.trim();
     if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
       pin = Math.floor(1000 + Math.random() * 9000).toString();
     }
-    if (!file) { alert('请选择物品照片！'); return; }
+    if (!file) { showToast('请选择照片', '物品照片为必填项', 'warning'); return; }
 
     if (!ItemStore.proxyReady()) {
-      alert('代理未部署：暂时无法发布。请按 DEPLOY.md 部署 Cloudflare Worker 后填入 API_PROXY（js/store.js 顶部）。');
+      showToast('代理未部署', '暂时无法发布。请按 DEPLOY.md 部署 Cloudflare Worker 后填入 API_PROXY（js/store.js 顶部）。', 'warning', 7000);
       return;
     }
 
     submitBtn.disabled = true;
-    submitBtn.innerText = '正在发布...';
+    submitBtn.innerText = '正在发布…';
     progressContainer.style.display = 'block';
     try {
-      progressText.innerText = '正在压缩图片...';
+      progressText.innerText = '正在压缩图片…';
       const imgUrl = await compressImageToBase64(file);
-      progressText.innerText = '正在保存信息...';
+      progressText.innerText = '正在保存信息…';
       const newId = await ItemStore.create({ name, desc, contact, building, lat, lng, imgUrl, pin });
       localStorage.setItem(`pin_${newId}`, pin);
-      alert(`发布成功！\n管理 PIN: ${pin}\n(已自动保存在本设备)`);
+      showToast('发布成功', `管理 PIN：${pin}（已自动保存在本设备）`, 'success', 7000);
       window.location.href = 'index.html';
     } catch (err) {
-      alert('发布失败：' + err.message);
+      showToast('发布失败', err.message, 'error');
       submitBtn.disabled = false;
-      submitBtn.innerText = '🚀 发布物品';
+      submitBtn.innerText = '发布物品';
       progressContainer.style.display = 'none';
     }
   });
 }
 
+function setLocateLabel(btn, text, located) {
+  btn.innerHTML = `${ICONS.pin}${text}`;
+  btn.classList.toggle('located', !!located);
+}
+
 window.doLocate = async function () {
   const btn = document.getElementById('btnLocate');
   const status = document.getElementById('locateStatus');
-  btn.innerText = '定位中...';
+  setLocateLabel(btn, '定位中…', false);
   try {
     const pos = await getLocation();
     document.getElementById('itemLat').value = pos.lat;
     document.getElementById('itemLng').value = pos.lng;
-    btn.innerText = '已定位 ✓';
-    btn.classList.add('located');
-    status.textContent = '正在获取地址...';
+    setLocateLabel(btn, '已定位', true);
+    status.textContent = '正在获取地址…';
     try {
       const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json&accept-language=zh`, {
         headers: { 'User-Agent': 'NeighborhoodSharing/1.0' }
@@ -409,9 +448,9 @@ window.doLocate = async function () {
       const geoData = await geoRes.json();
       const addr = geoData.display_name || `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
       const parts = addr.split(',').map(s => s.trim());
-      status.textContent = `📍 ${parts.slice(0, 3).join(', ')}`;
+      status.textContent = parts.slice(0, 3).join(', ');
     } catch (e) {
-      status.textContent = `📍 ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
+      status.textContent = `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`;
     }
     const mapContainer = document.getElementById('miniMap');
     if (mapContainer) {
@@ -420,7 +459,41 @@ window.doLocate = async function () {
         src="https://www.openstreetmap.org/export/embed.html?bbox=${pos.lng - 0.005},${pos.lat - 0.003},${pos.lng + 0.005},${pos.lat + 0.003}&layer=mapnik&marker=${pos.lat},${pos.lng}"></iframe>`;
     }
   } catch (err) {
-    btn.innerText = '定位失败，重试';
+    setLocateLabel(btn, '点击获取位置', false);
     status.textContent = '请允许浏览器定位权限';
   }
 };
+
+// ═══════════════════════════════
+// Toast 通知（替代原生 alert，非阻塞）
+// ═══════════════════════════════
+function showToast(title, msg, type = 'info', duration = 2800) {
+  let wrap = document.querySelector('.toast-wrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.className = 'toast-wrap';
+    document.body.appendChild(wrap);
+  }
+  const iconMap = {
+    success: ICONS.checkCircle,
+    error: ICONS.xCircle,
+    info: ICONS.infoCircle,
+    warning: ICONS.alertCircle,
+  };
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span class="t-icon">${iconMap[type] || ICONS.infoCircle}</span>
+    <div class="t-body">
+      <div class="t-title">${escapeHtml(title)}</div>
+      ${msg ? `<div class="t-msg">${escapeHtml(msg)}</div>` : ''}
+    </div>
+    <button class="t-close" aria-label="关闭">×</button>`;
+  const remove = () => {
+    toast.classList.add('leaving');
+    setTimeout(() => toast.remove(), 220);
+  };
+  toast.querySelector('.t-close').addEventListener('click', remove);
+  wrap.appendChild(toast);
+  if (duration > 0) setTimeout(remove, duration);
+}

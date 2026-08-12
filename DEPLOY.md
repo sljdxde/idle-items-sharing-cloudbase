@@ -2,7 +2,7 @@
 
 本项目**无数据库、无自建服务器**：静态站点走 GitHub Pages，写操作走一个极轻的 Cloudflare Worker 代理（持有 GitHub Token，加密 PIN）。
 
-## ⚠️ 第一步（安全，必做）
+## 第一步（安全，必做）
 原 `js/github.js` 里曾硬编码一个**有仓库写权限的 Token** 并已进入公开 git 历史——它已泄露。请立即去 GitHub → Settings → Developer settings → Personal access tokens，把那个 token **吊销/轮换**。新代码已不含任何 Token。
 
 ## 第二步：准备 GitHub Token（给代理用）

@@ -163,7 +163,7 @@ export default {
           lat: b.lat || null, lng: b.lng || null, imgUrl: b.imgUrl || '',
           status: 'available', requests: [], pinCipher: b.pin ? await encryptPin(b.pin) : '',
         };
-        const readable = `## 闲置物品：${b.name}\n\n**描述**：${b.desc || ''}\n\n**联系/位置**：${b.contact ? b.contact : (b.building ? ('🏠 ' + b.building) : '')}\n\n> 本 Issue 由系统自动创建，请勿修改隐藏数据！\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`;
+        const readable = `## 闲置物品：${b.name}\n\n**描述**：${b.desc || ''}\n\n**联系/位置**：${b.contact ? b.contact : (b.building ? ('楼号 ' + b.building) : '')}\n\n> 本 Issue 由系统自动创建，请勿修改隐藏数据！\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`;
         const res = await gh('', 'POST', { title: `[闲置物品] ${b.name}`, body: readable, labels: ['item'] });
         if (!res.ok) { const e = await res.json().catch(() => ({})); return json(res.status, { error: e.message || '创建失败' }); }
         const created = await res.json();
@@ -181,7 +181,7 @@ export default {
         data.requests.push(req);
         if (data.status === 'available') data.status = 'requested';
         await writeItem(num, data, ['item']);
-        await comment(num, `🤝 **${req.fromName}**${req.contact ? ('（' + req.contact + '）') : ''} 想借阅《${data.name}》：${req.message || '（无留言）'}`);
+        await comment(num, `**${req.fromName}**${req.contact ? ('（' + req.contact + '）') : ''} 想借阅《${data.name}》：${req.message || '（无留言）'}`);
         return json(200, { id: rid });
       }
 
