@@ -95,12 +95,21 @@ window.setRange = function (range) {
   renderFilteredItems(document.getElementById('item-list'), document.getElementById('empty-state'));
 };
 
-async function reloadList() {
+async function reloadList(forceLive) {
   const listEl = document.getElementById('item-list');
   const emptyEl = document.getElementById('empty-state');
-  try { allItems = await ItemStore.list(); renderFilteredItems(listEl, emptyEl); }
+  try { allItems = await ItemStore.list({ forceLive: !!forceLive }); renderFilteredItems(listEl, emptyEl); }
   catch (e) { showToast('刷新失败', e.message, 'error'); }
 }
+
+// 强制刷新：跳过静态快照与本地缓存，直接拉取 GitHub 实时数据
+window.refreshList = async function () {
+  const btn = document.getElementById('btnRefresh');
+  if (btn) btn.classList.add('spinning');
+  await reloadList(true);
+  if (btn) btn.classList.remove('spinning');
+  showToast('已刷新', '已拉取最新物品', 'success');
+};
 
 function renderFilteredItems(listEl, emptyEl) {
   let filtered = allItems;

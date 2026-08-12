@@ -322,6 +322,24 @@ a:hover { color: var(--primary-hover); }
 }
 .results-count b { color: var(--text-1); font-weight: 700; }
 
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-container);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, background .15s ease;
+}
+.btn-refresh:hover { color: var(--primary); border-color: var(--primary); background: var(--bg-muted); }
+.btn-refresh .icon { width: 18px; height: 18px; }
+.btn-refresh.spinning .icon { animation: ns-spin .8s linear infinite; }
+@keyframes ns-spin { to { transform: rotate(360deg); } }
+
 /* ============================================================
    容器 / 网格
    ============================================================ */

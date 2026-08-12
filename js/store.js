@@ -45,19 +45,55 @@ async function proxyFetch(path, body) {
 // 优先级：① 同源静态快照 items.json（GitHub Action 定时生成，无速率限制、无 CORS）
 //         ② 代理 GET /api/items（若已部署 Worker）
 //         ③ 匿名直连 GitHub API（60/hr 限制，易 403，仅作最后兜底）
-async function list() {
-  // ① 同源静态快照：前端最稳的读路径，彻底避开共享 IP 限流
+// 浏览器本地缓存：降低匿名 API 限流（共享 IP）命中概率
+const LIST_CACHE_KEY = 'ns_list_cache';
+const LIST_CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+
+function readListCache() {
   try {
-    const res = await fetch(`items.json?t=${Date.now()}`, { cache: 'no-store' });
-    if (res.ok) {
-      const arr = await res.json();
-      if (Array.isArray(arr)) return arr;
+    const raw = localStorage.getItem(LIST_CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (typeof c.t === 'number' && Date.now() - c.t < LIST_CACHE_TTL && Array.isArray(c.data)) return c.data;
+  } catch (_) {}
+  return null;
+}
+function writeListCache(arr) {
+  try { localStorage.setItem(LIST_CACHE_KEY, JSON.stringify({ t: Date.now(), data: arr })); } catch (_) {}
+}
+
+// 实时从 GitHub 匿名 API 读取（易 403，作为兜底实时源）
+async function listFromApi() {
+  const url = `${GH_API}/issues?state=open&per_page=100&labels=item&sort=updated`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
+  if (!res.ok) throw new Error(`加载失败: ${res.status}（如持续 403，请等待配额恢复或部署代理）`);
+  const issues = await res.json();
+  return issues.map(parseIssue).filter(Boolean);
+}
+
+// 读取优先级（可在 opts.forceLive=true 时跳过缓存，直接拉实时）：
+//   ① 同源静态快照 items.json —— 非空时采信（无速率限制、无 CORS，最稳）
+//   ② 代理 GET /api/items（若已部署 Worker）
+//   ③ 实时源 —— 优先复用本地缓存（5 分钟 TTL），失效再打匿名 API
+//   ④ 全部失败 → 返回空数组（前端显示空状态，不再抛错中断）
+async function list(opts) {
+  const forceLive = !!(opts && opts.forceLive);
+
+  // ① 同源静态快照
+  if (!forceLive) {
+    try {
+      const res = await fetch(`items.json?t=${Date.now()}`, { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.json();
+        // 仅当非空才采信；空快照说明 Action 未同步或暂无数据，继续走实时源
+        if (Array.isArray(arr) && arr.length > 0) return arr;
+      }
+    } catch (e) {
+      console.warn('items.json 读取失败，尝试降级:', e.message);
     }
-  } catch (e) {
-    console.warn('items.json 读取失败，尝试降级:', e.message);
   }
   // ② 代理（若已部署）
-  if (proxyReady()) {
+  if (!forceLive && proxyReady()) {
     try {
       const res = await fetch(`${API_PROXY}/api/items`, {
         headers: { 'Accept': 'application/json', 'x-site-key': SITE_KEY },
@@ -68,12 +104,19 @@ async function list() {
       console.warn('代理不可达，降级直连:', e.message);
     }
   }
-  // ③ 兜底：匿名直连（易 403）
-  const url = `${GH_API}/issues?state=open&per_page=100&labels=item&sort=updated`;
-  const res = await fetch(url, { headers: { 'Accept': 'application/vnd.github.v3+json' } });
-  if (!res.ok) throw new Error(`加载失败: ${res.status}（如持续 403，请等待配额恢复或部署代理）`);
-  const issues = await res.json();
-  return issues.map(parseIssue).filter(Boolean);
+  // ③ 实时源（带本地缓存，降低限流风险）
+  try {
+    if (!forceLive) {
+      const cached = readListCache();
+      if (cached) return cached;
+    }
+    const live = await listFromApi();
+    writeListCache(live);
+    return live;
+  } catch (e) {
+    console.warn('实时读取失败，返回空列表:', e.message);
+    return [];
+  }
 }
 
 // 把 GitHub Issue 解析成 Item（兼容旧 item：lent 标签=borrowed、明文 pin）
