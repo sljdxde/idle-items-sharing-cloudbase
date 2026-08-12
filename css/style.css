@@ -1,34 +1,38 @@
 /* ============================================
    邻里好物 — 社区闲置互助平台样式
-   设计系统 v3：克制 · 排版优先 · 单色 + 单一强调色
-   参考 Vercel 设计工艺（去除装饰性渐变/光晕/玻璃/扫光）
+   设计系统 v4：woyao.pro 暖纸风
+   · 米色纸张底 #f6f3ec · 衬线标题(Noto Serif SC) · 蓝色强调 #2b7fff
+   · 暖灰边框 · 克制阴影 · 单色优先
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@600;700;900&display=swap');
 
-/* ─────────── 设计 token（浅色） ─────────── */
 :root {
-  /* 中性 */
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-muted: #f7f8f8;
-  --text: #0a0a0a;
-  --text-secondary: #525252;
-  --text-tertiary: #8f8f8f;
-  --border: #ebebeb;
-  --border-strong: #dcdcdc;
+  /* 字体 */
+  --font-serif: 'Noto Serif SC', Georgia, 'Songti SC', serif;
+  --font-sans: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
 
-  /* 单一强调色：翡翠绿（状态 / 主操作） */
-  --accent: #0ea371;
-  --accent-hover: #0b8a60;
+  /* 暖纸中性 */
+  --bg: #f6f3ec;            /* 米色纸张底（全站统一暖底） */
+  --surface: #ffffff;      /* 卡片/弹窗/表单卡（浮于暖底） */
+  --surface-muted: #f3efe7;/* 内嵌面板（详情/请求/输入底色） */
+  --text: #1c1b18;         /* 暖近黑 */
+  --text-secondary: #6b6862;
+  --text-tertiary: #8f8a80;
+  --border: #e7e3da;       /* 暖浅灰边 */
+  --border-strong: #d8d3c8;
+
+  /* 强调：woyao.pro 蓝 */
+  --accent: #2b7fff;
+  --accent-hover: #1a6fe0;
   --accent-fg: #ffffff;
-  --accent-subtle: #ecfdf5;
+  --accent-subtle: #e9f1ff;
 
-  /* 状态色（含非颜色线索：文字标签） */
+  /* 状态色（配文字，不只靠颜色） */
   --warning: #b45309;
-  --warning-bg: #fef3c7;
+  --warning-bg: #fbeecb;
   --danger: #dc2626;
-  --danger-bg: #fee2e2;
+  --danger-bg: #fde8e8;
 
   /* 形状 */
   --radius-sm: 8px;
@@ -36,49 +40,20 @@
   --radius-lg: 16px;
 
   /* 阴影：极克制 */
-  --shadow-card: 0 1px 2px rgba(10, 10, 10, 0.04);
-  --shadow-modal: 0 16px 40px -12px rgba(10, 10, 10, 0.22);
+  --shadow-card: 0 1px 2px rgba(28, 27, 24, 0.05);
+  --shadow-modal: 0 16px 40px -12px rgba(28, 27, 24, 0.18);
 
-  --ring: 0 0 0 3px rgba(14, 163, 113, 0.18);
+  --ring: 0 0 0 3px rgba(43, 127, 255, 0.20);
   --transition: 0.18s ease;
   --maxw: 1040px;
 }
 
-/* ─────────── 深色主题（隐式，无切换器） ─────────── */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0a0a;
-    --surface: #121212;
-    --surface-muted: #1a1a1a;
-    --text: #ededed;
-    --text-secondary: #a1a1a1;
-    --text-tertiary: #6f6f6f;
-    --border: #262626;
-    --border-strong: #383838;
-    --accent: #34d399;
-    --accent-hover: #10b981;
-    --accent-fg: #052e22;
-    --accent-subtle: #06281d;
-    --warning: #fbbf24;
-    --warning-bg: #3a2a08;
-    --danger: #f87171;
-    --danger-bg: #3a1414;
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-modal: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
-    --ring: 0 0 0 3px rgba(52, 211, 153, 0.22);
-  }
-}
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
@@ -90,9 +65,14 @@ body {
   flex-direction: column;
 }
 
-/* ─────────── 导航栏（实底，无玻璃） ─────────── */
+/* 衬线标题基类 */
+.logo, .hero h2, .form-card h2, .modal-content h3, .footer-brand {
+  font-family: var(--font-serif);
+}
+
+/* ─────────── 导航栏（实底暖白，无玻璃） ─────────── */
 .navbar {
-  background: var(--bg);
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -109,10 +89,10 @@ body {
 }
 
 .logo {
-  font-size: 1.18rem;
+  font-size: 1.2rem;
   font-weight: 900;
   color: var(--text);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -133,9 +113,7 @@ body {
 }
 
 .nav-links a:hover,
-.nav-links a.active {
-  color: var(--text);
-}
+.nav-links a.active { color: var(--text); }
 
 .btn-publish {
   background: var(--accent);
@@ -147,13 +125,11 @@ body {
   transition: background var(--transition);
 }
 
-.btn-publish:hover {
-  background: var(--accent-hover);
-}
+.btn-publish:hover { background: var(--accent-hover); }
 
-/* ─────────── Hero（纯排版，无装饰） ─────────── */
+/* ─────────── Hero ─────────── */
 .hero {
-  padding: 72px 22px 56px;
+  padding: 76px 22px 56px;
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
@@ -164,13 +140,14 @@ body {
   font-weight: 500;
   color: var(--text-tertiary);
   margin-bottom: 16px;
+  letter-spacing: 0.04em;
 }
 
 .hero h2 {
-  font-size: clamp(1.9rem, 4vw, 2.5rem);
-  font-weight: 800;
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  font-weight: 900;
   color: var(--text);
-  letter-spacing: -0.8px;
+  letter-spacing: -0.5px;
   line-height: 1.25;
   margin-bottom: 14px;
   max-width: 18em;
@@ -206,11 +183,7 @@ body {
   gap: 6px;
 }
 
-.filter-pills {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .filter-pill {
   padding: 7px 16px;
@@ -230,9 +203,9 @@ body {
 }
 
 .filter-pill.active {
-  background: var(--text);
-  color: var(--bg);
-  border-color: var(--text);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
 }
 
 /* ─────────── 容器 / 网格 ─────────── */
@@ -250,7 +223,7 @@ body {
   gap: 20px;
 }
 
-/* ─────────── 卡片（细边框，无光晕） ─────────── */
+/* ─────────── 卡片 ─────────── */
 .card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -274,10 +247,7 @@ body {
   transform: translateY(-2px);
 }
 
-.card-img-wrapper {
-  position: relative;
-  overflow: hidden;
-}
+.card-img-wrapper { position: relative; overflow: hidden; }
 
 .card-img {
   width: 100%;
@@ -288,11 +258,9 @@ body {
   transition: transform 0.3s ease;
 }
 
-.card:hover .card-img {
-  transform: scale(1.04);
-}
+.card:hover .card-img { transform: scale(1.04); }
 
-/* ─────────── 状态徽标（颜色编码状态，配文字） ─────────── */
+/* 状态徽标（颜色编码 + 文字） */
 .status-badge {
   position: absolute;
   top: 10px;
@@ -305,7 +273,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .status-badge::before {
@@ -323,7 +291,7 @@ body {
 .card.is-requested .card-img { filter: saturate(0.85); }
 .card.is-lent .card-img { filter: grayscale(0.55) brightness(0.92); }
 
-/* ─────────── 距离标签 ─────────── */
+/* 距离标签 */
 .distance-tag {
   position: absolute;
   top: 10px;
@@ -332,7 +300,7 @@ body {
   border-radius: 999px;
   font-size: 0.72rem;
   font-weight: 500;
-  background: rgba(10, 10, 10, 0.6);
+  background: rgba(28, 27, 24, 0.6);
   color: #fff;
   font-variant-numeric: tabular-nums;
 }
@@ -385,11 +353,7 @@ body {
 }
 
 /* ─────────── 卡片按钮 ─────────── */
-.card-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+.card-actions { display: flex; gap: 8px; align-items: center; }
 
 .btn-borrow {
   flex: 1;
@@ -405,9 +369,7 @@ body {
   text-align: center;
 }
 
-.btn-borrow:hover {
-  background: var(--accent-hover);
-}
+.btn-borrow:hover { background: var(--accent-hover); }
 
 .btn-borrow:disabled,
 .btn-borrow.disabled {
@@ -500,10 +462,7 @@ body {
 }
 
 /* ─────────── 表单 ─────────── */
-.form-container {
-  max-width: 600px;
-  margin: 0 auto;
-}
+.form-container { max-width: 600px; margin: 0 auto; }
 
 .form-card {
   padding: 36px 30px;
@@ -515,9 +474,9 @@ body {
 .form-card h2 {
   margin-bottom: 6px;
   text-align: center;
-  font-size: 1.45rem;
-  font-weight: 800;
-  letter-spacing: -0.4px;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.3px;
 }
 
 .form-subtitle {
@@ -550,7 +509,7 @@ select {
   font-family: inherit;
   font-size: 0.95rem;
   transition: var(--transition);
-  background: var(--surface);
+  background: var(--surface-muted);
   color: var(--text);
 }
 
@@ -592,11 +551,7 @@ select:focus {
 .or-divider::after { right: 0; }
 
 /* 定位按钮 */
-.location-group {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
+.location-group { display: flex; gap: 12px; align-items: center; }
 
 .btn-locate {
   padding: 11px 18px;
@@ -646,10 +601,7 @@ select:focus {
 
 .btn-block { width: 100%; }
 
-.image-preview {
-  margin-top: 12px;
-  text-align: center;
-}
+.image-preview { margin-top: 12px; text-align: center; }
 
 .image-preview img {
   max-width: 100%;
@@ -683,11 +635,11 @@ select:focus {
   margin-top: 6px;
 }
 
-/* ─────────── 弹窗（克制，无弹性） ─────────── */
+/* ─────────── 弹窗 ─────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 10, 10, 0.45);
+  background: rgba(28, 27, 24, 0.42);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -717,7 +669,7 @@ select:focus {
 
 .modal-content h3 {
   margin-bottom: 6px;
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 700;
 }
 
@@ -804,10 +756,7 @@ select:focus {
   word-break: break-all;
 }
 
-.req-actions {
-  display: flex;
-  gap: 8px;
-}
+.req-actions { display: flex; gap: 8px; }
 
 .btn-sm {
   padding: 7px 14px;
@@ -882,7 +831,7 @@ select:focus {
 
 .btn-collapse:hover { background: var(--surface-muted); }
 
-/* ─────────── 页脚（安静，无深色带） ─────────── */
+/* ─────────── 页脚（安静） ─────────── */
 .site-footer {
   margin-top: auto;
   border-top: 1px solid var(--border);
@@ -902,8 +851,8 @@ select:focus {
 }
 
 .footer-brand {
-  font-size: 1.02rem;
-  font-weight: 800;
+  font-size: 1.05rem;
+  font-weight: 900;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -943,7 +892,7 @@ select:focus {
 /* ─────────── 响应式 ─────────── */
 @media (max-width: 768px) {
   .hero { padding: 48px 16px 40px; }
-  .hero h2 { font-size: 1.6rem; }
+  .hero h2 { font-size: 1.7rem; }
 
   .item-grid {
     grid-template-columns: 1fr;
@@ -952,12 +901,12 @@ select:focus {
 
   .container { padding: 18px 16px 48px; }
   .nav-container { padding: 12px 16px; }
-  .logo { font-size: 1.05rem; }
+  .logo { font-size: 1.08rem; }
   .filter-bar { padding: 14px 16px; }
   .form-card { padding: 26px 18px; }
 }
 
-/* ─────────── 尊重减少动效偏好 ─────────── */
+/* ─────────── 减少动效 ─────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
