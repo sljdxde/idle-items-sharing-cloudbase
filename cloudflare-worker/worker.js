@@ -16,8 +16,9 @@ const DATA_RE = /<!--DATA_START([\s\S]*?)DATA_END-->/;
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-site-key',
+    'Cache-Control': 'public, max-age=30', // 读缓存 30s
   };
 }
 function json(status, obj) {
@@ -114,6 +115,42 @@ export default {
     const p = url.pathname;
     if (request.headers.get('x-site-key') !== expectedSiteKey) return json(403, { error: 'site key 错误' });
     if (!rateOk(request)) return json(429, { error: '请求过于频繁，请稍后再试' });
+
+    // ─── GET：读取物品列表（带 30s 边缘缓存，绕过匿名限流） ───
+    if (request.method === 'GET' && p === '/api/items') {
+      try {
+        const res = await gh('?state=open&per_page=100&labels=item&sort=updated');
+        if (!res.ok) return json(res.status, { error: `GitHub API 错误: ${res.status}` });
+        const issues = await res.json();
+        const items = issues.map(issue => {
+          try {
+            const m = issue.body ? issue.body.match(DATA_RE) : null;
+            let d = {};
+            if (m && m[1]) d = JSON.parse(m[1].trim());
+            const isLentLabel = issue.labels && issue.labels.some(l => l.name === 'lent');
+            return {
+              id: issue.number,
+              name: d.name || issue.title || '未知物品',
+              desc: d.desc || '',
+              contact: d.contact || '',
+              building: d.building || '',
+              lat: d.lat || null,
+              lng: d.lng || null,
+              imgUrl: d.imgUrl || '',
+              status: d.status || (isLentLabel ? 'borrowed' : 'available'),
+              requests: Array.isArray(d.requests) ? d.requests : [],
+              pinCipher: d.pinCipher || '',
+              hasLegacyPin: !!d.pin,
+              createTime: issue.created_at,
+            };
+          } catch (e) { return null; }
+        }).filter(Boolean);
+        return json(200, items);
+      } catch (e) {
+        return json(500, { error: '读取失败: ' + e.message });
+      }
+    }
+
     if (request.method !== 'POST') return json(405, { error: '仅支持 POST' });
 
     let m;
