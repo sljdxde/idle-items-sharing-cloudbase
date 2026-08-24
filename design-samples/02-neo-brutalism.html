@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 · 新粗野主义撞色信息流 (02 · Neo-Brutalism)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F8F5FF;
+      --card-bg: #FFFFFF;
+      --black: #08080D;
+      --purple: #5200FF;
+      --magenta: #E1306C;
+      --yellow: #F8E000;
+      --cyan: #00F0FF;
+      --green: #10D070;
+      --border-w: 3px;
+      --shadow-offset: 5px;
+      --font-display: "Space Grotesk", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      background-image: radial-gradient(var(--black) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: var(--black);
+      font-family: var(--font-display);
+      line-height: 1.6;
+      line-break: strict;
+      font-synthesis: none;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+
+    a {
+      color: var(--black);
+      text-decoration: none;
+      transition: all 0.15s var(--ease);
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Outer Wrapper */
+    .app-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1rem 3rem;
+    }
+
+    @media (min-width: 768px) {
+      .app-wrap {
+        padding: 2rem 2rem 4rem;
+      }
+    }
+
+    /* Header Nav */
+    header {
+      background: var(--yellow);
+      border: var(--border-w) solid var(--black);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.75rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--black);
+    }
+
+    .brand-icon-box {
+      width: 34px;
+      height: 34px;
+      background: var(--magenta);
+      border: 2px solid var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      box-shadow: 2px 2px 0 var(--black);
+    }
+
+    .nav-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 1.25rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      border: 2px solid var(--black);
+      background: #FFFFFF;
+      box-shadow: 3px 3px 0 var(--black);
+      transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+    }
+
+    .nav-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--black);
+      background: var(--cyan);
+    }
+
+    .nav-btn.active {
+      background: var(--black);
+      color: #FFFFFF;
+    }
+
+    /* Hero */
+    .hero {
+      background: var(--card-bg);
+      border: var(--border-w) solid var(--black);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+      padding: 2.25rem 1.5rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (min-width: 768px) {
+      .hero {
+        padding: 3.5rem 3rem;
+      }
+    }
+
+    .hero-stripe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: repeating-linear-gradient(
+        45deg,
+        var(--yellow),
+        var(--yellow) 15px,
+        var(--black) 15px,
+        var(--black) 30px
+      );
+    }
+
+    .badge-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--purple);
+      color: #FFFFFF;
+      border: 2px solid var(--black);
+      padding: 0.35rem 0.85rem;
+      font-weight: 700;
+      font-size: 0.88rem;
+      box-shadow: 3px 3px 0 var(--black);
+      margin-bottom: 1.5rem;
+      transform: rotate(-1deg);
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.25rem;
+      text-wrap: balance;
+    }
+
+    .hero-title mark {
+      background: var(--yellow);
+      color: var(--black);
+      padding: 0 0.3rem;
+      border: 2px solid var(--black);
+      box-shadow: 3px 3px 0 var(--black);
+      display: inline-block;
+    }
+
+    .hero-desc {
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      line-height: 1.7;
+      max-width: 680px;
+      color: #222222;
+      margin-bottom: 2.25rem;
+      background: #FFFDF0;
+      padding: 1rem 1.25rem;
+      border-left: 6px solid var(--magenta);
+      border-top: 2px solid var(--black);
+      border-right: 2px solid var(--black);
+      border-bottom: 2px solid var(--black);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .btn-main {
+      min-height: 50px;
+      padding: 0 1.75rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: 3px solid var(--black);
+      background: var(--magenta);
+      color: #FFFFFF;
+      box-shadow: 4px 4px 0 var(--black);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), background 0.15s;
+    }
+
+    .btn-main:hover {
+      background: var(--purple);
+      transform: translate(-3px, -3px);
+      box-shadow: 7px 7px 0 var(--black);
+    }
+
+    .btn-main:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0 var(--black);
+    }
+
+    .btn-sub {
+      min-height: 50px;
+      padding: 0 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: 3px solid var(--black);
+      background: var(--cyan);
+      color: var(--black);
+      box-shadow: 4px 4px 0 var(--black);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+    }
+
+    .btn-sub:hover {
+      background: #FFFFFF;
+      transform: translate(-3px, -3px);
+      box-shadow: 7px 7px 0 var(--black);
+    }
+
+    .btn-sub:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0 var(--black);
+    }
+
+    /* Toolbar */
+    .toolbar {
+      background: #FFFFFF;
+      border: var(--border-w) solid var(--black);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--black);
+      padding: 1rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .toolbar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .toolbar-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .loc-tag {
+      background: #E8FFD9;
+      border: 2px solid var(--black);
+      padding: 0.4rem 0.8rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 2px 2px 0 var(--black);
+      min-height: 44px;
+    }
+
+    .loc-tag svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--black);
+    }
+
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .pill {
+      min-height: 44px;
+      padding: 0 1rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: 2px solid var(--black);
+      background: #FFFFFF;
+      color: var(--black);
+      box-shadow: 2px 2px 0 var(--black);
+      transition: all 0.15s var(--ease);
+    }
+
+    .pill:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 var(--black);
+      background: var(--yellow);
+    }
+
+    .pill.active {
+      background: var(--purple);
+      color: #FFFFFF;
+      box-shadow: 2px 2px 0 var(--black);
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .count-badge {
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: var(--yellow);
+      border: 2px solid var(--black);
+      padding: 0.4rem 0.8rem;
+      box-shadow: 2px 2px 0 var(--black);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-refresh {
+      min-height: 44px;
+      padding: 0 1.15rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: 2px solid var(--black);
+      background: #FFFFFF;
+      box-shadow: 2px 2px 0 var(--black);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.15s var(--ease);
+    }
+
+    .btn-refresh:hover {
+      background: var(--cyan);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--black);
+    }
+
+    /* Card Feed */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (min-width: 640px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .neo-card {
+      background: #FFFFFF;
+      border: var(--border-w) solid var(--black);
+      box-shadow: 6px 6px 0 var(--black);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+      position: relative;
+    }
+
+    .neo-card:hover {
+      transform: translate(-4px, -4px);
+      box-shadow: 10px 10px 0 var(--black);
+    }
+
+    .card-top-bar {
+      background: var(--yellow);
+      border-bottom: 2px solid var(--black);
+      padding: 0.4rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border: 2px solid var(--black);
+      box-shadow: 1px 1px 0 var(--black);
+      text-transform: uppercase;
+    }
+
+    .status-tag.available {
+      background: var(--green);
+      color: #000;
+    }
+
+    .status-tag.pending {
+      background: var(--cyan);
+      color: #000;
+    }
+
+    .status-tag.borrowed {
+      background: #DDDDDD;
+      color: #555555;
+    }
+
+    .dist-tag {
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #FFFFFF;
+      border: 1.5px solid var(--black);
+      padding: 0.15rem 0.45rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .card-photo-box {
+      height: 180px;
+      background: #F0EDF8;
+      border-bottom: 2px solid var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--black);
+      position: relative;
+      background-image: repeating-linear-gradient(
+        0deg,
+        #E3DFF2,
+        #E3DFF2 1px,
+        transparent 1px,
+        transparent 16px
+      );
+    }
+
+    .card-photo-box svg {
+      width: 36px;
+      height: 36px;
+      stroke: var(--black);
+    }
+
+    .card-photo-box span {
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #FFFFFF;
+      border: 1.5px solid var(--black);
+      padding: 0.15rem 0.5rem;
+      box-shadow: 2px 2px 0 var(--black);
+    }
+
+    .card-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .card-item-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      line-height: 1.25;
+      text-wrap: balance;
+    }
+
+    .card-item-desc {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: #333333;
+      flex: 1;
+    }
+
+    .card-footer-info {
+      border-top: 2px dashed var(--black);
+      padding-top: 0.65rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #555555;
+    }
+
+    .card-btn-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      border-top: 3px solid var(--black);
+    }
+
+    .btn-card-borrow {
+      min-height: 48px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: var(--purple);
+      color: #FFFFFF;
+      border: none;
+      border-right: 2px solid var(--black);
+      transition: background 0.15s;
+    }
+
+    .btn-card-borrow:hover:not(:disabled) {
+      background: var(--magenta);
+    }
+
+    .btn-card-borrow:disabled {
+      background: #CCCCCC;
+      color: #666666;
+      cursor: not-allowed;
+    }
+
+    .btn-card-manage {
+      min-height: 48px;
+      padding: 0 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      background: #FFFFFF;
+      color: var(--black);
+      border: none;
+      transition: background 0.15s;
+    }
+
+    .btn-card-manage:hover {
+      background: var(--yellow);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--black);
+      color: #FFFFFF;
+      border: var(--border-w) solid var(--black);
+      box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--purple);
+      padding: 2.5rem 1.5rem 2rem;
+    }
+
+    @media (min-width: 768px) {
+      footer {
+        padding: 3rem 2.5rem;
+      }
+    }
+
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      border-bottom: 2px solid #333333;
+      padding-bottom: 2rem;
+    }
+
+    @media (min-width: 768px) {
+      .footer-content {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .footer-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--yellow);
+      letter-spacing: -0.02em;
+    }
+
+    .footer-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-nav a {
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 0.95rem;
+      background: #222222;
+      border: 2px solid #FFFFFF;
+      padding: 0.4rem 0.8rem;
+      box-shadow: 2px 2px 0 var(--cyan);
+    }
+
+    .footer-nav a:hover {
+      background: var(--magenta);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 #FFFFFF;
+    }
+
+    .footer-copy {
+      padding-top: 1.5rem;
+      font-size: 0.85rem;
+      color: #AAAAAA;
+      font-weight: 500;
+    }
+
+    /* Persistent Style Label */
+    .style-pill {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: var(--yellow);
+      color: var(--black);
+      border: 3px solid var(--black);
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      box-shadow: 4px 4px 0 var(--black);
+      z-index: 9999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrap">
+  <!-- Nav -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon-box">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <path d="M3 9h18"></path>
+          <path d="M9 21V9"></path>
+        </svg>
+      </div>
+      <span>邻里好物</span>
+    </a>
+    <nav class="nav-group">
+      <a href="#" class="nav-btn active">首页</a>
+      <a href="#" class="nav-btn">发布闲置</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-stripe"></div>
+    <div class="badge-strip">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+      </svg>
+      社区闲置 · 互助共享
+    </div>
+    <h1 class="hero-title">让好物在<mark>邻里间流转</mark></h1>
+    <p class="hero-desc">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+    <div class="hero-actions">
+      <a href="#" class="btn-main">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        发布我的闲置
+      </a>
+      <a href="#" class="btn-sub">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        浏览附近好物
+      </a>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="toolbar">
+    <div class="toolbar-left">
+      <div class="loc-tag">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        已定位
+      </div>
+      <div class="pill-group" role="radiogroup" aria-label="距离筛选">
+        <button class="pill" type="button">500m</button>
+        <button class="pill active" type="button" aria-checked="true">1km</button>
+        <button class="pill" type="button">3km</button>
+        <button class="pill" type="button">全部</button>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <div class="count-badge">共 6 件闲置</div>
+      <button class="btn-refresh" type="button" aria-label="刷新好物列表">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6"></path>
+          <path d="M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        刷新
+      </button>
+    </div>
+  </section>
+
+  <!-- Items Feed -->
+  <main class="cards-grid">
+    <!-- Card 1 -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag available">闲置中</span>
+        <span class="dist-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          240m
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title">戴森V8吸尘器</h2>
+        <p class="card-item-desc">九成新，滤芯上周刚换，可借周末</p>
+        <div class="card-footer-info">
+          <span>3栋1801</span>
+          <span>6月12日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 2 -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag pending">待确认</span>
+        <span class="dist-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          480m
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title">儿童滑板车</h2>
+        <p class="card-item-desc">孩子长大了出闲置，轮子顺滑</p>
+        <div class="card-footer-info">
+          <span>5栋602</span>
+          <span>6月10日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 3 -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag available">闲置中</span>
+        <span class="dist-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          1.2km
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title">露营四人间帐篷</h2>
+        <p class="card-item-desc">含防潮垫，借前沟通行程</p>
+        <div class="card-footer-info">
+          <span>7栋101</span>
+          <span>6月8日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 4 (Borrowed - Disabled) -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag borrowed">已借出</span>
+        <span class="dist-tag" style="opacity: 0.6;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          350m
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title" style="color: #666;">电钻+全套钻头</h2>
+        <p class="card-item-desc" style="color: #888;">家庭维修神器，归还时附使用心得</p>
+        <div class="card-footer-info">
+          <span>2栋1203</span>
+          <span>6月5日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow" disabled aria-disabled="true">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 5 -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag available">闲置中</span>
+        <span class="dist-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          890m
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title">英文原版绘本30册</h2>
+        <p class="card-item-desc">适合3-6岁，整套借阅</p>
+        <div class="card-footer-info">
+          <span>8栋1502</span>
+          <span>6月3日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 6 -->
+    <article class="neo-card">
+      <div class="card-top-bar">
+        <span class="status-tag available">闲置中</span>
+        <span class="dist-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+          150m
+        </span>
+      </div>
+      <div class="card-photo-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="card-content">
+        <h2 class="card-item-title">小米加湿器4L</h2>
+        <p class="card-item-desc">静音，送两根新滤芯</p>
+        <div class="card-footer-info">
+          <span>1栋801</span>
+          <span>6月1日</span>
+        </div>
+      </div>
+      <div class="card-btn-row">
+        <button type="button" class="btn-card-borrow">我想借</button>
+        <button type="button" class="btn-card-manage">管理</button>
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-title">邻里好物 · 让闲置在邻里间发光发热</div>
+      <div class="footer-nav">
+        <a href="#">首页</a>
+        <a href="#">发布闲置</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </div>
+    <div class="footer-copy">
+      由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物
+    </div>
+  </footer>
+</div>
+
+<!-- Persistent Style Tag -->
+<div class="style-pill">02 · 新粗野主义撞色信息流</div>
+
+</body>
+</html>

@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 - 日式留白白盒画廊</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #FAFAFA;
+      --bg-white: #FFFFFF;
+      --bg-subtle: #F5F5F5;
+      --border-hairline: #EAEAEA;
+      --border-light: #DFDFDF;
+      --text-black: #0A0A0A;
+      --text-regular: #333333;
+      --text-subtle: #737373;
+      --text-pale: #9E9E9E;
+      --status-green: #2E7D32;
+      --status-green-bg: #F1F8F1;
+      --status-amber: #B45309;
+      --status-amber-bg: #FFFBEB;
+      --status-gray: #757575;
+      --status-gray-bg: #F5F5F5;
+      --font-hara: "Plus Jakarta Sans", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --ease-zen: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-body);
+      color: var(--text-regular);
+      font-family: var(--font-hara);
+      font-weight: 300;
+      font-size: 15px;
+      line-height: 1.8;
+      line-break: strict;
+      font-variant-numeric: tabular-nums;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: color 0.25s var(--ease-zen);
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* Header */
+    .white-nav {
+      background: rgba(250, 250, 250, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-hairline);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-inner {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      color: var(--text-black);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      color: var(--text-pale);
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--text-black);
+    }
+
+    .nav-links a.active::after {
+      content: "";
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--text-black);
+    }
+
+    /* Hero */
+    .hero-zen {
+      padding: 72px 0 56px;
+      text-align: center;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .badge-pill-wrap {
+      margin-bottom: 28px;
+    }
+
+    .badge-zen {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 18px;
+      background: var(--bg-white);
+      border: 1px solid var(--border-hairline);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      color: var(--text-subtle);
+    }
+
+    .badge-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--text-black);
+      opacity: 0.4;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 4.5vw, 44px);
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      color: var(--text-black);
+      line-height: 1.35;
+      text-wrap: balance;
+      margin-bottom: 20px;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-subtle);
+      max-width: 640px;
+      margin: 0 auto 40px;
+      line-height: 1.9;
+      text-wrap: balance;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .btn-zen-primary {
+      min-height: 46px;
+      padding: 0 32px;
+      background: var(--text-black);
+      color: var(--bg-white);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s var(--ease-zen);
+    }
+
+    .btn-zen-primary:hover {
+      background: #2A2A2A;
+      transform: translateY(-1px);
+    }
+
+    .btn-zen-secondary {
+      min-height: 46px;
+      padding: 0 30px;
+      background: var(--bg-white);
+      color: var(--text-black);
+      border: 1px solid var(--border-light);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s var(--ease-zen);
+    }
+
+    .btn-zen-secondary:hover {
+      border-color: var(--text-black);
+      transform: translateY(-1px);
+    }
+
+    /* Toolbar */
+    .toolbar-zen {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border-hairline);
+    }
+
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .toolbar-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .loc-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+      background: var(--bg-white);
+      padding: 6px 14px;
+      border: 1px solid var(--border-hairline);
+      border-radius: 999px;
+    }
+
+    .loc-dot-zen {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--status-green);
+    }
+
+    .pills-zen {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-white);
+      border: 1px solid var(--border-hairline);
+      padding: 3px;
+      border-radius: 999px;
+    }
+
+    .pill-zen-btn {
+      min-height: 34px;
+      padding: 0 16px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text-pale);
+      transition: all 0.2s var(--ease-zen);
+    }
+
+    .pill-zen-btn:hover {
+      color: var(--text-black);
+    }
+
+    .pill-zen-btn.active {
+      background: var(--text-black);
+      color: var(--bg-white);
+      font-weight: 400;
+    }
+
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-left: auto;
+    }
+
+    .count-zen {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: var(--text-subtle);
+    }
+
+    .btn-zen-refresh {
+      min-height: 38px;
+      padding: 0 14px;
+      background: var(--bg-white);
+      border: 1px solid var(--border-hairline);
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text-subtle);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s var(--ease-zen);
+    }
+
+    .btn-zen-refresh:hover {
+      color: var(--text-black);
+      border-color: var(--text-black);
+    }
+
+    /* Masonry / Staggered Cards */
+    .gallery-main {
+      padding: 48px 0 80px;
+      flex: 1;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+    }
+
+    @media (min-width: 640px) {
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 32px;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 36px;
+      }
+    }
+
+    .white-box-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-hairline);
+      border-radius: 2px;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s var(--ease-zen);
+      padding: 24px;
+    }
+
+    .white-box-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.04);
+    }
+
+    .photo-stage {
+      aspect-ratio: 4 / 3;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-hairline);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-pale);
+      margin-bottom: 20px;
+    }
+
+    .photo-stage svg {
+      opacity: 0.6;
+    }
+
+    .photo-caption {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: var(--text-pale);
+    }
+
+    .card-body-zen {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .title-line {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .item-title-zen {
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--text-black);
+      line-height: 1.4;
+    }
+
+    /* Restrained zen status badge */
+    .badge-status-zen {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .badge-status-zen.avail {
+      color: var(--status-green);
+      background: var(--status-green-bg);
+    }
+
+    .badge-status-zen.pend {
+      color: var(--status-amber);
+      background: var(--status-amber-bg);
+    }
+
+    .badge-status-zen.borrow {
+      color: var(--status-gray);
+      background: var(--status-gray-bg);
+    }
+
+    .item-desc-zen {
+      font-size: 14px;
+      color: var(--text-subtle);
+      line-height: 1.75;
+      margin-bottom: 20px;
+      flex: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .meta-zen-row {
+      border-top: 1px solid var(--border-hairline);
+      padding: 12px 0 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-pale);
+      letter-spacing: 0.06em;
+    }
+
+    .meta-zen-point {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .actions-zen {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    .btn-zen-borrow {
+      flex: 2;
+      min-height: 44px;
+      padding: 0 14px;
+      background: var(--text-black);
+      color: var(--bg-white);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease-zen);
+    }
+
+    .btn-zen-borrow:hover:not(:disabled) {
+      background: #2A2A2A;
+    }
+
+    .btn-zen-borrow:disabled {
+      background: var(--bg-subtle);
+      color: var(--text-pale);
+      cursor: not-allowed;
+    }
+
+    .btn-zen-manage {
+      flex: 1;
+      min-height: 44px;
+      padding: 0 12px;
+      background: var(--bg-white);
+      color: var(--text-subtle);
+      border: 1px solid var(--border-hairline);
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      border-radius: 2px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease-zen);
+    }
+
+    .btn-zen-manage:hover {
+      border-color: var(--text-black);
+      color: var(--text-black);
+    }
+
+    /* Footer */
+    .footer-zen {
+      border-top: 1px solid var(--border-hairline);
+      padding: 56px 0 44px;
+      margin-top: auto;
+      text-align: center;
+    }
+
+    .footer-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-motto-zen {
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      color: var(--text-regular);
+      font-weight: 400;
+    }
+
+    .footer-nav-zen {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: var(--text-subtle);
+    }
+
+    .footer-nav-zen a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .footer-nav-zen a:hover {
+      color: var(--text-black);
+    }
+
+    .footer-copyright {
+      font-size: 12px;
+      color: var(--text-pale);
+      letter-spacing: 0.06em;
+    }
+
+    /* Fixed Tag */
+    .fixed-badge-zen {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: var(--bg-white);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-regular);
+      padding: 6px 14px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      border-radius: 999px;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Site Nav -->
+  <header class="white-nav">
+    <div class="container nav-inner">
+      <div class="brand-group">
+        <a href="#" class="brand-title">邻里好物</a>
+        <span class="brand-subtitle">White Box Gallery</span>
+      </div>
+      <nav class="nav-links">
+        <a href="#" class="active">首页</a>
+        <a href="#">发布闲置</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-zen">
+    <div class="container">
+      <div class="badge-pill-wrap">
+        <span class="badge-zen">
+          <span class="badge-dot"></span>
+          <span>社区闲置 · 互助共享</span>
+        </span>
+      </div>
+      <h1 class="hero-title">让好物在邻里间流转</h1>
+      <p class="hero-desc">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+      <div class="hero-buttons">
+        <button class="btn-zen-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>发布我的闲置</span>
+        </button>
+        <button class="btn-zen-secondary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>浏览附近好物</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="toolbar-zen">
+    <div class="container toolbar-row">
+      <div class="toolbar-left">
+        <div class="loc-box">
+          <span class="loc-dot-zen"></span>
+          <span>已定位</span>
+        </div>
+        <div class="pills-zen" role="radiogroup" aria-label="距离筛选">
+          <button class="pill-zen-btn" role="radio" aria-checked="false">500m</button>
+          <button class="pill-zen-btn active" role="radio" aria-checked="true">1km</button>
+          <button class="pill-zen-btn" role="radio" aria-checked="false">3km</button>
+          <button class="pill-zen-btn" role="radio" aria-checked="false">全部</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <span class="count-zen">共 6 件闲置</span>
+        <button class="btn-zen-refresh" title="刷新数据" aria-label="刷新">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>刷新</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gallery Main -->
+  <main class="gallery-main">
+    <div class="container">
+      <div class="gallery-grid">
+
+        <!-- Card 1 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">戴森V8吸尘器</h2>
+              <span class="badge-status-zen avail">闲置中</span>
+            </div>
+            <p class="item-desc-zen">九成新，滤芯上周刚换，可借周末</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">3栋1801</span>
+              <span class="meta-zen-point">240m</span>
+              <span class="meta-zen-point">6月12日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow">我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">儿童滑板车</h2>
+              <span class="badge-status-zen pend">待确认</span>
+            </div>
+            <p class="item-desc-zen">孩子长大了出闲置，轮子顺滑</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">5栋602</span>
+              <span class="meta-zen-point">480m</span>
+              <span class="meta-zen-point">6月10日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow">我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">露营四人间帐篷</h2>
+              <span class="badge-status-zen avail">闲置中</span>
+            </div>
+            <p class="item-desc-zen">含防潮垫，借前沟通行程</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">7栋101</span>
+              <span class="meta-zen-point">1.2km</span>
+              <span class="meta-zen-point">6月8日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow">我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 4 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">电钻+全套钻头</h2>
+              <span class="badge-status-zen borrow">已借出</span>
+            </div>
+            <p class="item-desc-zen">家庭维修神器，归还时附使用心得</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">2栋1203</span>
+              <span class="meta-zen-point">350m</span>
+              <span class="meta-zen-point">6月5日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow" disabled>我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 5 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">英文原版绘本30册</h2>
+              <span class="badge-status-zen avail">闲置中</span>
+            </div>
+            <p class="item-desc-zen">适合3-6岁，整套借阅</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">8栋1502</span>
+              <span class="meta-zen-point">890m</span>
+              <span class="meta-zen-point">6月3日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow">我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 6 -->
+        <article class="white-box-card">
+          <div class="photo-stage">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="photo-caption">实物图</span>
+          </div>
+          <div class="card-body-zen">
+            <div class="title-line">
+              <h2 class="item-title-zen">小米加湿器4L</h2>
+              <span class="badge-status-zen avail">闲置中</span>
+            </div>
+            <p class="item-desc-zen">静音，送两根新滤芯</p>
+            <div class="meta-zen-row">
+              <span class="meta-zen-point">1栋801</span>
+              <span class="meta-zen-point">150m</span>
+              <span class="meta-zen-point">6月1日</span>
+            </div>
+            <div class="actions-zen">
+              <button class="btn-zen-borrow">我想借</button>
+              <button class="btn-zen-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer-zen">
+    <div class="container footer-wrapper">
+      <div class="footer-motto-zen">邻里好物 · 让闲置在邻里间发光发热</div>
+      <div class="footer-nav-zen">
+        <a href="#">首页</a>
+        <span>/</span>
+        <a href="#">发布闲置</a>
+        <span>/</span>
+        <a href="#">GitHub</a>
+      </div>
+      <div class="footer-copyright">由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</div>
+    </div>
+  </footer>
+
+  <!-- Fixed Style Badge -->
+  <div class="fixed-badge-zen">20 · 日式留白白盒画廊</div>
+
+</body>
+</html>

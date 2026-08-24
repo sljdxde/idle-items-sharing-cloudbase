@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邻里好物 · 20 版风格样机画廊</title>
+<style>
+  :root {
+    --paper: #F5F0E8;
+    --ink: #191919;
+    --muted: #6B6B6B;
+    --line: #E0DDD5;
+    --accent: #BC5B32;
+    --font: "PingFang SC", "MiSans", "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    font-synthesis: none;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font);
+    background: var(--paper);
+    color: var(--ink);
+    line-break: strict;
+    padding: clamp(24px, 4vw, 64px);
+  }
+  header { max-width: 1080px; margin: 0 auto 40px; }
+  .kicker {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 6px;
+    margin-bottom: 16px;
+    color: var(--accent);
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.25;
+    text-wrap: balance;
+    margin-bottom: 12px;
+  }
+  .sub { color: var(--muted); max-width: 36em; line-height: 1.8; }
+  .sub b { color: var(--ink); font-weight: 600; }
+
+  .grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+  }
+  a.card {
+    display: block;
+    background: #FFFDF9;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 18px 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), border-color 0.25s;
+  }
+  a.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(25, 15, 5, 0.08);
+    border-color: #D8CFC0;
+  }
+  a.card:active { transform: scale(0.98); }
+  .num {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .name { font-size: 17px; font-weight: 700; margin: 6px 0 2px; }
+  .en { font-size: 12px; color: var(--muted); letter-spacing: 0.02em; }
+  .desc { font-size: 13px; color: var(--muted); line-height: 1.65; margin-top: 10px; }
+  .tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .tag.bold   { background: #F6E7DC; border-color: transparent; color: #A0471F; }
+  .tag.neutral{ background: #EDEAE2; border-color: transparent; color: #57534B; }
+  .tag.quiet  { background: #E7EBE2; border-color: transparent; color: #55654A; }
+  .tag.star   { background: var(--accent); border-color: transparent; color: #FFF6EE; }
+
+  footer {
+    max-width: 1080px;
+    margin: 44px auto 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+  }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: #EFE9DD;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="kicker">Design Samples · Phase 0</span>
+  <h1>「邻里好物」首页 · 20 版风格样机</h1>
+  <p class="sub">同一份首页内容（同样的文案、同样的 6 件闲置物品），用 huashu-design 网页风格库的 <b>20 种设计语言</b>各渲染一版。点开任意一张横向对比，选出你最想住进去的那一版——确认后即以该风格进行全站重构。<b>★ 12 号暖色出版物</b>是当前推荐方向。</p>
+</header>
+
+<div class="grid">
+  <a class="card" href="01-editorial-brutalism.html">
+    <div class="num">01 / 还原度 98%</div>
+    <div class="name">媒体级粗野主义</div>
+    <div class="en">Editorial Brutalism</div>
+    <div class="desc">黑白规则线分栏、巨号字压小正文，杂志封面气场。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="02-neo-brutalism.html">
+    <div class="num">02 / 还原度 95%</div>
+    <div class="name">新粗野主义撞色信息流</div>
+    <div class="en">Neo-Brutalism</div>
+    <div class="desc">粗黑描边 + 高饱和撞色卡片，The Verge 式信息流。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="03-memphis-maximalism.html">
+    <div class="num">03 / 还原度 72%</div>
+    <div class="name">孟菲斯复古拼贴</div>
+    <div class="en">Memphis Maximalism</div>
+    <div class="desc">复古撞色错位叠放，玩味市集气质。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="04-friendly-candy.html">
+    <div class="num">04 / 还原度 85%</div>
+    <div class="name">糖果色凸起立体按钮</div>
+    <div class="en">Friendly Geometric Candy</div>
+    <div class="desc">Duolingo 式圆润友好，可按压的立体按钮。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="05-pure-css-art.html">
+    <div class="num">05 / 还原度 80%</div>
+    <div class="name">纯CSS几何插画</div>
+    <div class="en">Pure-CSS Art</div>
+    <div class="desc">零图片素材，hero 由几何形状拼出社区插画。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="06-big-type-editorial.html">
+    <div class="num">06 / 还原度 88%</div>
+    <div class="name">巨型字黑白高对比</div>
+    <div class="en">Bold Big-Type Editorial</div>
+    <div class="desc">时装大字报，标题占满整屏与负空间博弈。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="07-cosmic-retro-futurism.html">
+    <div class="num">07 / 还原度 75%</div>
+    <div class="name">复古未来太空图录</div>
+    <div class="en">Cosmic Retro-Futurism</div>
+    <div class="desc">奶油白+钴蓝天文图录，轨道线与行星圆点。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="08-cinematic-sound-viz.html">
+    <div class="num">08 / 还原度 72%</div>
+    <div class="name">电影感声波可视化</div>
+    <div class="en">Cinematic Sound-Viz Dark</div>
+    <div class="desc">纯黑片头舞台，巨标题压波形带。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="09-pixel-game.html">
+    <div class="num">09 / 还原度 70%</div>
+    <div class="name">像素游戏横版叙事</div>
+    <div class="en">Pixel-Game Side-Scroller</div>
+    <div class="desc">纵向滚动分「关卡」换色，游戏 HUD 式界面。</div>
+    <div class="tags"><span class="tag bold">大胆</span></div>
+  </a>
+  <a class="card" href="10-bauhaus.html">
+    <div class="num">10 / 还原度 90%</div>
+    <div class="name">包豪斯几何</div>
+    <div class="en">Bauhaus Geometric</div>
+    <div class="desc">三原色几何构成，圆三角方拼出的秩序感。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="11-dark-editorial.html">
+    <div class="num">11 / 还原度 96%</div>
+    <div class="name">暗色双色侧栏</div>
+    <div class="en">Dark Editorial</div>
+    <div class="desc">深海军蓝底+荧光青 accent，开发者作品集范式。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="12-warm-editorial.html">
+    <div class="num">12 / 还原度 97%</div>
+    <div class="name">暖色出版物</div>
+    <div class="en">Warm Editorial</div>
+    <div class="desc">奶油纸底+赤陶橙+宋体排印，社区二手书店的温度。</div>
+    <div class="tags"><span class="tag neutral">中性</span><span class="tag star">★ 推荐方向</span></div>
+  </a>
+  <a class="card" href="13-glass-bento.html">
+    <div class="num">13 / 还原度 85%</div>
+    <div class="name">Linear暗色发光 Bento</div>
+    <div class="en">Glassmorphism Bento</div>
+    <div class="desc">近黑便当格分块、玻璃拟态与微光边框。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="14-angled-fluid-gradient.html">
+    <div class="num">14 / 还原度 92%</div>
+    <div class="name">斜切流体渐变带</div>
+    <div class="en">Angled Fluid Gradient</div>
+    <div class="desc">Stripe 式斜切分区，多色渐变缓慢流动。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="15-colorful-docs.html">
+    <div class="num">15 / 还原度 98%</div>
+    <div class="name">实用主义彩虹分类文档</div>
+    <div class="en">Utility-First Colorful Docs</div>
+    <div class="desc">文档站骨架+彩虹分类色条，物品分类一目了然。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="16-terminal-core.html">
+    <div class="num">16 / 还原度 80%</div>
+    <div class="name">终端核软未来</div>
+    <div class="en">Terminal-Core Soft-Futurism</div>
+    <div class="desc">等宽字命令行隐喻，工业极简炭黑面板。</div>
+    <div class="tags"><span class="tag neutral">中性</span></div>
+  </a>
+  <a class="card" href="17-functional-brutalism.html">
+    <div class="num">17 / 还原度 98%</div>
+    <div class="name">功能主义网格社区</div>
+    <div class="en">Functional Brutalism</div>
+    <div class="desc">Are.na 式高密度索引流，灰线分割系统字。</div>
+    <div class="tags"><span class="tag quiet">安静</span></div>
+  </a>
+  <a class="card" href="18-gallery-dark.html">
+    <div class="num">18 / 还原度 75%</div>
+    <div class="name">深色画廊裱框</div>
+    <div class="en">Gallery Dark</div>
+    <div class="desc">美术馆暗房单列大图，EXIF 式注脚。</div>
+    <div class="tags"><span class="tag quiet">安静</span></div>
+  </a>
+  <a class="card" href="19-swiss-monochrome.html">
+    <div class="num">19 / 还原度 98%</div>
+    <div class="name">Swiss极致黑白</div>
+    <div class="en">Swiss Monochrome</div>
+    <div class="desc">Vercel 式锐利黑白精密栅格，零装饰。</div>
+    <div class="tags"><span class="tag quiet">安静</span></div>
+  </a>
+  <a class="card" href="20-hara-white-gallery.html">
+    <div class="num">20 / 还原度 80%</div>
+    <div class="name">日式留白白盒画廊</div>
+    <div class="en">Kenya Hara White Gallery</div>
+    <div class="desc">原研哉式空寂留白，瀑布网格内容为王。</div>
+    <div class="tags"><span class="tag quiet">安静</span></div>
+  </a>
+</div>
+
+<footer>
+  查看方式：直接双击任意 HTML 文件用浏览器打开；或在本目录运行 <code>python3 -m http.server 8890</code> 后访问 <code>http://localhost:8890/design-samples/</code>。<br>
+  所有样机均为静态演示：图片为诚实占位、数据为示例文案，不含任何真实联系方式。选定风格后进入 Phase 1 重构。
+</footer>
+
+</body>
+</html>

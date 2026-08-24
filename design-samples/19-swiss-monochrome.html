@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 - Swiss极致黑白</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;600;700&family=Geist:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --swiss-black: #000000;
+      --swiss-white: #FFFFFF;
+      --swiss-gray-50: #F9F9F9;
+      --swiss-gray-100: #F2F2F2;
+      --swiss-gray-200: #E5E5E5;
+      --swiss-gray-400: #999999;
+      --swiss-gray-600: #666666;
+      --swiss-gray-800: #222222;
+      --font-swiss: "Geist", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --ease-swiss: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      border-radius: 0 !important; /* Strict Swiss Sharp Corners */
+    }
+
+    body {
+      background-color: var(--swiss-white);
+      color: var(--swiss-black);
+      font-family: var(--font-swiss);
+      font-size: 15px;
+      line-height: 1.6;
+      line-break: strict;
+      font-variant-numeric: tabular-nums;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: 1px solid var(--swiss-black);
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Swiss Header */
+    .swiss-header {
+      border-bottom: 2px solid var(--swiss-black);
+      background: var(--swiss-white);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-grid {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      min-height: 64px;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding-right: 24px;
+    }
+
+    .brand-mark {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-geo {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      background: var(--swiss-black);
+    }
+
+    .brand-edition {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border: 1px solid var(--swiss-black);
+    }
+
+    .nav-section {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .nav-item {
+      display: inline-flex;
+      align-items: center;
+      padding: 0 20px;
+      min-height: 44px;
+      font-size: 14px;
+      font-weight: 700;
+      border-left: 1px solid var(--swiss-black);
+      transition: background 0.15s var(--ease-swiss), color 0.15s;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    /* Swiss Hero */
+    .swiss-hero {
+      border-bottom: 2px solid var(--swiss-black);
+      background: var(--swiss-gray-50);
+      padding: 56px 0 48px;
+    }
+
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+
+    @media (min-width: 860px) {
+      .hero-layout {
+        grid-template-columns: 2fr 1fr;
+        align-items: flex-end;
+      }
+    }
+
+    .hero-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+
+    .hero-heading {
+      font-size: clamp(32px, 6vw, 56px);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.08;
+      text-wrap: balance;
+      margin-bottom: 20px;
+    }
+
+    .hero-subheading {
+      font-size: 16px;
+      color: var(--swiss-gray-600);
+      line-height: 1.7;
+      max-width: 620px;
+      text-wrap: balance;
+    }
+
+    .hero-action-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-swiss-solid {
+      min-height: 48px;
+      padding: 0 24px;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      font-size: 15px;
+      font-weight: 700;
+      border: 2px solid var(--swiss-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-swiss-solid:hover {
+      background: var(--swiss-gray-800);
+    }
+
+    .btn-swiss-outline {
+      min-height: 48px;
+      padding: 0 24px;
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      font-size: 15px;
+      font-weight: 700;
+      border: 2px solid var(--swiss-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-swiss-outline:hover {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    /* Swiss Toolbar */
+    .swiss-toolbar {
+      border-bottom: 1px solid var(--swiss-black);
+      background: var(--swiss-white);
+      padding: 14px 0;
+    }
+
+    .toolbar-flex {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .status-pin {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border: 1px solid var(--swiss-black);
+    }
+
+    .pills-container {
+      display: flex;
+      border: 1px solid var(--swiss-black);
+    }
+
+    .pill-item {
+      min-height: 38px;
+      padding: 0 16px;
+      border: none;
+      border-right: 1px solid var(--swiss-black);
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .pill-item:last-child {
+      border-right: none;
+    }
+
+    .pill-item:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    .pill-item.active {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .results-indicator {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .btn-swiss-refresh {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--swiss-black);
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-swiss-refresh:hover {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    /* Swiss Catalog Grid */
+    .swiss-main {
+      padding: 36px 0 64px;
+      flex: 1;
+    }
+
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      border-top: 1px solid var(--swiss-black);
+      border-left: 1px solid var(--swiss-black);
+    }
+
+    @media (min-width: 680px) {
+      .catalog-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .catalog-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .swiss-card {
+      border-right: 1px solid var(--swiss-black);
+      border-bottom: 1px solid var(--swiss-black);
+      background: var(--swiss-white);
+      display: flex;
+      flex-direction: column;
+      transition: background 0.2s var(--ease-swiss);
+    }
+
+    .swiss-card:hover {
+      background: var(--swiss-gray-50);
+    }
+
+    .card-meta-head {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--swiss-black);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--swiss-gray-100);
+    }
+
+    .swiss-placeholder {
+      aspect-ratio: 16 / 10;
+      background: var(--swiss-white);
+      border-bottom: 1px solid var(--swiss-black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--swiss-gray-600);
+    }
+
+    .placeholder-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--swiss-black);
+    }
+
+    .card-content-area {
+      padding: 20px 18px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .card-item-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+    }
+
+    .badge-swiss {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border: 1px solid var(--swiss-black);
+      white-space: nowrap;
+    }
+
+    .badge-swiss.avail {
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+    }
+
+    .badge-swiss.pend {
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      border-style: dashed;
+    }
+
+    .badge-swiss.borrow {
+      background: var(--swiss-gray-200);
+      color: var(--swiss-gray-600);
+      border-color: var(--swiss-gray-400);
+    }
+
+    .card-item-desc {
+      font-size: 14px;
+      color: var(--swiss-gray-600);
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+
+    .swiss-specs-table {
+      border: 1px solid var(--swiss-black);
+      border-bottom: none;
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .spec-row {
+      display: flex;
+      border-bottom: 1px solid var(--swiss-black);
+    }
+
+    .spec-col-label {
+      width: 80px;
+      padding: 6px 10px;
+      background: var(--swiss-gray-100);
+      border-right: 1px solid var(--swiss-black);
+      font-weight: 600;
+      color: var(--swiss-gray-600);
+    }
+
+    .spec-col-val {
+      flex: 1;
+      padding: 6px 10px;
+      font-weight: 700;
+      color: var(--swiss-black);
+    }
+
+    .card-actions-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-swiss-action-main {
+      flex: 2;
+      min-height: 44px;
+      padding: 0 14px;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid var(--swiss-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+
+    .btn-swiss-action-main:hover:not(:disabled) {
+      background: var(--swiss-gray-800);
+    }
+
+    .btn-swiss-action-main:disabled {
+      background: var(--swiss-gray-200);
+      color: var(--swiss-gray-400);
+      border-color: var(--swiss-gray-200);
+      cursor: not-allowed;
+    }
+
+    .btn-swiss-action-manage {
+      flex: 1;
+      min-height: 44px;
+      padding: 0 12px;
+      background: var(--swiss-white);
+      color: var(--swiss-black);
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid var(--swiss-black);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-swiss-action-manage:hover {
+      background: var(--swiss-gray-100);
+    }
+
+    /* Swiss Footer */
+    .swiss-footer {
+      border-top: 2px solid var(--swiss-black);
+      background: var(--swiss-white);
+      padding: 40px 0 32px;
+      margin-top: auto;
+    }
+
+    .footer-grid-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .footer-title-bold {
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
+
+    .footer-links-row {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .footer-links-row a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .footer-links-row a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-bottom-line {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--swiss-gray-600);
+      border-top: 1px solid var(--swiss-black);
+      padding-top: 16px;
+    }
+
+    /* Fixed Style Pill */
+    .style-flag {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: var(--swiss-black);
+      color: var(--swiss-white);
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--swiss-black);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="swiss-header">
+    <div class="container header-grid">
+      <div class="brand-section">
+        <a href="#" class="brand-mark">
+          <span class="brand-geo"></span>
+          <span>邻里好物</span>
+        </a>
+        <span class="brand-edition">SWISS · M5</span>
+      </div>
+      <nav class="nav-section">
+        <a href="#" class="nav-item active">首页</a>
+        <a href="#" class="nav-item">发布闲置</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="swiss-hero">
+    <div class="container hero-layout">
+      <div>
+        <div class="hero-badge-tag">
+          <span>■</span>
+          <span>社区闲置 · 互助共享</span>
+        </div>
+        <h1 class="hero-heading">让好物在邻里间流转</h1>
+        <p class="hero-subheading">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+      </div>
+      <div class="hero-action-col">
+        <button class="btn-swiss-solid">
+          <span>发布我的闲置</span>
+          <span>→</span>
+        </button>
+        <button class="btn-swiss-outline">
+          <span>浏览附近好物</span>
+          <span>↓</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="swiss-toolbar">
+    <div class="container toolbar-flex">
+      <div class="toolbar-group">
+        <div class="status-pin">
+          <span>●</span>
+          <span>已定位</span>
+        </div>
+        <div class="pills-container" role="radiogroup" aria-label="距离筛选">
+          <button class="pill-item" role="radio" aria-checked="false">500m</button>
+          <button class="pill-item active" role="radio" aria-checked="true">1km</button>
+          <button class="pill-item" role="radio" aria-checked="false">3km</button>
+          <button class="pill-item" role="radio" aria-checked="false">全部</button>
+        </div>
+      </div>
+      <div class="toolbar-group" style="margin-left: auto;">
+        <span class="results-indicator">共 6 件闲置</span>
+        <button class="btn-swiss-refresh" title="刷新数据" aria-label="刷新">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>刷新</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Catalog Grid -->
+  <main class="swiss-main">
+    <div class="container">
+      <div class="catalog-grid">
+
+        <!-- Card 1 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 01</span>
+            <span>GRID-A</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">戴森V8吸尘器</h2>
+              <span class="badge-swiss avail">闲置中</span>
+            </div>
+            <p class="card-item-desc">九成新，滤芯上周刚换，可借周末</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">3栋1801</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">240m</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月12日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main">
+                <span>我想借</span>
+                <span>→</span>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 02</span>
+            <span>GRID-B</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">儿童滑板车</h2>
+              <span class="badge-swiss pend">待确认</span>
+            </div>
+            <p class="card-item-desc">孩子长大了出闲置，轮子顺滑</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">5栋602</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">480m</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月10日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main">
+                <span>我想借</span>
+                <span>→</span>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 03</span>
+            <span>GRID-C</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">露营四人间帐篷</h2>
+              <span class="badge-swiss avail">闲置中</span>
+            </div>
+            <p class="card-item-desc">含防潮垫，借前沟通行程</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">7栋101</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">1.2km</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月8日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main">
+                <span>我想借</span>
+                <span>→</span>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 4 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 04</span>
+            <span>GRID-D</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">电钻+全套钻头</h2>
+              <span class="badge-swiss borrow">已借出</span>
+            </div>
+            <p class="card-item-desc">家庭维修神器，归还时附使用心得</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">2栋1203</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">350m</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月5日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main" disabled>
+                <span>我想借</span>
+                <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 5 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 05</span>
+            <span>GRID-E</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">英文原版绘本30册</h2>
+              <span class="badge-swiss avail">闲置中</span>
+            </div>
+            <p class="card-item-desc">适合3-6岁，整套借阅</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">8栋1502</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">890m</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月3日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main">
+                <span>我想借</span>
+                <span>→</span>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Card 6 -->
+        <article class="swiss-card">
+          <div class="card-meta-head">
+            <span>INDEX // 06</span>
+            <span>GRID-F</span>
+          </div>
+          <div class="swiss-placeholder">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="0" ry="0"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="placeholder-label">实物图</span>
+          </div>
+          <div class="card-content-area">
+            <div class="card-title-row">
+              <h2 class="card-item-title">小米加湿器4L</h2>
+              <span class="badge-swiss avail">闲置中</span>
+            </div>
+            <p class="card-item-desc">静音，送两根新滤芯</p>
+            <div class="swiss-specs-table">
+              <div class="spec-row">
+                <span class="spec-col-label">楼号</span>
+                <span class="spec-col-val">1栋801</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">距离</span>
+                <span class="spec-col-val">150m</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-col-label">日期</span>
+                <span class="spec-col-val">6月1日</span>
+              </div>
+            </div>
+            <div class="card-actions-row">
+              <button class="btn-swiss-action-main">
+                <span>我想借</span>
+                <span>→</span>
+              </button>
+              <button class="btn-swiss-action-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Swiss Footer -->
+  <footer class="swiss-footer">
+    <div class="container footer-grid-layout">
+      <div class="footer-title-bold">邻里好物 · 让闲置在邻里间发光发热</div>
+      <div class="footer-links-row">
+        <a href="#">首页</a>
+        <span>/</span>
+        <a href="#">发布闲置</a>
+        <span>/</span>
+        <a href="#">GitHub</a>
+      </div>
+      <div class="footer-bottom-line">由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</div>
+    </div>
+  </footer>
+
+  <!-- Fixed Badge -->
+  <div class="style-flag">19 · Swiss极致黑白</div>
+
+</body>
+</html>

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 · 06 巨型字黑白高对比 Bold Big-Type Editorial</title>
+  <!-- Google Fonts: Archivo Expanded & Syne -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Expanded:wght@700;800;900&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Reset & Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F4F4F4;
+      --bg-muted: #EBEBEB;
+      --text-main: #000000;
+      --text-muted: #666666;
+      --text-sub: #888888;
+      --border-dark: #000000;
+      --border-light: #E0E0E0;
+      --accent-blush: #E8C4C0;
+      --font-display: "Archivo Expanded", "Syne", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.65;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-break: strict;
+      font-variant-numeric: tabular-nums;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: opacity 0.3s var(--ease-editorial), color 0.3s var(--ease-editorial);
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.35s var(--ease-editorial);
+    }
+
+    .icon-svg {
+      display: inline-block;
+      width: 1.25rem;
+      height: 1.25rem;
+      stroke-width: 1.75;
+      stroke: currentColor;
+      fill: none;
+      vertical-align: middle;
+    }
+
+    /* Container */
+    .editorial-container {
+      width: 100%;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .editorial-container {
+        padding: 0 3rem;
+      }
+    }
+
+    /* Top Running Header / Ticker */
+    .editorial-ticker {
+      border-bottom: 1px solid var(--border-dark);
+      padding: 0.5rem 0;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-primary);
+    }
+
+    /* Navigation */
+    .editorial-nav {
+      border-bottom: 2px solid var(--border-dark);
+      background: var(--bg-primary);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .editorial-nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: stretch;
+      min-height: 4rem;
+    }
+
+    .editorial-logo {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      display: flex;
+      align-items: center;
+      padding-right: 1.5rem;
+      border-right: 1px solid var(--border-dark);
+      white-space: nowrap;
+    }
+
+    .editorial-nav-links {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .editorial-nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 1.5rem;
+      min-height: 44px;
+      min-width: 44px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-left: 1px solid var(--border-dark);
+      letter-spacing: 0.05em;
+      position: relative;
+    }
+
+    .editorial-nav-link:hover {
+      background: var(--text-main);
+      color: var(--bg-primary);
+    }
+
+    /* Hero Section */
+    .editorial-hero {
+      padding: 4rem 0 3.5rem 0;
+      border-bottom: 2px solid var(--border-dark);
+      position: relative;
+    }
+
+    .editorial-hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .editorial-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 0 1.25rem;
+      background: var(--accent-blush);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid var(--border-dark);
+    }
+
+    .editorial-hero-index {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+    }
+
+    .editorial-hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.6rem, 7.5vw, 6.2rem);
+      font-weight: 900;
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      text-wrap: balance;
+      margin-bottom: 2.5rem;
+      text-transform: uppercase;
+      word-break: break-word;
+    }
+
+    .editorial-hero-split {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      align-items: flex-end;
+      border-top: 1px solid var(--border-dark);
+      padding-top: 2rem;
+    }
+
+    @media (min-width: 860px) {
+      .editorial-hero-split {
+        grid-template-columns: 1.3fr 1fr;
+      }
+    }
+
+    .editorial-hero-sub {
+      font-size: 1.15rem;
+      font-weight: 500;
+      line-height: 1.7;
+      color: var(--text-main);
+      max-width: 600px;
+    }
+
+    .editorial-hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    @media (min-width: 480px) {
+      .editorial-hero-actions {
+        flex-direction: row;
+      }
+    }
+
+    .btn-editorial-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.75rem;
+      background: var(--text-main);
+      color: var(--bg-primary);
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      border: 2px solid var(--text-main);
+      box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-editorial-primary:hover {
+      background: var(--bg-primary);
+      color: var(--text-main);
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.9);
+    }
+
+    .btn-editorial-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 1.75rem;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      border: 2px solid var(--border-dark);
+    }
+
+    .btn-editorial-secondary:hover {
+      background: var(--accent-blush);
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.8);
+    }
+
+    /* Toolbar Section */
+    .editorial-toolbar {
+      border-bottom: 2px solid var(--border-dark);
+      background: var(--bg-secondary);
+      padding: 1.25rem 0;
+    }
+
+    .editorial-toolbar-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+    }
+
+    .editorial-location-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 800;
+      font-size: 0.9rem;
+      letter-spacing: 0.06em;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--text-main);
+      display: inline-block;
+    }
+
+    .editorial-pills-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .editorial-filter-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 54px;
+      padding: 0 1.1rem;
+      border: 1.5px solid var(--border-dark);
+      background: var(--bg-primary);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .editorial-filter-pill:hover {
+      background: var(--accent-blush);
+    }
+
+    .editorial-filter-pill.active {
+      background: var(--text-main);
+      color: var(--bg-primary);
+    }
+
+    .editorial-toolbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .editorial-count {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .editorial-btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 44px;
+      padding: 0 1rem;
+      border: 1.5px solid var(--border-dark);
+      background: var(--bg-primary);
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .editorial-btn-refresh:hover {
+      background: var(--text-main);
+      color: var(--bg-primary);
+    }
+
+    /* Grid Section */
+    .editorial-grid-section {
+      padding: 3.5rem 0 5rem 0;
+    }
+
+    .editorial-grid-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-dark);
+      padding-bottom: 0.75rem;
+    }
+
+    .editorial-grid-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .editorial-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 680px) {
+      .editorial-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem;
+      }
+    }
+
+    @media (min-width: 1040px) {
+      .editorial-cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+      }
+    }
+
+    /* Card Item */
+    .editorial-card {
+      border: 2px solid var(--border-dark);
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: transform 0.35s var(--ease-editorial), box-shadow 0.35s var(--ease-editorial);
+    }
+
+    .editorial-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 8px 8px 0px #000000;
+    }
+
+    .editorial-card-index {
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      background: var(--text-main);
+      color: var(--bg-primary);
+      font-family: var(--font-display);
+      font-size: 0.75rem;
+      font-weight: 900;
+      padding: 0.2rem 0.6rem;
+      z-index: 2;
+      border-bottom: 1px solid var(--border-dark);
+      border-right: 1px solid var(--border-dark);
+    }
+
+    /* Image Placeholder */
+    .editorial-img-box {
+      width: 100%;
+      height: 200px;
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .editorial-img-icon {
+      width: 28px;
+      height: 28px;
+      stroke: var(--text-muted);
+    }
+
+    .editorial-img-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* Card Body */
+    .editorial-card-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .editorial-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .editorial-card-name {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 900;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+
+    /* Badges */
+    .badge-editorial {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      border: 1.5px solid var(--border-dark);
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+
+    .badge-available {
+      background: var(--text-main);
+      color: var(--bg-primary);
+    }
+
+    .badge-pending {
+      background: var(--accent-blush);
+      color: var(--text-main);
+    }
+
+    .badge-borrowed {
+      background: var(--bg-muted);
+      color: var(--text-muted);
+      border-color: var(--border-light);
+      text-decoration: line-through;
+    }
+
+    .editorial-card-desc {
+      font-size: 0.95rem;
+      color: #333333;
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      flex: 1;
+    }
+
+    .editorial-card-meta {
+      border-top: 1px solid var(--border-dark);
+      padding-top: 0.75rem;
+      margin-bottom: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .meta-cell-label {
+      color: var(--text-sub);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: block;
+      margin-bottom: 0.1rem;
+    }
+
+    /* Actions */
+    .editorial-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .btn-card-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      background: var(--text-main);
+      color: var(--bg-primary);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      border: 1.5px solid var(--border-dark);
+    }
+
+    .btn-card-primary:hover:not(:disabled) {
+      background: var(--bg-primary);
+      color: var(--text-main);
+    }
+
+    .btn-card-primary:disabled {
+      background: var(--bg-muted);
+      color: var(--text-sub);
+      border-color: var(--border-light);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-card-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      border: 1.5px solid var(--border-dark);
+    }
+
+    .btn-card-secondary:hover {
+      background: var(--accent-blush);
+    }
+
+    /* Footer */
+    .editorial-footer {
+      border-top: 2px solid var(--border-dark);
+      background: var(--bg-primary);
+      padding: 3.5rem 0 2rem 0;
+    }
+
+    .editorial-footer-slogan {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 3.5vw, 2.5rem);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 2rem;
+      text-wrap: balance;
+    }
+
+    .editorial-footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      border-top: 1px solid var(--border-dark);
+      padding-top: 1.5rem;
+    }
+
+    .editorial-footer-link {
+      font-weight: 800;
+      font-size: 0.95rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .editorial-footer-link:hover {
+      background: var(--text-main);
+      color: var(--bg-primary);
+      text-decoration: none;
+      padding: 0 0.5rem;
+    }
+
+    .editorial-footer-copy {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-light);
+      padding-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    /* Style Badge (Fixed Bottom Right) */
+    .style-badge-fixed {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 9999;
+      background: #000000;
+      color: #FFFFFF;
+      border: 1.5px solid #FFFFFF;
+      padding: 0.5rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      box-shadow: 4px 4px 0px rgba(0,0,0,0.4);
+      pointer-events: auto;
+    }
+
+    .style-badge-fixed::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: var(--accent-blush);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Info Bar -->
+  <aside class="editorial-ticker">
+    <div class="editorial-container" style="display:flex; justify-content:space-between; width:100%;">
+      <span>VOL. 06 / ISSUE 2026</span>
+      <span>COMMUNITY RESOURCE MATRIX</span>
+    </div>
+  </aside>
+
+  <!-- Navigation -->
+  <header class="editorial-nav">
+    <div class="editorial-container">
+      <div class="editorial-nav-inner">
+        <a href="#home" class="editorial-logo">
+          邻里好物
+        </a>
+        <nav class="editorial-nav-links" aria-label="主导航">
+          <a href="#home" class="editorial-nav-link">首页</a>
+          <a href="#publish" class="editorial-nav-link">发布闲置</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="home">
+    <!-- Hero Section -->
+    <section class="editorial-hero">
+      <div class="editorial-container">
+        <div class="editorial-hero-meta">
+          <div class="editorial-badge-tag">
+            社区闲置 · 互助共享
+          </div>
+          <span class="editorial-hero-index">01 / ARCHIVE</span>
+        </div>
+
+        <h1 class="editorial-hero-title">
+          让好物在邻里间流转
+        </h1>
+
+        <div class="editorial-hero-split">
+          <p class="editorial-hero-sub">
+            发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值
+          </p>
+          <div class="editorial-hero-actions">
+            <a href="#publish" class="btn-editorial-primary">发布我的闲置</a>
+            <a href="#browse" class="btn-editorial-secondary">浏览附近好物</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar Section -->
+    <section class="editorial-toolbar" id="browse">
+      <div class="editorial-container">
+        <div class="editorial-toolbar-inner">
+          <div class="editorial-location-indicator">
+            <span class="status-dot"></span>
+            <span>已定位</span>
+          </div>
+
+          <div class="editorial-pills-group" role="group" aria-label="距离筛选">
+            <button type="button" class="editorial-filter-pill">500m</button>
+            <button type="button" class="editorial-filter-pill active">1km</button>
+            <button type="button" class="editorial-filter-pill">3km</button>
+            <button type="button" class="editorial-filter-pill">全部</button>
+          </div>
+
+          <div class="editorial-toolbar-meta">
+            <span class="editorial-count">共 6 件闲置</span>
+            <button type="button" class="editorial-btn-refresh" aria-label="刷新物品列表">
+              <svg class="icon-svg" viewBox="0 0 24 24">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+              </svg>
+              <span>刷新</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Items Grid Section -->
+    <section class="editorial-grid-section">
+      <div class="editorial-container">
+        <div class="editorial-grid-header">
+          <h2 class="editorial-grid-title">CATALOGUE / 物品名录</h2>
+          <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted);">NEARBY INVENTORY</span>
+        </div>
+
+        <div class="editorial-cards-grid">
+          
+          <!-- Card 1 -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#01</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">戴森V8吸尘器</h3>
+                <span class="badge-editorial badge-available">闲置中</span>
+              </div>
+              <p class="editorial-card-desc">九成新，滤芯上周刚换，可借周末</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>3栋1801 · 240m</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月12日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#02</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">儿童滑板车</h3>
+                <span class="badge-editorial badge-pending">待确认</span>
+              </div>
+              <p class="editorial-card-desc">孩子长大了出闲置，轮子顺滑</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>5栋602 · 480m</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月10日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#03</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">露营四人间帐篷</h3>
+                <span class="badge-editorial badge-available">闲置中</span>
+              </div>
+              <p class="editorial-card-desc">含防潮垫，借前沟通行程</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>7栋101 · 1.2km</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月8日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 4 (Disabled Borrow) -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#04</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">电钻+全套钻头</h3>
+                <span class="badge-editorial badge-borrowed">已借出</span>
+              </div>
+              <p class="editorial-card-desc">家庭维修神器，归还时附使用心得</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>2栋1203 · 350m</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月5日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary" disabled aria-disabled="true">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 5 -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#05</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">英文原版绘本30册</h3>
+                <span class="badge-editorial badge-available">闲置中</span>
+              </div>
+              <p class="editorial-card-desc">适合3-6岁，整套借阅</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>8栋1502 · 890m</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月3日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 6 -->
+          <article class="editorial-card">
+            <div class="editorial-card-index">#06</div>
+            <div class="editorial-img-box">
+              <svg class="editorial-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="editorial-img-label">实物图</span>
+            </div>
+            <div class="editorial-card-body">
+              <div class="editorial-card-top">
+                <h3 class="editorial-card-name">小米加湿器4L</h3>
+                <span class="badge-editorial badge-available">闲置中</span>
+              </div>
+              <p class="editorial-card-desc">静音，送两根新滤芯</p>
+              <div class="editorial-card-meta">
+                <div>
+                  <span class="meta-cell-label">LOCATION</span>
+                  <span>1栋801 · 150m</span>
+                </div>
+                <div>
+                  <span class="meta-cell-label">DATE</span>
+                  <span>6月1日</span>
+                </div>
+              </div>
+              <div class="editorial-card-actions">
+                <button type="button" class="btn-card-primary">我想借</button>
+                <button type="button" class="btn-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="editorial-footer">
+    <div class="editorial-container">
+      <h2 class="editorial-footer-slogan">邻里好物 · 让闲置在邻里间发光发热</h2>
+      
+      <div class="editorial-footer-links">
+        <a href="#home" class="editorial-footer-link">首页</a>
+        <span style="display:inline-flex; align-items:center; color:var(--text-sub);">/</span>
+        <a href="#publish" class="editorial-footer-link">发布闲置</a>
+        <span style="display:inline-flex; align-items:center; color:var(--text-sub);">/</span>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="editorial-footer-link">GitHub</a>
+      </div>
+
+      <div class="editorial-footer-copy">
+        <span>由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</span>
+        <span>BLACK &amp; WHITE EDITORIAL EDITION</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Fixed Badge -->
+  <div class="style-badge-fixed" role="status" aria-label="当前样式">
+    06 · 巨型字黑白高对比
+  </div>
+
+</body>
+</html>

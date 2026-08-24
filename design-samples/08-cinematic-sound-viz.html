@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 · 08 电影感声波可视化 Cinematic Sound-Viz Dark</title>
+  <!-- Google Fonts: Sora & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* CSS Reset & Dark Studio Theme Base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --cinema-black: #050507;
+      --cinema-surface: #0E0F14;
+      --cinema-card: #14151D;
+      --cinema-card-hover: #1B1C28;
+      --text-pure: #FFFFFF;
+      --text-dim: #A0A4B8;
+      --text-sub: #636882;
+      --wave-cyan: #00F0FF;
+      --wave-purple: #8A2BE2;
+      --wave-blue: #3A86FF;
+      --accent-gradient: linear-gradient(135deg, #00F0FF 0%, #7928CA 50%, #FF0080 100%);
+      --border-dark: #222533;
+      --border-glow: rgba(0, 240, 255, 0.3);
+      --font-heading: "Sora", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      --font-body: "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
+      --ease-cinema: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    body {
+      background-color: var(--cinema-black);
+      color: var(--text-pure);
+      font-family: var(--font-body);
+      line-height: 1.65;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-break: strict;
+      font-variant-numeric: tabular-nums;
+      padding-bottom: 90px;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(122, 40, 202, 0.18) 0%, transparent 60%),
+        radial-gradient(circle at 100% 50%, rgba(0, 240, 255, 0.08) 0%, transparent 50%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: all 0.3s var(--ease-cinema);
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-pure);
+      transition: all 0.35s var(--ease-cinema);
+    }
+
+    .icon-svg {
+      display: inline-block;
+      width: 1.2rem;
+      height: 1.2rem;
+      stroke-width: 1.75;
+      stroke: currentColor;
+      fill: none;
+      vertical-align: middle;
+    }
+
+    /* Container */
+    .cinema-container {
+      width: 100%;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .cinema-container {
+        padding: 0 3rem;
+      }
+    }
+
+    /* Studio Timecode Header */
+    .cinema-timecode-bar {
+      border-bottom: 1px solid var(--border-dark);
+      padding: 0.4rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(5, 5, 7, 0.9);
+      letter-spacing: 0.12em;
+    }
+
+    .rec-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: #FF0055;
+    }
+
+    .rec-dot {
+      width: 8px;
+      height: 8px;
+      background: #FF0055;
+      border-radius: 50%;
+      animation: pulse-rec 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-rec {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.85); }
+    }
+
+    /* Navigation */
+    .cinema-nav {
+      border-bottom: 1px solid var(--border-dark);
+      background: rgba(14, 15, 20, 0.85);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .cinema-nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 4.5rem;
+    }
+
+    .cinema-logo-group {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .cinema-sound-bars-logo {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 22px;
+      padding-bottom: 2px;
+    }
+
+    .cinema-sound-bars-logo span {
+      width: 3px;
+      background: var(--wave-cyan);
+      border-radius: 1px;
+    }
+
+    .cinema-sound-bars-logo span:nth-child(1) { height: 10px; }
+    .cinema-sound-bars-logo span:nth-child(2) { height: 20px; background: #9D4EDD; }
+    .cinema-sound-bars-logo span:nth-child(3) { height: 14px; background: #00F0FF; }
+    .cinema-sound-bars-logo span:nth-child(4) { height: 18px; }
+
+    .cinema-logo-title {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #FFFFFF, #D1D5E8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cinema-nav-links {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .cinema-nav-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 44px;
+      padding: 0 1.25rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+
+    .cinema-nav-link:hover {
+      color: var(--text-pure);
+      border-color: var(--border-dark);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    /* Hero Section */
+    .cinema-hero {
+      padding: 4.5rem 0 3.5rem 0;
+      position: relative;
+      border-bottom: 1px solid var(--border-dark);
+      overflow: hidden;
+    }
+
+    /* Soundwave Visualizer Banner Behind Hero */
+    .cinema-hero-waveform {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 140px;
+      opacity: 0.25;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 2px;
+      padding: 0 1rem;
+    }
+
+    .waveform-bar {
+      flex: 1;
+      background: linear-gradient(to top, var(--wave-cyan), var(--wave-purple));
+      border-radius: 2px 2px 0 0;
+      min-height: 8px;
+    }
+
+    .cinema-badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-height: 44px;
+      padding: 0 1.25rem;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 24px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--wave-cyan);
+      letter-spacing: 0.08em;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.15);
+    }
+
+    .cinema-hero-title {
+      font-family: var(--font-heading);
+      font-size: clamp(2.4rem, 6.8vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      text-wrap: balance;
+      margin-bottom: 1.5rem;
+      max-width: 960px;
+    }
+
+    .cinema-hero-sub {
+      font-size: 1.15rem;
+      color: var(--text-dim);
+      line-height: 1.75;
+      max-width: 680px;
+      margin-bottom: 2.5rem;
+    }
+
+    .cinema-hero-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    @media (min-width: 480px) {
+      .cinema-hero-actions {
+        flex-direction: row;
+      }
+    }
+
+    .btn-cinema-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 2rem;
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      box-shadow: 0 0 24px rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-cinema-primary:hover {
+      background: var(--wave-cyan);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-cinema-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 0 2rem;
+      background: rgba(20, 21, 29, 0.8);
+      color: var(--text-pure);
+      font-weight: 600;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-dark);
+      backdrop-filter: blur(8px);
+    }
+
+    .btn-cinema-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    /* Toolbar Section */
+    .cinema-toolbar {
+      padding: 1.25rem 0;
+      background: var(--cinema-surface);
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .cinema-toolbar-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+    }
+
+    .cinema-location {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--wave-cyan);
+      letter-spacing: 0.05em;
+    }
+
+    .cinema-pills-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .cinema-filter-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 56px;
+      padding: 0 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      border-radius: 4px;
+      background: rgba(20, 21, 29, 0.6);
+      border: 1px solid var(--border-dark);
+      color: var(--text-dim);
+    }
+
+    .cinema-filter-pill:hover {
+      color: var(--text-pure);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .cinema-filter-pill.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--wave-cyan);
+      color: #FFFFFF;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+    }
+
+    .cinema-toolbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .cinema-count {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .cinema-btn-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 44px;
+      padding: 0 1rem;
+      border: 1px solid var(--border-dark);
+      background: var(--cinema-card);
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+
+    .cinema-btn-refresh:hover {
+      border-color: var(--wave-cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    /* Grid Section */
+    .cinema-grid-section {
+      padding: 3.5rem 0 5rem 0;
+    }
+
+    .cinema-grid-header {
+      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border-dark);
+      padding-bottom: 0.75rem;
+    }
+
+    .cinema-grid-title {
+      font-family: var(--font-heading);
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .cinema-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 680px) {
+      .cinema-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.75rem;
+      }
+    }
+
+    @media (min-width: 1040px) {
+      .cinema-cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+      }
+    }
+
+    /* Audio Monitor Card */
+    .cinema-card {
+      background: var(--cinema-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      transition: transform 0.35s var(--ease-cinema), border-color 0.35s var(--ease-cinema), box-shadow 0.35s var(--ease-cinema);
+    }
+
+    .cinema-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0, 240, 255, 0.5);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.15);
+    }
+
+    /* Oscilloscope-style Image Placeholder */
+    .cinema-img-box {
+      width: 100%;
+      height: 190px;
+      background: #08080C;
+      border-bottom: 1px solid var(--border-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cinema-img-box::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+      background: rgba(0, 240, 255, 0.2);
+    }
+
+    .cinema-img-icon {
+      width: 28px;
+      height: 28px;
+      stroke: var(--text-dim);
+      position: relative;
+      z-index: 1;
+    }
+
+    .cinema-img-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--text-sub);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Card Body */
+    .cinema-card-body {
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .cinema-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .cinema-card-name {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+    }
+
+    /* Status Badges */
+    .badge-cinema {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    .badge-cinema-available {
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--wave-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .badge-cinema-pending {
+      background: rgba(255, 183, 3, 0.12);
+      color: #FFB703;
+      border: 1px solid rgba(255, 183, 3, 0.3);
+    }
+
+    .badge-cinema-borrowed {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-sub);
+      border: 1px solid var(--border-dark);
+      text-decoration: line-through;
+    }
+
+    .cinema-card-desc {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+      margin-bottom: 1.25rem;
+      flex: 1;
+    }
+
+    .cinema-card-meta {
+      border-top: 1px solid var(--border-dark);
+      padding-top: 0.75rem;
+      margin-bottom: 1.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+
+    .cinema-meta-tag {
+      color: var(--text-sub);
+      font-size: 0.68rem;
+      display: block;
+      letter-spacing: 0.05em;
+    }
+
+    /* Actions */
+    .cinema-card-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .btn-cinema-card-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      background: var(--text-pure);
+      color: #000000;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border-radius: 4px;
+    }
+
+    .btn-cinema-card-primary:hover:not(:disabled) {
+      background: var(--wave-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+    }
+
+    .btn-cinema-card-primary:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-sub);
+      cursor: not-allowed;
+      border: 1px solid var(--border-dark);
+    }
+
+    .btn-cinema-card-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 1px solid var(--border-dark);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-pure);
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-radius: 4px;
+    }
+
+    .btn-cinema-card-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Footer */
+    .cinema-footer {
+      border-top: 1px solid var(--border-dark);
+      background: var(--cinema-surface);
+      padding: 3.5rem 0 2rem 0;
+    }
+
+    .cinema-footer-slogan {
+      font-family: var(--font-heading);
+      font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      text-wrap: balance;
+    }
+
+    .cinema-footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      border-top: 1px solid var(--border-dark);
+      padding-top: 1.5rem;
+    }
+
+    .cinema-footer-link {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-dim);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .cinema-footer-link:hover {
+      color: var(--wave-cyan);
+    }
+
+    .cinema-footer-copy {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text-sub);
+      border-top: 1px solid var(--border-dark);
+      padding-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    /* Fixed Style Badge */
+    .style-badge-fixed {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 9999;
+      background: #000000;
+      color: #FFFFFF;
+      border: 1px solid var(--wave-cyan);
+      padding: 0.5rem 1rem;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+      pointer-events: auto;
+      border-radius: 4px;
+    }
+
+    .style-badge-fixed::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--wave-cyan);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--wave-cyan);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Studio Timecode Bar -->
+  <aside class="cinema-timecode-bar">
+    <div class="cinema-container" style="display:flex; justify-content:space-between; width:100%;">
+      <div class="rec-pulse">
+        <span class="rec-dot"></span>
+        <span>REC 24.00 FPS · 48kHz 24-BIT</span>
+      </div>
+      <span>TRACK 08: AUDIO SPECTRUM</span>
+    </div>
+  </aside>
+
+  <!-- Navigation -->
+  <header class="cinema-nav">
+    <div class="cinema-container">
+      <div class="cinema-nav-inner">
+        <a href="#home" class="cinema-logo-group">
+          <div class="cinema-sound-bars-logo" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="cinema-logo-title">邻里好物</span>
+        </a>
+        <nav class="cinema-nav-links" aria-label="主导航">
+          <a href="#home" class="cinema-nav-link">首页</a>
+          <a href="#publish" class="cinema-nav-link">发布闲置</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="home">
+    <!-- Hero Section -->
+    <section class="cinema-hero">
+      <!-- Simulated Background Audio Waveform -->
+      <div class="cinema-hero-waveform" aria-hidden="true">
+        <div class="waveform-bar" style="height: 25%;"></div>
+        <div class="waveform-bar" style="height: 45%;"></div>
+        <div class="waveform-bar" style="height: 70%;"></div>
+        <div class="waveform-bar" style="height: 35%;"></div>
+        <div class="waveform-bar" style="height: 85%;"></div>
+        <div class="waveform-bar" style="height: 60%;"></div>
+        <div class="waveform-bar" style="height: 95%;"></div>
+        <div class="waveform-bar" style="height: 40%;"></div>
+        <div class="waveform-bar" style="height: 75%;"></div>
+        <div class="waveform-bar" style="height: 30%;"></div>
+        <div class="waveform-bar" style="height: 65%;"></div>
+        <div class="waveform-bar" style="height: 90%;"></div>
+        <div class="waveform-bar" style="height: 50%;"></div>
+        <div class="waveform-bar" style="height: 80%;"></div>
+        <div class="waveform-bar" style="height: 20%;"></div>
+      </div>
+
+      <div class="cinema-container" style="position:relative; z-index:2;">
+        <div class="cinema-badge-tag">
+          <svg class="icon-svg" viewBox="0 0 24 24" style="width:1rem; height:1rem;">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span>社区闲置 · 互助共享</span>
+        </div>
+
+        <h1 class="cinema-hero-title">
+          让好物在邻里间流转
+        </h1>
+
+        <p class="cinema-hero-sub">
+          发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值
+        </p>
+
+        <div class="cinema-hero-actions">
+          <a href="#publish" class="btn-cinema-primary">发布我的闲置</a>
+          <a href="#browse" class="btn-cinema-secondary">浏览附近好物</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar Section -->
+    <section class="cinema-toolbar" id="browse">
+      <div class="cinema-container">
+        <div class="cinema-toolbar-inner">
+          <div class="cinema-location">
+            <svg class="icon-svg" viewBox="0 0 24 24" style="color:var(--wave-cyan);">
+              <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>已定位</span>
+          </div>
+
+          <div class="cinema-pills-group" role="group" aria-label="距离筛选">
+            <button type="button" class="cinema-filter-pill">500m</button>
+            <button type="button" class="cinema-filter-pill active">1km</button>
+            <button type="button" class="cinema-filter-pill">3km</button>
+            <button type="button" class="cinema-filter-pill">全部</button>
+          </div>
+
+          <div class="cinema-toolbar-meta">
+            <span class="cinema-count">共 6 件闲置</span>
+            <button type="button" class="cinema-btn-refresh" aria-label="刷新物品列表">
+              <svg class="icon-svg" viewBox="0 0 24 24">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.19"/>
+              </svg>
+              <span>刷新</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Items Grid Section -->
+    <section class="cinema-grid-section">
+      <div class="cinema-container">
+        <div class="cinema-grid-header">
+          <h2 class="cinema-grid-title">AUDIO WAVE CHANNELS / 物品声道</h2>
+          <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-sub);">SIGNAL STRENGTH: OPTIMAL</span>
+        </div>
+
+        <div class="cinema-cards-grid">
+          
+          <!-- Card 1 -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">戴森V8吸尘器</h3>
+                <span class="badge-cinema badge-cinema-available">闲置中</span>
+              </div>
+              <p class="cinema-card-desc">九成新，滤芯上周刚换，可借周末</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>3栋1801 · 240m</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月12日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 2 -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">儿童滑板车</h3>
+                <span class="badge-cinema badge-cinema-pending">待确认</span>
+              </div>
+              <p class="cinema-card-desc">孩子长大了出闲置，轮子顺滑</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>5栋602 · 480m</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月10日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 3 -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">露营四人间帐篷</h3>
+                <span class="badge-cinema badge-cinema-available">闲置中</span>
+              </div>
+              <p class="cinema-card-desc">含防潮垫，借前沟通行程</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>7栋101 · 1.2km</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月8日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 4 (Disabled Borrow) -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">电钻+全套钻头</h3>
+                <span class="badge-cinema badge-cinema-borrowed">已借出</span>
+              </div>
+              <p class="cinema-card-desc">家庭维修神器，归还时附使用心得</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>2栋1203 · 350m</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月5日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary" disabled aria-disabled="true">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 5 -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">英文原版绘本30册</h3>
+                <span class="badge-cinema badge-cinema-available">闲置中</span>
+              </div>
+              <p class="cinema-card-desc">适合3-6岁，整套借阅</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>8栋1502 · 890m</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月3日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 6 -->
+          <article class="cinema-card">
+            <div class="cinema-img-box">
+              <svg class="cinema-img-icon" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <span class="cinema-img-label">实物图</span>
+            </div>
+            <div class="cinema-card-body">
+              <div class="cinema-card-top">
+                <h3 class="cinema-card-name">小米加湿器4L</h3>
+                <span class="badge-cinema badge-cinema-available">闲置中</span>
+              </div>
+              <p class="cinema-card-desc">静音，送两根新滤芯</p>
+              <div class="cinema-card-meta">
+                <div>
+                  <span class="cinema-meta-tag">DISTANCE</span>
+                  <span>1栋801 · 150m</span>
+                </div>
+                <div>
+                  <span class="cinema-meta-tag">TIMESTAMP</span>
+                  <span>6月1日</span>
+                </div>
+              </div>
+              <div class="cinema-card-actions">
+                <button type="button" class="btn-cinema-card-primary">我想借</button>
+                <button type="button" class="btn-cinema-card-secondary">管理</button>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="cinema-footer">
+    <div class="cinema-container">
+      <h2 class="cinema-footer-slogan">邻里好物 · 让闲置在邻里间发光发热</h2>
+      
+      <div class="cinema-footer-links">
+        <a href="#home" class="cinema-footer-link">首页</a>
+        <span style="display:inline-flex; align-items:center; color:var(--text-sub);">/</span>
+        <a href="#publish" class="cinema-footer-link">发布闲置</a>
+        <span style="display:inline-flex; align-items:center; color:var(--text-sub);">/</span>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="cinema-footer-link">GitHub</a>
+      </div>
+
+      <div class="cinema-footer-copy">
+        <span>由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</span>
+        <span>MASTER AUDIO DUBBING · SOUNDTRACK VISUALS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Fixed Badge -->
+  <div class="style-badge-fixed" role="status" aria-label="当前样式">
+    08 · 电影感声波可视化
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 · 纯CSS几何插画 (05 · Pure-CSS Art)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-canvas: #0F172A;
+      --panel-bg: #1E293B;
+      --card-bg: #1E293B;
+      --primary-cyan: #38BDF8;
+      --warm-amber: #F59E0B;
+      --coral-red: #F43F5E;
+      --mint-green: #10B981;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
+      --border-line: #334155;
+      --font-art: "Rubik", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-art);
+      line-height: 1.6;
+      line-break: strict;
+      font-synthesis: none;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 70px;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+      transition: all 0.2s var(--ease);
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        padding: 2rem 2rem;
+      }
+    }
+
+    /* Header Nav */
+    header {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 16px;
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--primary-cyan);
+    }
+
+    .brand-art-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary-cyan), var(--warm-amber));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg-canvas);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .nav-item {
+      min-height: 44px;
+      padding: 0 1.25rem;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      color: var(--text-main);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .nav-item.active {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--primary-cyan);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    /* Hero Section with Pure-CSS Art */
+    .hero-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 24px;
+      padding: 2.5rem 1.5rem;
+      margin-bottom: 2.5rem;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+      align-items: center;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (min-width: 960px) {
+      .hero-panel {
+        grid-template-columns: 1.1fr 0.9fr;
+        padding: 3.5rem 3rem;
+      }
+    }
+
+    .hero-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warm-amber);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      padding: 0.35rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      align-self: flex-start;
+    }
+
+    .hero-title {
+      font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.04em;
+      margin-bottom: 1.25rem;
+      text-wrap: balance;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--primary-cyan), var(--warm-amber));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: clamp(1rem, 1.6vw, 1.2rem);
+      line-height: 1.7;
+      color: var(--text-muted);
+      margin-bottom: 2.25rem;
+      max-width: 580px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .btn-action-primary {
+      min-height: 50px;
+      padding: 0 1.75rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      background: var(--primary-cyan);
+      color: var(--bg-canvas);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+      border: none;
+    }
+
+    .btn-action-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(56, 189, 248, 0.6);
+    }
+
+    .btn-action-secondary {
+      min-height: 50px;
+      padding: 0 1.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-line);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+
+    .btn-action-secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* PURE CSS ART STAGE */
+    .css-art-stage {
+      position: relative;
+      height: 280px;
+      background: #0B1120;
+      border-radius: 20px;
+      border: 1px solid var(--border-line);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (min-width: 960px) {
+      .css-art-stage {
+        height: 340px;
+      }
+    }
+
+    /* Art Elements */
+    .art-sun {
+      position: absolute;
+      top: 30px;
+      right: 40px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--warm-amber);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.4);
+    }
+
+    .art-ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: #151E2E;
+      border-top: 2px solid var(--border-line);
+    }
+
+    /* House 1 (Left Tall Building) */
+    .art-building-left {
+      position: absolute;
+      bottom: 70px;
+      left: 40px;
+      width: 70px;
+      height: 140px;
+      background: #1E293B;
+      border: 2px solid var(--primary-cyan);
+      border-radius: 6px 6px 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 15px;
+      gap: 10px;
+    }
+
+    .art-window {
+      width: 14px;
+      height: 14px;
+      background: var(--primary-cyan);
+      border-radius: 2px;
+      opacity: 0.85;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    }
+
+    /* House 2 (Center Slanted Roof Cottage) */
+    .art-cottage-center {
+      position: absolute;
+      bottom: 70px;
+      left: 130px;
+      width: 90px;
+      height: 90px;
+      background: #27354A;
+      border-left: 2px solid var(--warm-amber);
+      border-right: 2px solid var(--warm-amber);
+      border-bottom: 2px solid var(--warm-amber);
+      z-index: 2;
+    }
+
+    .art-roof-triangle {
+      position: absolute;
+      top: -45px;
+      left: -2px;
+      width: 0;
+      height: 0;
+      border-left: 47px solid transparent;
+      border-right: 47px solid transparent;
+      border-bottom: 45px solid var(--warm-amber);
+    }
+
+    .art-door {
+      position: absolute;
+      bottom: 0;
+      left: 32px;
+      width: 26px;
+      height: 40px;
+      background: var(--warm-amber);
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* House 3 (Right Geo Tower) */
+    .art-tower-right {
+      position: absolute;
+      bottom: 70px;
+      right: 50px;
+      width: 80px;
+      height: 120px;
+      background: #1A2436;
+      border: 2px solid var(--mint-green);
+      border-radius: 12px 12px 0 0;
+    }
+
+    /* Floating Item Parcel (Pure CSS Gift/Sharing Capsule) */
+    .art-floating-capsule {
+      position: absolute;
+      top: 60px;
+      left: 140px;
+      width: 44px;
+      height: 44px;
+      background: var(--coral-red);
+      border-radius: 10px;
+      transform: rotate(15deg);
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .art-capsule-ribbon-v {
+      position: absolute;
+      width: 8px;
+      height: 100%;
+      background: #FFF;
+    }
+
+    .art-capsule-ribbon-h {
+      position: absolute;
+      height: 8px;
+      width: 100%;
+      background: #FFF;
+    }
+
+    /* Connecting Sharing Arc Line */
+    .art-share-arc {
+      position: absolute;
+      top: 75px;
+      left: 75px;
+      width: 180px;
+      height: 100px;
+      border: 2px dashed rgba(56, 189, 248, 0.6);
+      border-color: rgba(56, 189, 248, 0.6) transparent transparent transparent;
+      border-radius: 50%/100px 100px 0 0;
+      transform: rotate(-10deg);
+    }
+
+    /* Toolbar */
+    .art-toolbar {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 16px;
+      padding: 0.85rem 1.25rem;
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    @media (min-width: 768px) {
+      .art-toolbar {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .tool-group-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .geo-loc-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--mint-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 0.35rem 0.85rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      min-height: 44px;
+    }
+
+    .geo-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .geo-pill {
+      min-height: 44px;
+      padding: 0 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid var(--border-line);
+      transition: all 0.2s;
+    }
+
+    .geo-pill:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .geo-pill.active {
+      background: var(--primary-cyan);
+      color: var(--bg-canvas);
+      border-color: var(--primary-cyan);
+      font-weight: 800;
+    }
+
+    .tool-group-right {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .geo-count {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 10px;
+      border: 1px solid var(--border-line);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .btn-geo-refresh {
+      min-height: 44px;
+      padding: 0 1.1rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-line);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s;
+    }
+
+    .btn-geo-refresh:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Cards Grid */
+    .art-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .art-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .art-cards-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .art-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.2s var(--ease), border-color 0.2s;
+    }
+
+    .art-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .art-card-thumb {
+      height: 180px;
+      background: #131D2D;
+      border-bottom: 1px solid var(--border-line);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      position: relative;
+    }
+
+    .art-card-thumb svg {
+      width: 34px;
+      height: 34px;
+      stroke: #475569;
+    }
+
+    .art-card-thumb span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748B;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.15rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .art-card-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .art-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .art-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .art-badge.available {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--mint-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .art-badge.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warm-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .art-badge.borrowed {
+      background: rgba(148, 163, 184, 0.1);
+      color: #64748B;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .art-distance {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary-cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .art-card-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--text-main);
+      text-wrap: balance;
+    }
+
+    .art-card-desc {
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+      flex: 1;
+    }
+
+    .art-card-meta {
+      border-top: 1px solid var(--border-line);
+      padding-top: 0.65rem;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748B;
+    }
+
+    .art-card-btns {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      border-top: 1px solid var(--border-line);
+    }
+
+    .btn-art-borrow {
+      min-height: 46px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--primary-cyan);
+      border: none;
+      border-right: 1px solid var(--border-line);
+      transition: background 0.2s;
+    }
+
+    .btn-art-borrow:hover:not(:disabled) {
+      background: var(--primary-cyan);
+      color: var(--bg-canvas);
+    }
+
+    .btn-art-borrow:disabled {
+      background: rgba(255, 255, 255, 0.02);
+      color: #475569;
+      cursor: not-allowed;
+    }
+
+    .btn-art-manage {
+      min-height: 46px;
+      padding: 0 1.2rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-art-manage:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-line);
+      border-radius: 20px;
+      padding: 2.5rem 1.5rem 2rem;
+    }
+
+    @media (min-width: 768px) {
+      footer {
+        padding: 3rem 2.5rem;
+      }
+    }
+
+    .footer-top-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border-line);
+    }
+
+    @media (min-width: 768px) {
+      .footer-top-box {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+    }
+
+    .footer-title-art {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary-cyan);
+    }
+
+    .footer-links-art {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .footer-link-btn {
+      min-height: 42px;
+      padding: 0 1rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid var(--border-line);
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .footer-link-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--primary-cyan);
+    }
+
+    .footer-copy-art {
+      padding-top: 1.5rem;
+      font-size: 0.82rem;
+      color: #64748B;
+      font-weight: 600;
+    }
+
+    /* Style Pill */
+    .style-pill {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      background: var(--panel-bg);
+      color: var(--primary-cyan);
+      border: 1px solid var(--primary-cyan);
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 700;
+      font-size: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      z-index: 9999;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Nav -->
+  <header>
+    <a href="#" class="brand-logo">
+      <div class="brand-art-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <path d="M3 9h18"></path>
+          <path d="M9 21V9"></path>
+        </svg>
+      </div>
+      <span>邻里好物</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#" class="nav-item active">首页</a>
+      <a href="#" class="nav-item">发布闲置</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section with Pure-CSS Geometry Art -->
+  <section class="hero-panel">
+    <div class="hero-content">
+      <div class="hero-badge-pill">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        社区闲置 · 互助共享
+      </div>
+      <h1 class="hero-title">
+        让好物在<span>邻里间流转</span>
+      </h1>
+      <p class="hero-desc">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+      <div class="hero-actions">
+        <a href="#" class="btn-action-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          发布我的闲置
+        </a>
+        <a href="#" class="btn-action-secondary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          浏览附近好物
+        </a>
+      </div>
+    </div>
+
+    <!-- Pure CSS Illustration -->
+    <div class="css-art-stage" aria-label="纯CSS社区与物品流转几何插画">
+      <div class="art-sun"></div>
+      <div class="art-share-arc"></div>
+      <div class="art-floating-capsule">
+        <div class="art-capsule-ribbon-v"></div>
+        <div class="art-capsule-ribbon-h"></div>
+      </div>
+      <div class="art-building-left">
+        <div class="art-window"></div>
+        <div class="art-window"></div>
+        <div class="art-window"></div>
+      </div>
+      <div class="art-cottage-center">
+        <div class="art-roof-triangle"></div>
+        <div class="art-door"></div>
+      </div>
+      <div class="art-tower-right"></div>
+      <div class="art-ground"></div>
+    </div>
+  </section>
+
+  <!-- Toolbar -->
+  <section class="art-toolbar">
+    <div class="tool-group-left">
+      <div class="geo-loc-badge">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        已定位
+      </div>
+      <div class="geo-pills" role="radiogroup" aria-label="距离筛选">
+        <button class="geo-pill" type="button">500m</button>
+        <button class="geo-pill active" type="button" aria-checked="true">1km</button>
+        <button class="geo-pill" type="button">3km</button>
+        <button class="geo-pill" type="button">全部</button>
+      </div>
+    </div>
+    <div class="tool-group-right">
+      <div class="geo-count">共 6 件闲置</div>
+      <button class="btn-geo-refresh" type="button" aria-label="刷新好物列表">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M23 4v6h-6"></path>
+          <path d="M1 20v-6h6"></path>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+        刷新
+      </button>
+    </div>
+  </section>
+
+  <!-- Cards Grid -->
+  <main class="art-cards-grid">
+    <!-- Card 1 -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge available">闲置中</span>
+          <span class="art-distance">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            240m
+          </span>
+        </div>
+        <h2 class="art-card-title">戴森V8吸尘器</h2>
+        <p class="art-card-desc">九成新，滤芯上周刚换，可借周末</p>
+        <div class="art-card-meta">
+          <span>3栋1801</span>
+          <span>6月12日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 2 -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge pending">待确认</span>
+          <span class="art-distance">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            480m
+          </span>
+        </div>
+        <h2 class="art-card-title">儿童滑板车</h2>
+        <p class="art-card-desc">孩子长大了出闲置，轮子顺滑</p>
+        <div class="art-card-meta">
+          <span>5栋602</span>
+          <span>6月10日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 3 -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge available">闲置中</span>
+          <span class="art-distance">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            1.2km
+          </span>
+        </div>
+        <h2 class="art-card-title">露营四人间帐篷</h2>
+        <p class="art-card-desc">含防潮垫，借前沟通行程</p>
+        <div class="art-card-meta">
+          <span>7栋101</span>
+          <span>6月8日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 4 (Borrowed - Disabled) -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge borrowed">已借出</span>
+          <span class="art-distance" style="color: #64748B;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            350m
+          </span>
+        </div>
+        <h2 class="art-card-title" style="color: #64748B;">电钻+全套钻头</h2>
+        <p class="art-card-desc" style="color: #475569;">家庭维修神器，归还时附使用心得</p>
+        <div class="art-card-meta">
+          <span>2栋1203</span>
+          <span>6月5日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow" disabled aria-disabled="true">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 5 -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge available">闲置中</span>
+          <span class="art-distance">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            890m
+          </span>
+        </div>
+        <h2 class="art-card-title">英文原版绘本30册</h2>
+        <p class="art-card-desc">适合3-6岁，整套借阅</p>
+        <div class="art-card-meta">
+          <span>8栋1502</span>
+          <span>6月3日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+
+    <!-- Card 6 -->
+    <article class="art-card">
+      <div class="art-card-thumb">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="0"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg>
+        <span>实物图</span>
+      </div>
+      <div class="art-card-content">
+        <div class="art-status-row">
+          <span class="art-badge available">闲置中</span>
+          <span class="art-distance">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polygon points="12 6 12 12 16 14"></polygon></svg>
+            150m
+          </span>
+        </div>
+        <h2 class="art-card-title">小米加湿器4L</h2>
+        <p class="art-card-desc">静音，送两根新滤芯</p>
+        <div class="art-card-meta">
+          <span>1栋801</span>
+          <span>6月1日</span>
+        </div>
+      </div>
+      <div class="art-card-btns">
+        <button type="button" class="btn-art-borrow">我想借</button>
+        <button type="button" class="btn-art-manage">管理</button>
+      </div>
+    </article>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-top-box">
+      <div class="footer-title-art">邻里好物 · 让闲置在邻里间发光发热</div>
+      <nav class="footer-links-art">
+        <a href="#" class="footer-link-btn">首页</a>
+        <a href="#" class="footer-link-btn">发布闲置</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="footer-link-btn">GitHub</a>
+      </nav>
+    </div>
+    <div class="footer-copy-art">
+      由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物
+    </div>
+  </footer>
+</div>
+
+<!-- Persistent Style Tag -->
+<div class="style-pill">05 · 纯CSS几何插画</div>
+
+</body>
+</html>

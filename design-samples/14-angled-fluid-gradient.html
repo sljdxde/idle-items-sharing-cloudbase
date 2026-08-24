@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 · 社区闲置物品分享（斜切流体渐变带）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-indigo: #635BFF;
+      --brand-indigo-dark: #4F46E5;
+      --bg-light: #F8FAFC;
+      --bg-white: #FFFFFF;
+      --text-dark: #0F172A;
+      --text-body: #334155;
+      --text-muted: #64748B;
+      --border-color: #E2E8F0;
+      --border-focus: #CBD5E1;
+      --badge-avail-bg: #ECFDF5;
+      --badge-avail-border: #A7F3D0;
+      --badge-avail-text: #059669;
+      --badge-pending-bg: #FFFBEB;
+      --badge-pending-border: #FDE68A;
+      --badge-pending-text: #D97706;
+      --badge-lent-bg: #F1F5F9;
+      --badge-lent-border: #CBD5E1;
+      --badge-lent-text: #64748B;
+      --font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-light);
+      color: var(--text-body);
+      font-family: var(--font-family);
+      font-size: 15px;
+      line-height: 1.65;
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-break: strict;
+      font-variant-numeric: tabular-nums;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+      position: relative;
+    }
+
+    /* Fluid Animated Gradient Header & Hero Container */
+    .fluid-hero-wrapper {
+      position: relative;
+      background: linear-gradient(135deg, #635BFF 0%, #00D4FF 35%, #FF5894 70%, #FF8F3D 100%);
+      background-size: 300% 300%;
+      animation: gradientFlow 14s ease infinite alternate;
+      color: #FFFFFF;
+      padding-bottom: 5rem;
+    }
+
+    @keyframes gradientFlow {
+      0% {
+        background-position: 0% 30%;
+      }
+      50% {
+        background-position: 100% 70%;
+      }
+      100% {
+        background-position: 0% 30%;
+      }
+    }
+
+    /* Slanted Diagonal Divider */
+    .fluid-hero-wrapper::after {
+      content: '';
+      position: absolute;
+      bottom: -40px;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background-color: var(--bg-light);
+      clip-path: polygon(0 50%, 100% 0%, 100% 100%, 0 100%);
+      z-index: 10;
+    }
+
+    /* Navigation Bar */
+    .nav-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 23, 42, 0.2);
+    }
+
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+    }
+
+    .brand-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-glyph {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-menu {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .nav-item-link {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.9);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      position: relative;
+      transition: all 0.2s var(--ease-fluid);
+    }
+
+    .nav-item-link:hover, .nav-item-link.active {
+      color: #FFFFFF;
+    }
+
+    .nav-item-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #FFFFFF;
+      border-radius: 2px;
+    }
+
+    /* Hero Main Section */
+    .hero-content {
+      padding: 3.5rem 0 4rem;
+      max-width: 800px;
+    }
+
+    .hero-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 9999px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .hero-main-title {
+      font-size: clamp(2.15rem, 5vw, 3.4rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      margin-bottom: 1.25rem;
+      text-wrap: balance;
+      color: #FFFFFF;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hero-sub-text {
+      font-size: 1.1rem;
+      line-height: 1.75;
+      color: rgba(255, 255, 255, 0.92);
+      margin-bottom: 2.25rem;
+      max-width: 660px;
+    }
+
+    .hero-cta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .btn-action-primary {
+      min-height: 48px;
+      padding: 0 1.75rem;
+      background: #FFFFFF;
+      color: var(--brand-indigo-dark);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+      transition: all 0.25s var(--ease-fluid);
+    }
+
+    .btn-action-primary:hover {
+      background: #F8FAFC;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-action-secondary {
+      min-height: 48px;
+      padding: 0 1.5rem;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 8px;
+      font-size: 0.9375rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.25s var(--ease-fluid);
+    }
+
+    .btn-action-secondary:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: translateY(-2px);
+    }
+
+    /* Main Structured Content */
+    .content-section {
+      position: relative;
+      z-index: 20;
+      padding-top: 2rem;
+      padding-bottom: 5rem;
+    }
+
+    /* Structured Toolbar Panel */
+    .filter-dashboard {
+      background: var(--bg-white);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .filter-row-primary {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .gps-state-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-dark);
+      background: #F1F5F9;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .gps-pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--brand-indigo);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--brand-indigo);
+    }
+
+    .distance-button-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .btn-distance-pill {
+      min-height: 44px;
+      padding: 0 1.125rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-body);
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s var(--ease-fluid);
+      white-space: nowrap;
+    }
+
+    .btn-distance-pill:hover {
+      color: var(--text-dark);
+      border-color: var(--brand-indigo);
+      background: #FFFFFF;
+    }
+
+    .btn-distance-pill.active {
+      background: var(--brand-indigo);
+      color: #FFFFFF;
+      border-color: var(--brand-indigo-dark);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(99, 91, 255, 0.3);
+    }
+
+    .filter-row-secondary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .items-total-info {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .items-total-info strong {
+      color: var(--text-dark);
+      font-weight: 700;
+    }
+
+    .btn-tool-refresh {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 44px;
+      padding: 0 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-body);
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      transition: all 0.2s var(--ease-fluid);
+    }
+
+    .btn-tool-refresh:hover {
+      color: var(--brand-indigo);
+      border-color: var(--brand-indigo);
+    }
+
+    .btn-tool-refresh svg {
+      transition: transform 0.4s var(--ease-fluid);
+    }
+
+    .btn-tool-refresh:hover svg {
+      transform: rotate(180deg);
+    }
+
+    /* Item Cards Grid */
+    .goods-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .goods-card {
+      background: var(--bg-white);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.25s var(--ease-fluid);
+    }
+
+    .goods-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+      border-color: #CBD5E1;
+    }
+
+    .goods-card-figure {
+      height: 165px;
+      background: #F1F5F9;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      position: relative;
+    }
+
+    .goods-card-figure svg {
+      width: 28px;
+      height: 28px;
+      stroke-width: 1.5;
+    }
+
+    .figure-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .goods-card-content {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card-top-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .goods-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.4;
+      text-wrap: balance;
+    }
+
+    .status-fluid-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .status-fluid-pill.state-avail {
+      background: var(--badge-avail-bg);
+      border: 1px solid var(--badge-avail-border);
+      color: var(--badge-avail-text);
+    }
+
+    .status-fluid-pill.state-pending {
+      background: var(--badge-pending-bg);
+      border: 1px solid var(--badge-pending-border);
+      color: var(--badge-pending-text);
+    }
+
+    .status-fluid-pill.state-lent {
+      background: var(--badge-lent-bg);
+      border: 1px solid var(--badge-lent-border);
+      color: var(--badge-lent-text);
+    }
+
+    .goods-description {
+      font-size: 0.875rem;
+      color: var(--text-body);
+      line-height: 1.6;
+      margin-bottom: 1.25rem;
+      flex: 1;
+    }
+
+    .goods-meta-info {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0;
+      border-top: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .meta-sub-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .meta-entry {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .meta-entry svg {
+      color: var(--brand-indigo);
+    }
+
+    .card-footer-buttons {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.75rem;
+    }
+
+    .btn-item-borrow {
+      min-height: 44px;
+      padding: 0 1.25rem;
+      background: rgba(99, 91, 255, 0.08);
+      color: var(--brand-indigo-dark);
+      border: 1px solid rgba(99, 91, 255, 0.2);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease-fluid);
+    }
+
+    .btn-item-borrow:hover:not(:disabled) {
+      background: var(--brand-indigo);
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(99, 91, 255, 0.25);
+    }
+
+    .btn-item-borrow:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: var(--bg-light);
+      border-color: var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-item-manage {
+      min-height: 44px;
+      padding: 0 1rem;
+      background: #FFFFFF;
+      color: var(--text-body);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease-fluid);
+    }
+
+    .btn-item-manage:hover {
+      color: var(--text-dark);
+      border-color: var(--text-muted);
+      background: var(--bg-light);
+    }
+
+    /* Structured Footer */
+    .site-colophon-footer {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border-color);
+      padding: 3.5rem 0 4.5rem;
+      margin-top: 3rem;
+    }
+
+    .colophon-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 1.25rem;
+    }
+
+    .footer-core-phrase {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .footer-anchor-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+    }
+
+    .footer-nav-link {
+      font-size: 0.875rem;
+      color: var(--text-body);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      transition: color 0.2s var(--ease-fluid);
+    }
+
+    .footer-nav-link:hover {
+      color: var(--brand-indigo);
+    }
+
+    .footer-meta-line {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* Fixed Floating Style Badge */
+    .style-spec-tag {
+      position: fixed;
+      bottom: 1.25rem;
+      right: 1.25rem;
+      z-index: 100;
+      background: #FFFFFF;
+      border: 1px solid var(--border-color);
+      color: var(--text-dark);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .style-spec-tag::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #635BFF, #FF5894);
+    }
+
+    /* Grid Breakpoints */
+    @media (min-width: 680px) {
+      .goods-grid-layout {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .filter-dashboard {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .filter-row-primary {
+        flex: 1;
+      }
+      .filter-row-secondary {
+        padding-top: 0;
+        border-top: none;
+        gap: 1.25rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .goods-grid-layout {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.75rem;
+      }
+      .hero-content {
+        padding: 4.5rem 0 5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero with Fluid Animated Gradient -->
+  <div class="fluid-hero-wrapper">
+    <!-- Sticky Nav -->
+    <header class="nav-header">
+      <div class="container nav-container">
+        <a href="#" class="brand-title">
+          <span class="brand-glyph">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </span>
+          <span>邻里好物</span>
+        </a>
+
+        <nav class="nav-menu">
+          <a href="#" class="nav-item-link active">首页</a>
+          <a href="#" class="nav-item-link">发布闲置</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Hero Content -->
+    <div class="container">
+      <section class="hero-content">
+        <div class="hero-badge-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+          <span>社区闲置 · 互助共享</span>
+        </div>
+
+        <h1 class="hero-main-title">让好物在邻里间流转</h1>
+        <p class="hero-sub-text">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+
+        <div class="hero-cta-bar">
+          <button class="btn-action-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>发布我的闲置</span>
+          </button>
+          <button class="btn-action-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>浏览附近好物</span>
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Main Structured Section -->
+  <main class="content-section">
+    <div class="container">
+      <!-- Toolbar -->
+      <section class="filter-dashboard">
+        <div class="filter-row-primary">
+          <div class="gps-state-badge">
+            <span class="gps-pulse-dot"></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>已定位</span>
+          </div>
+
+          <div class="distance-button-group">
+            <button class="btn-distance-pill">500m</button>
+            <button class="btn-distance-pill active">1km</button>
+            <button class="btn-distance-pill">3km</button>
+            <button class="btn-distance-pill">全部</button>
+          </div>
+        </div>
+
+        <div class="filter-row-secondary">
+          <div class="items-total-info">共 <strong>6</strong> 件闲置</div>
+          <button class="btn-tool-refresh">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>刷新</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Items Grid -->
+      <section class="goods-grid-layout">
+        <!-- Item 1 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">戴森V8吸尘器</h2>
+              <span class="status-fluid-pill state-avail">闲置中</span>
+            </div>
+            <p class="goods-description">九成新，滤芯上周刚换，可借周末</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  3栋1801
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  240m
+                </span>
+              </div>
+              <span>6月12日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow">我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Item 2 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">儿童滑板车</h2>
+              <span class="status-fluid-pill state-pending">待确认</span>
+            </div>
+            <p class="goods-description">孩子长大了出闲置，轮子顺滑</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  5栋602
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  480m
+                </span>
+              </div>
+              <span>6月10日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow">我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Item 3 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">露营四人间帐篷</h2>
+              <span class="status-fluid-pill state-avail">闲置中</span>
+            </div>
+            <p class="goods-description">含防潮垫，借前沟通行程</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  7栋101
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  1.2km
+                </span>
+              </div>
+              <span>6月8日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow">我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Item 4 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">电钻+全套钻头</h2>
+              <span class="status-fluid-pill state-lent">已借出</span>
+            </div>
+            <p class="goods-description">家庭维修神器，归还时附使用心得</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  2栋1203
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  350m
+                </span>
+              </div>
+              <span>6月5日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow" disabled>我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Item 5 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">英文原版绘本30册</h2>
+              <span class="status-fluid-pill state-avail">闲置中</span>
+            </div>
+            <p class="goods-description">适合3-6岁，整套借阅</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  8栋1502
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  890m
+                </span>
+              </div>
+              <span>6月3日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow">我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+
+        <!-- Item 6 -->
+        <article class="goods-card">
+          <div class="goods-card-figure">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <span class="figure-label">实物图</span>
+          </div>
+          <div class="goods-card-content">
+            <div class="card-top-header">
+              <h2 class="goods-title">小米加湿器4L</h2>
+              <span class="status-fluid-pill state-avail">闲置中</span>
+            </div>
+            <p class="goods-description">静音，送两根新滤芯</p>
+            <div class="goods-meta-info">
+              <div class="meta-sub-group">
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                  1栋801
+                </span>
+                <span class="meta-entry">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  150m
+                </span>
+              </div>
+              <span>6月1日</span>
+            </div>
+            <div class="card-footer-buttons">
+              <button class="btn-item-borrow">我想借</button>
+              <button class="btn-item-manage">管理</button>
+            </div>
+          </div>
+        </article>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-colophon-footer">
+    <div class="container colophon-container">
+      <p class="footer-core-phrase">邻里好物 · 让闲置在邻里间发光发热</p>
+      <nav class="footer-anchor-list">
+        <a href="#" class="footer-nav-link">首页</a>
+        <a href="#" class="footer-nav-link">发布闲置</a>
+        <a href="#" class="footer-nav-link">GitHub</a>
+      </nav>
+      <p class="footer-meta-line">由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</p>
+    </div>
+  </footer>
+
+  <!-- Style Specification Badge -->
+  <div class="style-spec-tag">14 · 斜切流体渐变带</div>
+</body>
+</html>
