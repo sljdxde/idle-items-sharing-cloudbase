@@ -45,7 +45,6 @@ jobs:
                 let d = {};
                 const m = issue.body ? issue.body.match(DATA_RE) : null;
                 if (m && m[1]) { try { d = JSON.parse(m[1].trim()); } catch (e) {} }
-                const isLent = (issue.labels || []).some(l => l.name === 'lent');
                 return {
                   id: issue.number,
                   name: d.name || issue.title || '未知物品',
@@ -59,7 +58,9 @@ jobs:
                     const _im = issue.body && issue.body.match(/https:\/\/user-images\.githubusercontent\.com\/[^\s)>"']+/);
                     return _im ? _im[0] : '';
                   })(),
-                  status: d.status || (isLent ? 'borrowed' : 'available'),
+                  status: (issue.labels || []).some(l => l.name === 'lent')
+                    ? 'borrowed'
+                    : (d.status || 'available'),
                   category: d.category || '',
                   requests: Array.isArray(d.requests) ? d.requests : [],
                   pinCipher: d.pinCipher || '',

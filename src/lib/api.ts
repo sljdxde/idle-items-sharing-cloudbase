@@ -16,7 +16,7 @@ const DATA_RE = /<!--DATA_START([\s\S]*?)DATA_END-->/
 
 // ─── 内部：解析 ───
 
-interface RawIssue {
+export interface RawIssue {
   number: number
   title?: string
   body?: string | null
@@ -25,11 +25,14 @@ interface RawIssue {
 }
 
 function statusFrom(d: Partial<Item>, issue: RawIssue): ItemStatus {
+  // lent 标签是物主的显式操作，优先级最高（覆盖 DATA 块里的历史状态）；
+  // 无标签时回退 DATA 状态；都没有则 available。
+  const lent = (issue.labels ?? []).some((l) => l.name === 'lent')
+  if (lent) return 'borrowed'
   if (d.status === 'available' || d.status === 'requested' || d.status === 'borrowed') {
     return d.status
   }
-  const lent = (issue.labels ?? []).some((l) => l.name === 'lent')
-  return lent ? 'borrowed' : 'available'
+  return 'available'
 }
 
 export function parseIssue(issue: RawIssue): Item | null {
