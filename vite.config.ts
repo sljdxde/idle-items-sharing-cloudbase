@@ -15,6 +15,8 @@ export default defineConfig({
   },
   build: {
     sourcemap: false,
+    // 容器内可能是较老的系统 WebView，显式降目标以转译 ?. / ?? 等新语法
+    target: 'es2018',
     rollupOptions: {
       output: {
         format: 'iife',

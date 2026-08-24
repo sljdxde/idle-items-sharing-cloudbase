@@ -8,6 +8,11 @@ import { SEED_ITEMS } from './seed'
 
 const STORAGE_KEY = 'linli_haowu_items_v1'
 
+/** 深拷贝：structuredClone 在老 WebView（<Chrome98/Safari15.4）缺失，用 JSON 兜底 */
+function deepClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
 function revive(raw: string): Item[] | null {
   try {
     const parsed = JSON.parse(raw)
@@ -28,7 +33,7 @@ export function loadItems(): Item[] {
     items = null // 隐私模式等场景：退化为内存态
   }
   if (!items || items.length === 0) {
-    items = structuredClone(SEED_ITEMS)
+    items = deepClone(SEED_ITEMS)
     saveItems(items)
   }
   return items
