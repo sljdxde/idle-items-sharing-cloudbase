@@ -1,19 +1,19 @@
 [
   {
-    "id": 5,
-    "name": "【E2E】旧台灯一盏",
-    "desc": "灯罩略旧（E2E测试物品C）",
+    "id": 4,
+    "name": "【E2E】小米加湿器4L",
+    "desc": "静音，送滤芯（E2E测试物品B）",
     "contact": "微信 owner-test",
     "building": "7栋101",
     "lat": 30.2741,
     "lng": 120.1551,
     "imgUrl": "",
     "status": "available",
-    "category": "home",
+    "category": "electronics",
     "requests": [],
     "pinCipher": "",
     "hasLegacyPin": false,
-    "createTime": "2026-08-24T06:55:53Z"
+    "createTime": "2026-08-24T06:55:50Z"
   },
   {
     "id": 3,
