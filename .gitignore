@@ -8,3 +8,10 @@ node_modules/
 
 # 本地记忆与内部数据（不入库）
 .workbuddy/
+
+# 构建产物
+dist/
+
+# 本地打包与 TS 增量缓存
+design-samples.zip
+*.tsbuildinfo

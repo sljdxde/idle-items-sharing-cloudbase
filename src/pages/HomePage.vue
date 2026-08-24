@@ -1,0 +1,386 @@
+<script setup lang="ts">
+// ================================================
+// HomePage — Hero 拼贴 + 工具栏（搜索/分类/距离）+ 卡片网格
+// ================================================
+
+import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
+import { useItemsStore } from '@/stores/items'
+import { locateForHome } from '@/composables/useGeolocation'
+import { useToast } from '@/composables/useToast'
+import { calcDistance } from '@/lib/filters'
+import type { Item } from '@/lib/types'
+import FilterToolbar from '@/components/FilterToolbar.vue'
+import ItemCard from '@/components/ItemCard.vue'
+import BorrowModal from '@/components/BorrowModal.vue'
+import ManageModal from '@/components/ManageModal.vue'
+
+const store = useItemsStore()
+const toast = useToast()
+
+const borrowItem = ref<Item | null>(null)
+const manageItem = ref<Item | null>(null)
+
+onMounted(async () => {
+  await store.load()
+  await locateForHome()
+})
+
+/** 距离换算：给卡片渲染用 */
+const distances = computed<Map<number, number>>(() => {
+  const m = new Map<number, number>()
+  const u = store.userLoc
+  if (!u) return m
+  for (const it of store.visibleItems) {
+    if (it.lat != null && it.lng != null) {
+      m.set(it.id, calcDistance(u.lat, u.lng, it.lat, it.lng))
+    }
+  }
+  return m
+})
+
+async function onRefresh(): Promise<void> {
+  await store.load(true)
+  toast.success('已刷新', '已拉取最新物品')
+}
+</script>
+
+<template>
+  <main class="memphis-container home-main">
+    <!-- Hero：拼贴卡 -->
+    <section class="memphis-hero">
+      <div class="hero-collage-card">
+        <span class="hero-tape t1" aria-hidden="true"></span>
+        <span class="hero-tape t2" aria-hidden="true"></span>
+        <div class="hero-badge-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            aria-hidden="true">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          社区闲置 · 互助共享
+        </div>
+        <h1 class="hero-headline">让好物在<span class="retro-tag">邻里间流转</span></h1>
+        <p class="hero-subhead">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+        <div class="hero-button-group">
+          <RouterLink to="/publish" class="btn-memphis-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            发布我的闲置
+          </RouterLink>
+          <a href="#item-grid" class="btn-memphis-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            浏览附近好物
+          </a>
+        </div>
+      </div>
+
+      <!-- 几何漂浮装饰 -->
+      <span class="deco-circle" aria-hidden="true"></span>
+      <span class="deco-triangle" aria-hidden="true"></span>
+    </section>
+
+    <!-- 工具栏：搜索 / 分类 / 距离 / 刷新 -->
+    <FilterToolbar @refresh="onRefresh" />
+
+    <!-- 加载态 -->
+    <div v-if="store.loading && !store.loaded" class="loading-box">
+      <span class="loading-block b1"></span>
+      <span class="loading-block b2"></span>
+      <span class="loading-block b3"></span>
+      <p>正在加载物品列表…</p>
+    </div>
+
+    <p v-else-if="store.error" class="error-box">加载失败：{{ store.error }}<br>点右上角「刷新」重试。</p>
+
+    <!-- 空状态 -->
+    <div v-else-if="store.visibleItems.length === 0" class="empty-box">
+      <div class="empty-geom" aria-hidden="true">
+        <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
+      </div>
+      <template v-if="store.search || store.category !== 'all'">
+        <h2 class="empty-title">没找到匹配的好物</h2>
+        <p class="empty-desc">换个关键词，或清除筛选条件试试。</p>
+        <button type="button" class="btn-memphis-secondary"
+          @click="store.search = ''; store.setCategory('all')">清除筛选</button>
+      </template>
+      <template v-else>
+        <h2 class="empty-title">附近暂无闲置物品</h2>
+        <p class="empty-desc">成为第一个分享好物的人吧。</p>
+        <RouterLink to="/publish" class="btn-memphis-primary">发布第一件</RouterLink>
+      </template>
+    </div>
+
+    <!-- 网格 -->
+    <section id="item-grid" class="memphis-grid" aria-label="闲置物品列表">
+      <TransitionGroup name="grid">
+        <div v-for="(item, i) in store.visibleItems" :key="item.id" class="grid-cell">
+          <ItemCard :item="item" :index="i" :distance-meters="distances.get(item.id) ?? null"
+            @borrow="borrowItem = $event" @manage="manageItem = $event" />
+        </div>
+      </TransitionGroup>
+    </section>
+
+    <BorrowModal :open="borrowItem !== null" :item="borrowItem" @close="borrowItem = null" />
+    <ManageModal :open="manageItem !== null" :item="manageItem" @close="manageItem = null" />
+  </main>
+</template>
+
+<style scoped>
+.home-main {
+  padding-top: 0.5rem;
+}
+
+/* ── Hero ── */
+.memphis-hero {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.hero-collage-card {
+  position: relative;
+  background: var(--paper-cream);
+  border: 3px solid var(--ink);
+  box-shadow: 8px 8px 0 var(--mustard);
+  padding: clamp(1.6rem, 4vw, 3rem);
+  transform: rotate(-0.6deg);
+}
+
+.hero-tape {
+  position: absolute;
+  width: 92px;
+  height: 22px;
+  background: rgba(244, 162, 97, 0.75);
+  border: 1px solid var(--ink);
+  z-index: 5;
+}
+
+.hero-tape.t1 {
+  top: -12px;
+  left: 8%;
+  transform: rotate(-4deg);
+}
+
+.hero-tape.t2 {
+  bottom: -10px;
+  right: 10%;
+  transform: rotate(3deg);
+}
+
+.hero-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  background: var(--bg-cream);
+  box-shadow: 2px 2px 0 var(--ink);
+  padding: 0.3rem 0.7rem;
+  margin-bottom: 1.1rem;
+}
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(2.1rem, 5.5vw, 3.6rem);
+  line-height: 1.15;
+  text-wrap: balance;
+  margin-bottom: 0.9rem;
+}
+
+.retro-tag {
+  display: inline-block;
+  background: var(--mustard);
+  border: 2.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--retro-red);
+  padding: 0 0.35em;
+  transform: rotate(-1.5deg) scale(1.03);
+}
+
+.hero-subhead {
+  max-width: 36em;
+  color: #444;
+  margin-bottom: 1.5rem;
+}
+
+.hero-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+/* 漂浮几何 */
+.deco-circle {
+  position: absolute;
+  top: -16px;
+  right: 4%;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--royal-blue);
+  border: 3px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: rotate(6deg);
+  z-index: 6;
+}
+
+.deco-triangle {
+  position: absolute;
+  bottom: -14px;
+  left: 38%;
+  width: 0;
+  height: 0;
+  border-left: 22px solid transparent;
+  border-right: 22px solid transparent;
+  border-bottom: 38px solid var(--salmon);
+  filter: drop-shadow(3px 3px 0 rgba(29, 30, 44, 0.9));
+  z-index: 6;
+}
+
+@media (max-width: 640px) {
+
+  .deco-circle,
+  .deco-triangle {
+    display: none;
+  }
+}
+
+/* ── 网格 ── */
+.memphis-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.6rem 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .memphis-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .memphis-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.grid-cell {
+  display: flex;
+}
+
+.grid-cell > * {
+  width: 100%;
+}
+
+/* ── 加载 / 错误 / 空状态 ── */
+.loading-box,
+.error-box,
+.empty-box {
+  background: var(--paper-cream);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0 var(--royal-blue);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  transform: rotate(-0.4deg);
+}
+
+.error-box {
+  box-shadow: 6px 6px 0 var(--retro-red);
+  color: #7c2d12;
+  line-height: 1.8;
+}
+
+.loading-blocks {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.loading-box .loading-block {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--ink);
+  animation: hop 0.9s var(--ease) infinite;
+}
+
+.loading-block.b1 {
+  background: var(--retro-red);
+}
+
+.loading-block.b2 {
+  background: var(--mustard);
+  animation-delay: 0.12s !important;
+}
+
+.loading-block.b3 {
+  background: var(--royal-blue);
+  animation-delay: 0.24s !important;
+}
+
+@keyframes hop {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  40% {
+    transform: translateY(-10px) rotate(8deg);
+  }
+}
+
+.empty-geom {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.empty-geom span {
+  display: inline-block;
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.e-sq {
+  width: 26px;
+  height: 26px;
+  background: var(--retro-red);
+  transform: rotate(-8deg);
+}
+
+.e-ci {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--royal-blue);
+}
+
+.e-tr {
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-bottom: 28px solid var(--mustard);
+  filter: drop-shadow(2px 2px 0 var(--ink));
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+}
+
+.empty-desc {
+  color: #555;
+}
+</style>

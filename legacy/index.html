@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>邻里好物 — 社区闲置互助</title>
+  <meta name="description" content="让好物在邻里间流转，发现小区邻居的闲置好物">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <h1 class="logo">
+        <span class="logo-mark" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M9.5 19v-5h5v5"/></svg>
+        </span>
+        邻里好物
+      </h1>
+      <div class="nav-links">
+        <a href="index.html" class="active">首页</a>
+        <a href="publish.html" class="btn-publish">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          发布闲置
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero 区域 -->
+  <section class="hero">
+    <span class="hero-badge">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M16 18a4 4 0 0 0-8 0"/><circle cx="12" cy="8" r="3.2"/><path d="M20.5 18a3.5 3.5 0 0 0-5-3.2M3.5 18a3.5 3.5 0 0 1 5-3.2"/></svg>
+      社区闲置 · 互助共享
+    </span>
+    <h2>让好物在邻里间流转</h2>
+    <p>发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+    <div class="hero-actions">
+      <a href="publish.html" class="btn btn-primary btn-lg">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        发布我的闲置
+      </a>
+      <a href="#item-list" class="btn btn-default btn-lg">浏览附近好物</a>
+    </div>
+  </section>
+
+  <!-- 工具栏：定位状态 + 距离筛选 + 结果计数 -->
+  <div class="toolbar">
+    <div class="location-status" id="locationStatus">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      <span id="locationText">正在定位…</span>
+    </div>
+    <div class="toolbar-right">
+      <div class="segmented" role="group" aria-label="距离筛选">
+        <span class="filter-pill" data-range="500" onclick="setRange(500)">500m</span>
+        <span class="filter-pill active" data-range="1000" onclick="setRange(1000)">1km</span>
+        <span class="filter-pill" data-range="3000" onclick="setRange(3000)">3km</span>
+        <span class="filter-pill" data-range="0" onclick="setRange(0)">全部</span>
+      </div>
+      <span class="results-count" id="resultsCount"></span>
+      <button class="btn-refresh" id="btnRefresh" type="button" onclick="refreshList()" title="刷新列表" aria-label="刷新列表">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <main class="container">
+    <div id="loading" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>正在加载物品列表…</p>
+    </div>
+
+    <div id="item-list" class="item-grid" style="display: none;">
+      <!-- 卡片由 JS 动态渲染 -->
+    </div>
+
+    <div id="empty-state" class="empty-state" style="display: none;">
+      <div class="empty-illustration" aria-hidden="true">
+        <svg class="icon" viewBox="0 0 64 64"><path d="M8 24 32 10l24 14"/><path d="M12 22v22l20 12 20-12V22"/><path d="M32 34v22"/><path d="M12 44l20-12 20 12"/></svg>
+      </div>
+      <div class="empty-title">附近暂无闲置物品</div>
+      <div class="empty-desc">成为第一个分享好物的人，<a href="publish.html">发布第一件</a>吧。</div>
+    </div>
+  </main>
+
+  <!-- 借阅申请弹窗 -->
+  <div id="borrowModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <svg class="modal-icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg>
+          <div>
+            <h3>联系物主</h3>
+            <div class="modal-sub">直接联系取物，或在 GitHub 沟通</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeBorrowModal()" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="borrowBody"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeBorrowModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 管理弹窗（物主） -->
+  <div id="manageModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <svg class="modal-icon" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6Z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+          <div>
+            <h3>物品管理</h3>
+            <div class="modal-sub">在 GitHub 完成借出 / 归还 / 下架</div>
+          </div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeManageModal()" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="manageBody"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-cancel" onclick="closeManageModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页脚 -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <span class="logo-mark" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/><path d="M9.5 19v-5h5v5"/></svg>
+          </span>
+          邻里好物
+        </div>
+        <div class="footer-tag">让闲置在邻里间发光发热</div>
+      </div>
+      <nav class="footer-links">
+        <a href="index.html">首页</a>
+        <a href="publish.html">发布闲置</a>
+        <a href="https://github.com/sljdxde/idle-items-sharing-cloudbase" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+    </div>
+    <div class="footer-copy">由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</div>
+  </footer>
+
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      initApp('index');
+    });
+  </script>
+</body>
+
+</html>

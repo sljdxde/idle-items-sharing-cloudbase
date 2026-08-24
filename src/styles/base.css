@@ -1,0 +1,257 @@
+/* ============================================================
+   邻里好物 v2 · 全局基础样式与共享 Memphis 组件类
+   （卡片/按钮/徽标/筛选 chip 的完整样式在各 SFC scoped 内；
+    这里只放跨页面复用的原语，避免重复声明。）
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg-cream);
+  /* 孟菲斯双色网点底纹 */
+  background-image:
+    radial-gradient(var(--salmon) 1.5px, transparent 1.5px),
+    radial-gradient(var(--royal-blue) 1.5px, transparent 1.5px);
+  background-size: 36px 36px, 72px 72px;
+  background-position: 0 0, 18px 18px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.7;
+  line-break: strict;
+  overflow-wrap: break-word;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+:focus-visible {
+  outline: 3px solid var(--royal-blue);
+  outline-offset: 2px;
+}
+
+/* ── 容器 ── */
+.memphis-container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .memphis-container {
+    padding: 1.75rem 1.5rem;
+  }
+}
+
+/* ── 共享按钮原语 ── */
+.btn-memphis-primary,
+.btn-memphis-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.7rem 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: 2.5px solid var(--ink);
+  transition:
+    transform 0.2s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background var(--ease-snap),
+    color var(--ease-snap);
+}
+
+.btn-memphis-primary {
+  background: var(--retro-purple);
+  color: #fff;
+  box-shadow: 4px 4px 0 var(--retro-red);
+}
+
+.btn-memphis-primary:hover {
+  background: var(--retro-red);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btn-memphis-secondary {
+  background: var(--paper-cream);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--royal-blue);
+}
+
+.btn-memphis-secondary:hover {
+  background: var(--mustard);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btn-memphis-primary:active,
+.btn-memphis-secondary:active {
+  transform: translate(2px, 2px) scale(0.98);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* ── 共享 chip 原语 ── */
+.memphis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.45rem 0.85rem;
+  background: var(--paper-cream);
+  border: 2px solid var(--ink);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ── 状态徽标 ── */
+.badge-status {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border: 1.5px solid var(--ink);
+  box-shadow: 1.5px 1.5px 0 var(--ink);
+}
+
+.badge-status.available {
+  background: var(--mustard);
+  color: var(--ink);
+}
+
+.badge-status.pending {
+  background: var(--salmon);
+  color: var(--ink);
+}
+
+.badge-status.borrowed {
+  background: #d5d5d5;
+  color: #666;
+}
+
+/* ── 表单控件（发布页等复用） ── */
+.memphis-input,
+.memphis-textarea,
+.memphis-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  background: var(--paper-cream);
+  border: 2.5px solid var(--ink);
+  color: var(--ink);
+  transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+}
+
+.memphis-input:hover,
+.memphis-textarea:hover,
+.memphis-select:hover {
+  box-shadow: 3px 3px 0 var(--mustard);
+}
+
+.memphis-input:focus,
+.memphis-textarea:focus,
+.memphis-select:focus {
+  outline: none;
+  box-shadow: 4px 4px 0 var(--royal-blue);
+}
+
+.memphis-textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+
+/* ── 弹窗过渡（Teleport 模态共用） ── */
+.modal-fade-enter-active {
+  transition: opacity 0.22s var(--ease);
+}
+
+.modal-fade-leave-active {
+  transition: opacity 0.18s ease-in;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-pop-enter-active {
+  transition:
+    transform 0.28s var(--ease),
+    opacity 0.28s var(--ease);
+}
+
+.modal-pop-leave-active {
+  transition:
+    transform 0.18s ease-in,
+    opacity 0.18s ease-in;
+}
+
+.modal-pop-enter-from,
+.modal-pop-leave-to {
+  transform: translateY(24px) scale(0.96);
+  opacity: 0;
+}
+
+/* ── 卡片入场 stagger（TransitionGroup 用） ── */
+.grid-enter-active {
+  transition:
+    transform 0.5s var(--ease),
+    opacity 0.5s var(--ease);
+}
+
+.grid-enter-from {
+  transform: translateY(20px) rotate(0deg);
+  opacity: 0;
+}
+
+.grid-leave-active {
+  transition: transform 0.18s ease-in, opacity 0.18s ease-in;
+  position: absolute;
+}
+
+.grid-leave-to {
+  opacity: 0;
+}
+
+.grid-move {
+  transition: transform 0.4s var(--ease);
+}

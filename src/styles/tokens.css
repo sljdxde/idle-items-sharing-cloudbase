@@ -1,0 +1,32 @@
+/* ============================================================
+   邻里好物 v2 · 设计 tokens
+   风格：孟菲斯复古拼贴 Memphis Maximalism（源自 design-samples/03）
+   复古撞色 + 硬阴影 + 错位叠放 + 网点纹理；零 emoji、内联 SVG 图标
+   ============================================================ */
+
+:root {
+  /* ── 色板 ── */
+  --bg-cream: #f7f2e7;        /* 做旧米色暖底（页面） */
+  --paper-cream: #fffdf9;     /* 卡片纸白 */
+  --retro-red: #e63946;
+  --mustard: #e9c46a;
+  --royal-blue: #2a6f97;
+  --retro-purple: #7209b7;
+  --olive: #264653;
+  --salmon: #f4a261;
+  --ink: #1d1e2c;
+
+  /* ── 字体 ── */
+  --font-serif: 'DM Serif Display', 'Songti SC', 'SimSun', serif;       /* 中文回退宋体 */
+  --font-display: 'Bungee', Impact, 'PingFang SC', sans-serif;          /* 仅西文 display */
+  --font-mono: 'Space Mono', ui-monospace, Menlo, Consolas, monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  /* ── 动效 ── */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);      /* expoOut 入场 */
+  --ease-snap: 0.15s ease;                    /* 按钮换色 */
+
+  /* ── 布局 ── */
+  --container-max: 1240px;
+}

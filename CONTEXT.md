@@ -5,7 +5,8 @@
 ## 核心实体
 
 - **Item（闲置物品）**：社区里可被借阅分享的实物。一个 Item 对应 GitHub 仓库里一个带 `item` 标签的 Issue。
-  - 字段：`id`(issue 编号) / `name` / `desc` / `contact` / `building` / `lat` / `lng` / `imgUrl` / `status` / `requests[]` / `pinCipher`
+  - 字段：`id`(issue 编号) / `name` / `desc` / `contact` / `building` / `lat` / `lng` / `imgUrl` / `status` / `requests[]` / `category`
+- **Category（分类）**：Item 的内容类目，v2 新增（home/electronics/kids/outdoor/tools/books/clothing/other）。发布时手动选择；旧数据无该字段时由关键词推断、仅展示层生效不回写（`src/lib/categories.ts`）。
 - **ItemStore**：数据层接口（module）。方法 `list() / create(item) / setStatus(id, status) / remove(id)`；由 `GitHubIssuesAdapter` 实现，Token / 编码 / labels 全藏在 adapter 内部。见 ADR-0001。
 - **BorrowRequest（借阅请求）**：借阅人对某 Item 发起的借物意向，存于 Item 的 `requests` 数组。
   - 字段：`id` / `fromName`(昵称) / `contact`(微信/楼号) / `message`(留言) / `createdAt` / `status`(pending|accepted|rejected|cancelled)
@@ -26,5 +27,6 @@ Item.status：`available → requested → borrowed → available`
 
 ## 架构约束（来自决策）
 
-- 无数据库、无自建服务器；数据走 GitHub Issues，写操作经薄 Serverless 代理（见 ADR-0001）。
-- PIN 由代理加密，公开仓库只见密文，公开面无可读凭据。
+- 无数据库、无自建服务器；数据走 GitHub Issues。读路径三级降级：items.json 快照 → 本地缓存 → 匿名 API（`src/lib/api.ts`）。
+- 写路径当前为「方案1」：发布 = 预填 GitHub Issue 创建链接；管理 = GitHub 标签 / 关 Issue。Serverless 代理端点（ADR-0001）留作站内借阅闭环的升级路线。
+- 前端技术栈与设计语言见 ADR-0002：Vue 3 + Vite + TS，孟菲斯复古拼贴风格。

@@ -2,6 +2,8 @@
 
 本项目**无数据库、无自建服务器**：静态站点走 GitHub Pages，数据存于 GitHub Issues，同步由 GitHub Actions 完成。前端不持有任何写凭证。
 
+> **v2 变更（2026-08）**：站点改为 Vite 构建（Vue 3），推送 master 后由 `.github/workflows/deploy.yml` 自动「构建 → 拷入 items.json → 发布 Pages」。仓库 **Settings → Pages** 需把 Source 切换为 **GitHub Actions**。本地预览用 `npm run dev`（不再是 python http.server）。数据同步与发布/管理流程不变，下文继续适用；`legacy/` 为 v1 静态站存档。
+
 ## 一、安全提醒（历史遗留，必做）
 原 `js/github.js` 曾硬编码一个有仓库写权限的 Token 并已进入公开 git 历史——它已泄露。请去 GitHub → Settings → Developer settings → Personal access tokens 把它**吊销 / 轮换**。当前代码已不含任何 Token。
 

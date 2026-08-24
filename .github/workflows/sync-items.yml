@@ -60,6 +60,7 @@ jobs:
                     return _im ? _im[0] : '';
                   })(),
                   status: d.status || (isLent ? 'borrowed' : 'available'),
+                  category: d.category || '',
                   requests: Array.isArray(d.requests) ? d.requests : [],
                   pinCipher: d.pinCipher || '',
                   hasLegacyPin: !!d.pin,
