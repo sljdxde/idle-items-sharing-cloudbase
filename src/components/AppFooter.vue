@@ -1,7 +1,6 @@
 <script setup lang="ts">
-// 页脚：品牌口号 + 链接 + 版权行
+// 页脚：品牌口号 + 链接 + 版权行（纯离线，无外链）
 import { RouterLink } from 'vue-router'
-import { REPO_URL } from '@/lib/config'
 </script>
 
 <template>
@@ -11,12 +10,9 @@ import { REPO_URL } from '@/lib/config'
       <ul class="footer-links-list">
         <li><RouterLink to="/">首页</RouterLink></li>
         <li><RouterLink to="/publish">发布闲置</RouterLink></li>
-        <li>
-          <a :href="REPO_URL" target="_blank" rel="noopener noreferrer">GitHub</a>
-        </li>
       </ul>
     </div>
-    <div class="footer-bot-row">由社区共建 · 数据存于 GitHub Issues · © 2026 邻里好物</div>
+    <div class="footer-bot-row">数据保存在本机 · 离线可用 · © 2026 邻里好物</div>
   </footer>
 </template>
 
@@ -25,7 +21,8 @@ import { REPO_URL } from '@/lib/config'
   margin-top: 3rem;
   background: var(--ink);
   color: var(--paper-cream);
-  padding: 2.5rem 1.5rem 2rem;
+  /* 底部安全区：真机 env()，PC 模拟器注入 --safe-area-inset-* */
+  padding: 2.5rem 1.5rem calc(2rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   position: relative;
   z-index: 10;
 }

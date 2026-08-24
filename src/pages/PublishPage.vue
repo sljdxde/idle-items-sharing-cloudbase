@@ -1,17 +1,19 @@
 <script setup lang="ts">
 // ================================================
-// PublishPage — 发布闲置：物品信息（含分类）+ 位置与联系
-// 写路径：拼预填 GitHub Issue 创建链接（方案1，零凭证）
+// PublishPage — 发布闲置：站内直发（本地存储），图片本机压缩后内嵌
+// 离线容器：无定位/无外链图床，位置=楼号门牌
 // ================================================
 
 import { ref } from 'vue'
-import { getLocation } from '@/composables/useGeolocation'
+import { useRouter } from 'vue-router'
+import { useItemsStore } from '@/stores/items'
 import { useToast } from '@/composables/useToast'
-import { buildPublishUrl } from '@/lib/api'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId } from '@/lib/types'
 
 const toast = useToast()
+const router = useRouter()
+const store = useItemsStore()
 
 const name = ref('')
 const desc = ref('')
@@ -19,50 +21,54 @@ const contact = ref('')
 const building = ref('')
 const imgUrl = ref('')
 const category = ref<CategoryId>('other')
+const publishing = ref(false)
 
-const lat = ref<number | null>(null)
-const lng = ref<number | null>(null)
-const locating = ref(false)
-const locateStatus = ref<'none' | 'ok' | 'addr' | 'fail'>('none')
-const addrText = ref('')
+/** 选图 → canvas 压缩为 data:URI（包内可用，离线可见） */
+const fileInput = ref<HTMLInputElement | null>(null)
+function pickImage(): void {
+  fileInput.value?.click()
+}
 
-async function doLocate(): Promise<void> {
-  if (locating.value) return
-  locating.value = true
-  try {
-    const pos = await getLocation()
-    lat.value = pos.lat
-    lng.value = pos.lng
-    locateStatus.value = 'ok'
-    addrText.value = '正在获取地址…'
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${pos.lat}&lon=${pos.lng}&format=json&accept-language=zh`,
-      )
-      const data = (await res.json()) as { display_name?: string }
-      const parts = (data.display_name ?? '').split(',').map((s) => s.trim())
-      addrText.value = parts.slice(0, 3).join(', ') || `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`
-      locateStatus.value = 'addr'
-    } catch {
-      addrText.value = `${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`
-      locateStatus.value = 'addr'
-    }
-  } catch {
-    locateStatus.value = 'fail'
-    toast.warning('定位失败', '请允许浏览器定位权限后重试')
-  } finally {
-    locating.value = false
+function onFileChange(e: Event): void {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    toast.warning('仅支持图片', '请选择照片文件')
+    return
   }
+  const reader = new FileReader()
+  reader.onload = () => {
+    const img = new Image()
+    img.onload = () => {
+      const MAX = 1000
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.round(img.width * scale)
+      canvas.height = Math.round(img.height * scale)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
+      if (dataUrl.length > 1_500_000) {
+        toast.warning('图片过大', '换一张小一点的照片试试')
+        return
+      }
+      imgUrl.value = dataUrl
+    }
+    img.onerror = () => toast.warning('图片读取失败', '换一张试试')
+    img.src = String(reader.result)
+  }
+  reader.readAsDataURL(file)
+  input.value = '' // 允许重复选择同一张
 }
 
-// 图片链接即时预览
-const imgPreviewOk = ref(false)
-function onImgInput(): void {
-  const v = imgUrl.value.trim()
-  imgPreviewOk.value = /^https?:\/\//i.test(v) || v.startsWith('data:image/')
+function clearImage(): void {
+  imgUrl.value = ''
 }
 
-function onSubmit(): void {
+async function onSubmit(): Promise<void> {
+  if (publishing.value) return
   if (!name.value.trim() || !desc.value.trim()) {
     toast.warning('请填写完整', '物品名称和描述为必填项')
     return
@@ -71,31 +77,22 @@ function onSubmit(): void {
     toast.warning('请填写联系方式', '楼号与联系方式至少填写一项')
     return
   }
-  if (lat.value == null || lng.value == null) {
-    toast.warning('请先定位', '点击「获取位置」完成定位')
-    return
-  }
 
-  const url = buildPublishUrl({
-    name: name.value.trim(),
-    desc: desc.value.trim(),
-    contact: contact.value.trim(),
-    building: building.value.trim(),
-    lat: lat.value,
-    lng: lng.value,
-    imgUrl: imgUrl.value.trim(),
-    category: category.value,
-  })
-
-  const win = window.open(url, '_blank', 'noopener')
-  if (!win) {
-    navigator.clipboard
-      ?.writeText(url)
-      .then(() => toast.warning('跳转被拦截', '发布链接已复制，请粘贴到浏览器打开', 6000))
-      .catch(() => toast.warning('跳转被拦截', '请允许弹出窗口后重试', 6000))
-    return
+  publishing.value = true
+  try {
+    store.publish({
+      name: name.value,
+      desc: desc.value,
+      contact: contact.value,
+      building: building.value,
+      imgUrl: imgUrl.value,
+      category: category.value,
+    })
+    toast.success('发布成功', '物品已上架，邻居们可以看到啦')
+    router.push('/')
+  } finally {
+    publishing.value = false
   }
-  toast.success('已在 GitHub 打开发布页', '登录后点 Submit 即上架，本站自动同步展示', 6000)
 }
 </script>
 
@@ -130,45 +127,43 @@ function onSubmit(): void {
               placeholder="描述物品的新旧程度、可借 / 可送等" required></textarea>
           </label>
 
-          <label class="field">
-            <span class="field-label">物品照片链接 <small>（选填）</small></span>
-            <input v-model="imgUrl" type="url" class="memphis-input" inputmode="url"
-              placeholder="粘贴图片链接，例如图床 / 相册分享链接" @input="onImgInput" />
-            <img v-if="imgPreviewOk" :src="imgUrl" alt="图片预览" class="img-preview"
-              @error="imgPreviewOk = false" />
-          </label>
+          <div class="field">
+            <span class="field-label">物品照片 <small>（选填，自动压缩保存在本机）</small></span>
+            <input ref="fileInput" type="file" accept="image/*" class="visually-hidden" @change="onFileChange" />
+            <img v-if="imgUrl" :src="imgUrl" alt="图片预览" class="img-preview" />
+            <button v-if="imgUrl" type="button" class="btn-ghost btn-sm" @click="clearImage">移除照片</button>
+            <button v-else type="button" class="btn-photo" @click="pickImage">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              从相册选择照片
+            </button>
+          </div>
         </fieldset>
 
         <!-- 分区二：位置与联系 -->
         <fieldset class="form-section sec-blue">
           <legend>② 位置与联系</legend>
 
-          <div class="field">
-            <span class="field-label">您的位置 <i class="req">*</i></span>
-            <button type="button" class="btn-locate" :class="{ ok: locateStatus === 'ok' || locateStatus === 'addr' }"
-              :disabled="locating" @click="doLocate">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                aria-hidden="true">
-                <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11Z"></path>
-                <circle cx="12" cy="10" r="2.5"></circle>
-              </svg>
-              {{ locating ? '定位中…' : locateStatus === 'ok' || locateStatus === 'addr' ? '已定位' : '点击获取位置' }}
-            </button>
-            <p v-if="addrText" class="addr-text">{{ addrText }}</p>
-          </div>
-
           <label class="field">
             <span class="field-label">楼号门牌 <small>（与联系方式二选一）</small></span>
-            <input v-model="building" type="text" class="memphis-input" placeholder="例如：3 栋 2 单元 1801" />
+            <input v-model="building" type="text" class="memphis-input" maxlength="30"
+              placeholder="例如：3 栋 2 单元 1801" />
           </label>
 
           <label class="field">
             <span class="field-label">联系方式 <small>（微信 / 手机号）</small></span>
-            <input v-model="contact" type="text" class="memphis-input" placeholder="例如：微信 xxx 或手机号" />
+            <input v-model="contact" type="text" class="memphis-input" maxlength="40"
+              placeholder="例如：微信 xxx 或手机号" />
           </label>
         </fieldset>
 
-        <button type="submit" class="btn-memphis-primary btn-submit">发布物品</button>
+        <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing">
+          {{ publishing ? '发布中…' : '发布物品' }}
+        </button>
       </form>
     </div>
   </main>
@@ -267,16 +262,16 @@ function onSubmit(): void {
   font-style: normal;
 }
 
-.img-preview {
-  width: min(280px, 100%);
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  border: 2.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--mustard);
-  transform: rotate(0.6deg);
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
-.btn-locate {
+.btn-photo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -295,20 +290,25 @@ function onSubmit(): void {
     border-style var(--ease-snap);
 }
 
-.btn-locate:hover:not(:disabled) {
+.btn-photo:hover {
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 var(--royal-blue);
 }
 
-.btn-locate.ok {
-  border-style: solid;
-  background: var(--mustard);
+.img-preview {
+  width: min(280px, 100%);
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border: 2.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--mustard);
+  transform: rotate(0.6deg);
 }
 
-.addr-text {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: #555;
+.btn-sm {
+  align-self: flex-start;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.8rem;
+  box-shadow: 2px 2px 0 var(--ink);
 }
 
 .btn-submit {

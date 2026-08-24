@@ -1,49 +1,21 @@
 <script setup lang="ts">
 // ================================================
-// FilterToolbar — 定位状态 + 搜索框 + 分类 chips + 距离筛选 + 计数 + 刷新
+// FilterToolbar — 搜索框 + 分类 chips + 计数 + 刷新
+// 离线容器无 geolocation，距离筛选已移除（ADR-0003）
 // ================================================
 
-import { computed } from 'vue'
-import { useItemsStore, RANGE_OPTIONS } from '@/stores/items'
+import { useItemsStore } from '@/stores/items'
 import { CATEGORIES } from '@/lib/categories'
-import type { RangeOption } from '@/stores/items'
 
 const store = useItemsStore()
 
-const LOC_TEXT = {
-  idle: '点击开启定位',
-  locating: '正在定位…',
-  ok: '已定位',
-  denied: '未授权定位（显示全部）',
-  unsupported: '浏览器不支持定位',
-} as const
-
-const locText = computed(() => LOC_TEXT[store.locateStatus])
-
-function onRange(v: RangeOption): void {
-  store.setRange(v)
-}
-
-async function onLocate(): Promise<void> {
-  const { locateForHome } = await import('@/composables/useGeolocation')
-  await locateForHome()
-}
+defineEmits<{ refresh: [] }>()
 </script>
 
 <template>
   <section class="memphis-toolbar" aria-label="筛选工具栏">
-    <!-- 第一行：定位 / 搜索 / 刷新 -->
+    <!-- 第一行：搜索 / 计数 / 刷新 -->
     <div class="tool-row">
-      <button type="button" class="loc-chip" :class="{ ok: store.locateStatus === 'ok' }"
-        :disabled="store.locateStatus === 'locating'" @click="onLocate">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-          aria-hidden="true">
-          <path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11Z"></path>
-          <circle cx="12" cy="10" r="2.5"></circle>
-        </svg>
-        {{ locText }}
-      </button>
-
       <div class="search-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
           aria-hidden="true">
@@ -56,8 +28,7 @@ async function onLocate(): Promise<void> {
 
       <div class="count-chip">共 {{ store.visibleItems.length }} 件</div>
 
-      <button type="button" class="btn-tool-refresh" :class="{ spinning: store.loading }" aria-label="刷新好物列表"
-        @click="$emit('refresh')">
+      <button type="button" class="btn-tool-refresh" aria-label="刷新好物列表" @click="$emit('refresh')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
           aria-hidden="true">
           <path d="M23 4v6h-6"></path>
@@ -68,23 +39,13 @@ async function onLocate(): Promise<void> {
       </button>
     </div>
 
-    <!-- 第二行：分类 chips + 距离 chips -->
+    <!-- 第二行：分类 chips -->
     <div class="tool-row wrap">
       <div class="filter-btn-group" role="group" aria-label="分类筛选">
         <button v-for="c in CATEGORIES" :key="c.id" type="button" class="filter-chip cat-chip"
           :class="[`cat-${c.id}`, { active: store.category === c.id }]" :aria-pressed="store.category === c.id"
           @click="store.setCategory(c.id)">
           {{ c.label }}
-        </button>
-      </div>
-
-      <span class="row-divider" aria-hidden="true"></span>
-
-      <div class="filter-btn-group" role="radiogroup" aria-label="距离筛选">
-        <button v-for="r in RANGE_OPTIONS" :key="r.value" type="button" class="filter-chip"
-          :class="{ active: store.rangeMeters === r.value }" :aria-checked="store.rangeMeters === r.value"
-          role="radio" @click="onRange(r.value)">
-          {{ r.label }}
         </button>
       </div>
     </div>
@@ -111,33 +72,6 @@ async function onLocate(): Promise<void> {
 
 .tool-row.wrap {
   flex-wrap: wrap;
-}
-
-/* 定位 chip */
-.loc-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  min-height: 44px;
-  padding: 0 0.8rem;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  color: #555;
-  white-space: nowrap;
-  transition: background var(--ease-snap), color var(--ease-snap);
-}
-
-.loc-chip.ok {
-  background: var(--mustard);
-  color: var(--ink);
-}
-
-.loc-chip:hover:not(:disabled) {
-  background: var(--salmon);
-  color: var(--ink);
 }
 
 /* 搜索框 */
@@ -217,20 +151,6 @@ async function onLocate(): Promise<void> {
   box-shadow: 5px 5px 0 var(--retro-red);
 }
 
-.btn-tool-refresh svg {
-  transition: transform 0.5s var(--ease);
-}
-
-.btn-tool-refresh.spinning svg {
-  animation: spin 0.9s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* chips 组 */
 .filter-btn-group {
   display: flex;
@@ -264,13 +184,6 @@ async function onLocate(): Promise<void> {
   color: var(--mustard);
   transform: translate(1px, 1px);
   box-shadow: none;
-}
-
-.row-divider {
-  width: 2px;
-  height: 22px;
-  background: var(--line, #ddd);
-  margin: 0 0.25rem;
 }
 
 /* 分类色点（激活态左侧小方块，孟菲斯撞色索引） */

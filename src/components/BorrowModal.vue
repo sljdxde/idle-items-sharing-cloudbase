@@ -1,15 +1,42 @@
 <script setup lang="ts">
-// 借阅弹窗：展示联系方式/楼号 + GitHub 沟通入口
+// 借阅弹窗：站内发起借用申请（本地数据，无需任何外部账号）
+import { reactive, watch } from 'vue'
 import BaseModal from './BaseModal.vue'
 import type { Item } from '@/lib/types'
-import { issueUrl } from '@/lib/api'
+import { useItemsStore } from '@/stores/items'
 
-defineProps<{
+const props = defineProps<{
   open: boolean
   item: Item | null
 }>()
 
 const emit = defineEmits<{ close: [] }>()
+
+const store = useItemsStore()
+
+const form = reactive({ fromName: '', contact: '', message: '' })
+
+watch(
+  () => props.open,
+  (open) => {
+    if (open) {
+      form.fromName = ''
+      form.contact = ''
+      form.message = ''
+    }
+  },
+)
+
+function submit(): void {
+  if (!props.item) return
+  if (!form.fromName.trim() || !form.contact.trim()) return
+  store.requestBorrow(props.item.id, {
+    fromName: form.fromName,
+    contact: form.contact,
+    message: form.message,
+  })
+  emit('close')
+}
 </script>
 
 <template>
@@ -23,31 +50,30 @@ const emit = defineEmits<{ close: [] }>()
           </svg>
         </span>
         <div>
-          <h3 id="borrow-title" class="head-title">联系物主</h3>
-          <div class="head-sub">直接联系取物，或在 GitHub 沟通</div>
+          <h3 id="borrow-title" class="head-title">申请借用</h3>
+          <div class="head-sub">「{{ item.name }}」</div>
         </div>
       </div>
 
-      <p class="contact-tip">和邻居打个招呼吧——说明想借的时间与用途，更容易借到。</p>
-
-      <dl class="detail-rows">
-        <div v-if="item.contact" class="detail-row">
-          <dt>联系方式</dt>
-          <dd>{{ item.contact }}</dd>
-        </div>
-        <div v-if="item.building" class="detail-row">
-          <dt>楼号</dt>
-          <dd>{{ item.building }}</dd>
-        </div>
-        <div class="detail-row">
-          <dt>物品状态</dt>
-          <dd>{{ item.status === 'available' ? '闲置中' : item.status === 'requested' ? '待确认' : '已借出' }}</dd>
-        </div>
-      </dl>
-
-      <a class="btn-memphis-primary btn-block" :href="issueUrl(item.id)" target="_blank" rel="noopener noreferrer">
-        在 GitHub 查看 / 沟通
-      </a>
+      <form class="borrow-form" @submit.prevent="submit">
+        <label class="field">
+          <span class="field-label">你的称呼 *</span>
+          <input v-model="form.fromName" class="input" type="text" required maxlength="20"
+            placeholder="如：3栋小王">
+        </label>
+        <label class="field">
+          <span class="field-label">联系方式 *</span>
+          <input v-model="form.contact" class="input" type="text" required maxlength="40"
+            placeholder="微信 / 手机号">
+        </label>
+        <label class="field">
+          <span class="field-label">想借多久、做什么用</span>
+          <textarea v-model="form.message" class="input textarea" rows="3" maxlength="120"
+            placeholder="说明用途与归还时间，更容易借到"></textarea>
+        </label>
+        <button type="submit" class="btn-memphis-primary btn-block">提交申请，等物主确认</button>
+        <p class="privacy-tip">申请会连同称呼与联系方式一起展示给物主。</p>
+      </form>
     </div>
   </BaseModal>
 </template>
@@ -88,42 +114,36 @@ const emit = defineEmits<{ close: [] }>()
   color: #777;
 }
 
-.contact-tip {
-  background: var(--bg-cream);
-  border: 1.5px dashed var(--ink);
-  padding: 0.7rem 0.9rem;
-  font-size: 0.88rem;
-  line-height: 1.65;
-}
-
-.detail-rows {
+.borrow-form {
   display: flex;
   flex-direction: column;
+  gap: 0.9rem;
 }
 
-.detail-row {
+.field {
   display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0.2rem;
-  border-bottom: 1.5px dashed rgba(29, 30, 44, 0.25);
-  font-size: 0.92rem;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.detail-row dt {
+.field-label {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #777;
-  white-space: nowrap;
+  color: #555;
 }
 
-.detail-row dd {
-  text-align: right;
-  overflow-wrap: anywhere;
+.textarea {
+  resize: none;
 }
 
 .btn-block {
   width: 100%;
+}
+
+.privacy-tip {
+  font-size: 0.75rem;
+  color: #999;
+  text-align: center;
 }
 </style>

@@ -1,13 +1,11 @@
 <div align="center">
-  <h1>邻里好物 v2（Vue 3 · 孟菲斯复古拼贴版）</h1>
-  <p>一个极简、零服务器成本的社区闲置物品流转平台：数据存于 GitHub Issues，前端 Vue 3 + Vite + TypeScript。</p>
+  <h1>邻里好物 · 小红书小工具版</h1>
+  <p>社区闲置物品互助共享 · 离线可用的 H5 小工具（Vue 3 + Vite + TS · 孟菲斯复古拼贴设计）</p>
 
   <p>
     <img src="https://img.shields.io/badge/Vue_3-35495E?style=for-the-badge&logo=vuedotjs&logoColor=4FC08D" alt="Vue 3">
     <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-    <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
-    <img src="https://img.shields.io/badge/GitHub_Issues-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub Issues">
-    <img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License">
+    <img src="https://img.shields.io/badge/离线小工具-FF2442?style=for-the-badge" alt="offline minitool">
   </p>
 </div>
 
@@ -15,62 +13,53 @@
 
 ## 项目简介
 
-专为追求**绝对零成本、不依赖任何云服务商注册**的场景设计：每件闲置物品是一条带 `item` 标签的 GitHub Issue，GitHub Actions 自动同步为同源 `items.json` 静态快照；前端零写凭证——发布走预填 Issue 创建链接，管理走 Issue 标签。
+「邻里好物」让好物在邻里间流转：浏览邻居的闲置、发起借用申请、分享自己的好物。当前形态为**小红书 mini-tool 离线包**——纯本地运行，数据保存在用户设备（localStorage），零网络依赖。
 
-v2 相比 v1（`legacy/` 目录中的静态原版）：
+演进历程：GitHub Issues 数据库静态站（v1，`legacy/`）→ Vue 3 重构 + 云端同步（v2）→ **去 GitHub 化的离线小工具**（当前，见 `docs/adr/0003`）。
 
-- **工程化**：Vite 7 + Vue 3.5 `<script setup>` + TypeScript strict + Pinia + Vue Router（hash 模式）
-- **设计语言**：孟菲斯复古拼贴（Memphis Maximalism）——复古撞色、硬阴影、胶带与错位叠放（见 `docs/adr/0002`）
-- **新功能**：关键词搜索（名称/描述/楼号）+ 分类浏览（家居/电器/儿童/户外/工具/图书/服饰，旧数据自动关键词归类）
-- **详情页**：`/#/items/:id` 独立路由，可分享
-- **质量**：筛选逻辑纯函数化 + vitest 单测（16 例）
+## 功能
 
-## 核心特性（v1 全保留）
-
-- 定位 + Haversine 距离筛选（500m / 1km / 3km / 全部），已定位按距离排序
-- 三级读取降级：items.json 快照 → 本地缓存 → 匿名 GitHub API → 空状态
-- 图片外链懒加载、强制刷新、Toast 通知、移动端优先响应式
+- 首页信息流：搜索（名称/描述/楼号）+ 八类分类筛选，孟菲斯拼贴卡片
+- 发布：表单直发，照片经 canvas 压缩内嵌为 data:URI
+- 借阅闭环：借用申请 → 物主确认 → 已借出 → 确认归还（完整状态机）
+- 物品管理：确认/婉拒申请、下架与重新上架、永久删除
 
 ## 开发
 
 ```bash
 npm install
-npm run dev        # 本地开发（数据读根目录 items.json）
-npm run test       # vitest 单测
-npm run build      # 类型检查 + 构建到 dist/
-npm run preview    # 预览构建产物
+npm run dev        # 本地开发
+npm run test       # vitest 单测（19 例：本地状态机契约 + 筛选器）
+npm run build      # 类型检查 + 构建 dist/
+npm run package    # 一键出包：构建 → HTML 合规后处理 → 扫描门禁 → zip
 ```
 
-## 部署
+## 打包（小红书 mini-tool）
 
-- **GitHub Pages（默认）**：推送 master 即触发 `.github/workflows/deploy.yml` 自动构建发布；仓库 Settings → Pages 选 **GitHub Actions** 来源即可。首次启用需在 Actions 页允许一次工作流运行。
-- **小红书 mini-tool（规划中）**：构建产物为相对路径（`base=./`），`dist/` 可直接进入 zip 打包流程。
-- 数据同步 `sync-items.yml` 保持不变（15 分钟兜底 + issue 事件即时触发），并已透传新增的 `category` 字段。
+产物：`linli-haowu-minitool.zip`（≈58KB，index.html 位于 zip 根目录）。
+
+打包遵循 `.skill/SKILL.md` 及其 references 的容器规范：
+
+| 规范要求 | 本项目落地 |
+|---|---|
+| 纯本地不联网 | localStorage 数据层；零外部资源引用 |
+| 经典外置脚本 | IIFE 单包 + 构建后剥离 `type="module"` 并补 `defer` |
+| 禁 geolocation 等 API | 距离筛选改为搜索/分类；18 项扫描门禁阻断回归 |
+| zip 结构 | `scripts/package.sh` 从目录内容压缩 |
 
 ## 目录结构
 
 ```text
 ├── index.html            # Vite 入口
 ├── src/
-│   ├── lib/              # types / config / api(降级链) / filters(纯函数) / categories
-│   ├── stores/           # Pinia：列表 + 筛选状态
-│   ├── composables/      # useGeolocation / useToast
-│   ├── components/       # Navbar / Footer / ItemCard / FilterToolbar / Modal / Toast
-│   ├── pages/            # Home / Publish / Detail
+│   ├── lib/              # types / localStore(数据层) / seed / filters / categories
+│   ├── stores/           # Pinia：物品 CRUD 与借阅状态机
+│   ├── components/       # Navbar/Footer/Card/Toolbar/Modal/Toast
+│   ├── pages/            # Home / Publish / Detail（hash 路由）
 │   └── styles/           # Memphis 设计 tokens + 基础样式
+├── scripts/              # fix-dist-html / check-minitool / package.sh
 ├── tests/                # vitest 单测
-├── legacy/               # v1 静态站（存档，不再维护）
-├── items.json            # Actions 生成的数据快照（CI 会拷入 dist）
-├── design-samples/       # Phase 0 的 20 版风格样机（比选用）
-└── docs/adr/             # 架构决策记录
+├── .skill/               # 小红书小工具打包规范（SKILL.md + references）
+├── legacy/               # v1/v2 历史版本存档
+└── docs/adr/             # 架构决策记录（0001~0003）
 ```
-
----
-
-## 开源说明 (License)
-
-本项目基于 **[MIT License](LICENSE)** 协议开源。
-
-<div align="center">
-  <i>Let's share perfectly good things with the world.</i>
-</div>

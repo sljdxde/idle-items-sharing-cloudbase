@@ -6,12 +6,10 @@
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Item } from '@/lib/types'
-import { formatDateShort, formatDistance } from '@/lib/filters'
+import { formatDateShort } from '@/lib/filters'
 
 const props = defineProps<{
   item: Item
-  /** 与用户位置的距离（米）；null 表示未定位或无坐标 */
-  distanceMeters: number | null
   /** 卡片在网格中的序号：决定错位旋转角与撞色阴影 */
   index?: number
 }>()
@@ -72,14 +70,6 @@ const cardStyle = computed(() => {
     <div class="card-inner">
       <div class="card-meta-header">
         <span class="badge-status" :class="statusClass">{{ statusText }}</span>
-        <span v-if="distanceMeters != null && item.status !== 'borrowed'" class="dist-label">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polygon points="12 6 12 12 16 14"></polygon>
-          </svg>
-          {{ formatDistance(distanceMeters) }}
-        </span>
       </div>
 
       <h2 class="card-heading">

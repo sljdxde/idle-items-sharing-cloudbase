@@ -1,14 +1,13 @@
 <script setup lang="ts">
 // ================================================
-// HomePage — Hero 拼贴 + 工具栏（搜索/分类/距离）+ 卡片网格
+// HomePage — Hero 拼贴 + 工具栏（搜索/分类）+ 卡片网格
+// 数据来自本地存储，加载即时完成，无网络态
 // ================================================
 
-import { computed, onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
-import { locateForHome } from '@/composables/useGeolocation'
 import { useToast } from '@/composables/useToast'
-import { calcDistance } from '@/lib/filters'
 import type { Item } from '@/lib/types'
 import FilterToolbar from '@/components/FilterToolbar.vue'
 import ItemCard from '@/components/ItemCard.vue'
@@ -21,27 +20,13 @@ const toast = useToast()
 const borrowItem = ref<Item | null>(null)
 const manageItem = ref<Item | null>(null)
 
-onMounted(async () => {
-  await store.load()
-  await locateForHome()
+onMounted(() => {
+  store.load()
 })
 
-/** 距离换算：给卡片渲染用 */
-const distances = computed<Map<number, number>>(() => {
-  const m = new Map<number, number>()
-  const u = store.userLoc
-  if (!u) return m
-  for (const it of store.visibleItems) {
-    if (it.lat != null && it.lng != null) {
-      m.set(it.id, calcDistance(u.lat, u.lng, it.lat, it.lng))
-    }
-  }
-  return m
-})
-
-async function onRefresh(): Promise<void> {
-  await store.load(true)
-  toast.success('已刷新', '已拉取最新物品')
+function onRefresh(): void {
+  store.load()
+  toast.success('已刷新', '数据已从本机重新载入')
 }
 </script>
 
@@ -57,10 +42,10 @@ async function onRefresh(): Promise<void> {
             aria-hidden="true">
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
           </svg>
-          社区闲置 · 互助共享
+          社区闲置 · 互助共享 · 离线可用
         </div>
         <h1 class="hero-headline">让好物在<span class="retro-tag">邻里间流转</span></h1>
-        <p class="hero-subhead">发现小区邻居的闲置好物，借用或分享，让每一件物品继续发挥价值</p>
+        <p class="hero-subhead">发现邻居的闲置好物，借用或分享，让每一件物品继续发挥价值。数据保存在你的设备上。</p>
         <div class="hero-button-group">
           <RouterLink to="/publish" class="btn-memphis-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -76,7 +61,7 @@ async function onRefresh(): Promise<void> {
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            浏览附近好物
+            浏览好物
           </a>
         </div>
       </div>
@@ -86,21 +71,11 @@ async function onRefresh(): Promise<void> {
       <span class="deco-triangle" aria-hidden="true"></span>
     </section>
 
-    <!-- 工具栏：搜索 / 分类 / 距离 / 刷新 -->
+    <!-- 工具栏：搜索 / 分类 / 刷新 -->
     <FilterToolbar @refresh="onRefresh" />
 
-    <!-- 加载态 -->
-    <div v-if="store.loading && !store.loaded" class="loading-box">
-      <span class="loading-block b1"></span>
-      <span class="loading-block b2"></span>
-      <span class="loading-block b3"></span>
-      <p>正在加载物品列表…</p>
-    </div>
-
-    <p v-else-if="store.error" class="error-box">加载失败：{{ store.error }}<br>点右上角「刷新」重试。</p>
-
     <!-- 空状态 -->
-    <div v-else-if="store.visibleItems.length === 0" class="empty-box">
+    <div v-if="store.visibleItems.length === 0" class="empty-box">
       <div class="empty-geom" aria-hidden="true">
         <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
       </div>
@@ -111,7 +86,7 @@ async function onRefresh(): Promise<void> {
           @click="store.search = ''; store.setCategory('all')">清除筛选</button>
       </template>
       <template v-else>
-        <h2 class="empty-title">附近暂无闲置物品</h2>
+        <h2 class="empty-title">暂无闲置物品</h2>
         <p class="empty-desc">成为第一个分享好物的人吧。</p>
         <RouterLink to="/publish" class="btn-memphis-primary">发布第一件</RouterLink>
       </template>
@@ -121,8 +96,7 @@ async function onRefresh(): Promise<void> {
     <section id="item-grid" class="memphis-grid" aria-label="闲置物品列表">
       <TransitionGroup name="grid">
         <div v-for="(item, i) in store.visibleItems" :key="item.id" class="grid-cell">
-          <ItemCard :item="item" :index="i" :distance-meters="distances.get(item.id) ?? null"
-            @borrow="borrowItem = $event" @manage="manageItem = $event" />
+          <ItemCard :item="item" :index="i" @borrow="borrowItem = $event" @manage="manageItem = $event" />
         </div>
       </TransitionGroup>
     </section>
@@ -280,9 +254,7 @@ async function onRefresh(): Promise<void> {
   width: 100%;
 }
 
-/* ── 加载 / 错误 / 空状态 ── */
-.loading-box,
-.error-box,
+/* ── 空状态 ── */
 .empty-box {
   background: var(--paper-cream);
   border: 3px solid var(--ink);
@@ -294,51 +266,6 @@ async function onRefresh(): Promise<void> {
   align-items: center;
   gap: 1rem;
   transform: rotate(-0.4deg);
-}
-
-.error-box {
-  box-shadow: 6px 6px 0 var(--retro-red);
-  color: #7c2d12;
-  line-height: 1.8;
-}
-
-.loading-blocks {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.loading-box .loading-block {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid var(--ink);
-  animation: hop 0.9s var(--ease) infinite;
-}
-
-.loading-block.b1 {
-  background: var(--retro-red);
-}
-
-.loading-block.b2 {
-  background: var(--mustard);
-  animation-delay: 0.12s !important;
-}
-
-.loading-block.b3 {
-  background: var(--royal-blue);
-  animation-delay: 0.24s !important;
-}
-
-@keyframes hop {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  40% {
-    transform: translateY(-10px) rotate(8deg);
-  }
 }
 
 .empty-geom {

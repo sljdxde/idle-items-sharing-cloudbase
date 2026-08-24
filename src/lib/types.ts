@@ -33,17 +33,18 @@ export type CategoryId =
   | 'other'
 
 export interface Item {
-  /** GitHub Issue 编号 */
+  /** 本地自增编号 */
   id: number
   name: string
   desc: string
   contact: string
   building: string
-  lat: number | null
-  lng: number | null
+  /** 图片为包内 data:URI（canvas 压缩后），离线可用 */
   imgUrl: string
   status: ItemStatus
   requests: BorrowRequest[]
   category: CategoryId
   createTime: string
+  /** 下架标记：true = 不出现在列表，可重新上架 */
+  archived?: boolean
 }

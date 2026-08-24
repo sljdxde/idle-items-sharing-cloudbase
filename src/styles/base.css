@@ -14,6 +14,8 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* 触摸端：双击缩放交给容器，点击即点 */
+  touch-action: manipulation;
 }
 
 body {
@@ -33,6 +35,7 @@ body {
   font-synthesis: none;
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
 }
 

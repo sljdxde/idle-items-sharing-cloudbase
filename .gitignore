@@ -15,3 +15,6 @@ dist/
 # 本地打包与 TS 增量缓存
 design-samples.zip
 *.tsbuildinfo
+
+# 小工具打包产物
+linli-haowu-minitool.zip

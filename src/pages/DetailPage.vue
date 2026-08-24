@@ -6,7 +6,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
-import { calcDistance, formatDateShort, formatDistance } from '@/lib/filters'
+import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
@@ -18,8 +18,8 @@ const store = useItemsStore()
 const borrowOpen = ref(false)
 const manageOpen = ref(false)
 
-onMounted(async () => {
-  if (!store.loaded) await store.load()
+onMounted(() => {
+  if (store.items.length === 0) store.load()
 })
 
 const item = computed<Item | null>(() => {
@@ -30,12 +30,6 @@ const item = computed<Item | null>(() => {
 const categoryLabel = computed(() => {
   const c = item.value && CATEGORIES.find((x) => x.id === item.value!.category)
   return c ? c.label : '其他'
-})
-
-const distanceText = computed(() => {
-  const it = item.value
-  if (!it || !store.userLoc || it.lat == null || it.lng == null) return null
-  return formatDistance(calcDistance(store.userLoc.lat, store.userLoc.lng, it.lat, it.lng))
 })
 </script>
 
@@ -49,10 +43,10 @@ const distanceText = computed(() => {
       返回列表
     </RouterLink>
 
-    <!-- 未找到 / 加载中 -->
+    <!-- 未找到 -->
     <div v-if="!item" class="missing-box">
-      <h1 class="head-title">{{ store.loading && !store.loaded ? '正在加载…' : '没有这件物品' }}</h1>
-      <p class="empty-desc">它可能已下架，或链接有误。</p>
+      <h1 class="head-title">没有这件物品</h1>
+      <p class="empty-desc">它可能已被删除或下架，或链接有误。</p>
       <RouterLink to="/" class="btn-memphis-secondary">回首页逛逛</RouterLink>
     </div>
 
@@ -82,23 +76,23 @@ const distanceText = computed(() => {
         <p class="desc-text">{{ item.desc || '（无描述）' }}</p>
 
         <dl class="detail-rows">
-          <div v-if="distanceText" class="detail-row">
-            <dt>距您</dt>
-            <dd>{{ distanceText }}</dd>
-          </div>
           <div v-if="item.building" class="detail-row">
             <dt>楼号</dt>
             <dd>{{ item.building }}</dd>
           </div>
           <div v-if="item.contact" class="detail-row">
             <dt>联系方式</dt>
-            <dd>{{ item.contact }}</dd>
+            <dd class="selectable">{{ item.contact }}</dd>
+          </div>
+          <div v-if="item.archived" class="detail-row">
+            <dt>状态</dt>
+            <dd>已下架</dd>
           </div>
         </dl>
 
         <div class="action-row">
-          <button type="button" class="btn-memphis-primary" :disabled="item.status === 'borrowed'"
-            @click="borrowOpen = true">
+          <button v-if="!item.archived" type="button" class="btn-memphis-primary"
+            :disabled="item.status === 'borrowed'" @click="borrowOpen = true">
             {{ item.status === 'borrowed' ? '已借出' : '我想借' }}
           </button>
           <button type="button" class="btn-memphis-secondary" @click="manageOpen = true">管理此物品</button>
@@ -264,5 +258,11 @@ const distanceText = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
+}
+
+/* 容器禁剪贴板 API：联系方式保持可选中，供长按手动复制 */
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
 }
 </style>

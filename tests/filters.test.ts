@@ -1,18 +1,15 @@
 // ================================================
 // tests/filters.test.ts — 纯函数筛选器单测
-// 覆盖：分类 / 搜索 / 距离 / 排序 / 分类推断
+// 离线版：分类 / 搜索 / 最新排序 / 分类推断（距离相关已随定位移除）
 // ================================================
 
 import { describe, expect, it } from 'vitest'
 import {
-  calcDistance,
   filterItems,
   formatDateShort,
-  formatDistance,
   matchesCategory,
   matchesSearch,
-  sortItems,
-  withinRange,
+  sortByNewest,
 } from '@/lib/filters'
 import { inferCategory, normalizeCategory } from '@/lib/categories'
 import type { Item } from '@/lib/types'
@@ -24,27 +21,15 @@ function makeItem(partial: Partial<Item>): Item {
     desc: '',
     contact: '',
     building: '',
-    lat: null,
-    lng: null,
     imgUrl: '',
     status: 'available',
     requests: [],
     category: 'other',
     createTime: '2026-06-01T00:00:00Z',
+    archived: false,
     ...partial,
   }
 }
-
-describe('calcDistance / formatDistance', () => {
-  it('同一点距离为 0', () => {
-    expect(calcDistance(30, 120, 30, 120)).toBe(0)
-  })
-
-  it('500 米格式化为米，1500 米格式化为千米', () => {
-    expect(formatDistance(500)).toBe('500m')
-    expect(formatDistance(1500)).toBe('1.5km')
-  })
-})
 
 describe('matchesCategory', () => {
   it('all 放行一切', () => {
@@ -76,57 +61,34 @@ describe('matchesSearch', () => {
   })
 })
 
-describe('withinRange', () => {
-  const user = { lat: 30, lng: 120 }
-
-  it('range<=0 不限距离', () => {
-    expect(withinRange(makeItem({ lat: 40, lng: 121 }), user, 0)).toBe(true)
-  })
-  it('未定位或物品缺坐标时不过滤', () => {
-    expect(withinRange(makeItem({}), user, 1000)).toBe(true)
-    expect(withinRange(makeItem({ lat: 40, lng: 121 }), null, 1000)).toBe(true)
-  })
-})
-
-describe('sortItems / filterItems', () => {
-  it('未定位按发布时间降序', () => {
+describe('sortByNewest / filterItems', () => {
+  it('最新优先；时间相同时 id 降序', () => {
     const items = [
-      makeItem({ id: 1, createTime: '2026-06-01T00:00:00Z' }),
-      makeItem({ id: 2, createTime: '2026-06-10T00:00:00Z' }),
+      makeItem({ id: 1, createTime: '2026-06-10T00:00:00Z' }),
+      makeItem({ id: 2, createTime: '2026-06-01T00:00:00Z' }),
+      makeItem({ id: 3, createTime: '2026-06-01T00:00:00Z' }),
     ]
-    expect(sortItems(items, null).map((x) => x.id)).toEqual([2, 1])
+    expect(sortByNewest(items).map((x) => x.id)).toEqual([1, 3, 2])
   })
 
-  it('已定位按距离升序、缺坐标沉底', () => {
-    const user = { lat: 30, lng: 120 }
-    const near = makeItem({ id: 1, lat: 30.001, lng: 120 })
-    const far = makeItem({ id: 2, lat: 30.05, lng: 120 })
-    const noGeo = makeItem({ id: 3 })
-    expect(sortItems([noGeo, far, near], user).map((x) => x.id)).toEqual([1, 2, 3])
+  it('不改动入参数组', () => {
+    const items = [makeItem({ id: 1 }), makeItem({ id: 2, createTime: '2026-07-01T00:00:00Z' })]
+    sortByNewest(items)
+    expect(items.map((x) => x.id)).toEqual([1, 2])
   })
 
-  it('filterItems 组合：分类 + 搜索 + 距离', () => {
-    const user = { lat: 30, lng: 120 }
+  it('filterItems 组合：分类 + 搜索 + 排序', () => {
     const keep = makeItem({
       id: 1,
       name: '儿童滑板车',
       category: 'kids',
-      lat: 30.001,
-      lng: 120,
+      createTime: '2026-06-05T00:00:00Z',
     })
     const wrongCat = makeItem({ id: 2, name: '滑板车', category: 'outdoor' })
-    const outOfRange = makeItem({
-      id: 3,
-      name: '儿童玩具',
-      category: 'kids',
-      lat: 31,
-      lng: 120,
-    })
-    const result = filterItems([keep, wrongCat, outOfRange], {
+    const wrongWord = makeItem({ id: 3, name: '儿童玩具', category: 'kids' })
+    const result = filterItems([keep, wrongCat, wrongWord], {
       category: 'kids',
       search: '滑板车',
-      rangeMeters: 1000,
-      user,
     })
     expect(result.map((x) => x.id)).toEqual([1])
   })

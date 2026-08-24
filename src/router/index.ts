@@ -1,10 +1,12 @@
 // ================================================
-// src/router/index.ts — Hash 路由
-// 选 hash 而非 history：GitHub Pages 无需 SPA fallback 配置，
-// 且后续打包成小红书 mini-tool zip 时深链接天然可用。
+// src/router/index.ts — Hash 路由（离线容器内为纯客户端视图切换）
+// 静态导入：构建为 IIFE 单包，容器 CSP 禁止动态 module 加载
 // ================================================
 
 import { createRouter, createWebHashHistory } from 'vue-router'
+import HomePage from '@/pages/HomePage.vue'
+import PublishPage from '@/pages/PublishPage.vue'
+import DetailPage from '@/pages/DetailPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -12,19 +14,19 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: () => import('@/pages/HomePage.vue'),
+      component: HomePage,
       meta: { title: '邻里好物 — 社区闲置互助' },
     },
     {
       path: '/publish',
       name: 'publish',
-      component: () => import('@/pages/PublishPage.vue'),
+      component: PublishPage,
       meta: { title: '发布闲置 — 邻里好物' },
     },
     {
       path: '/items/:id(\\d+)',
       name: 'item-detail',
-      component: () => import('@/pages/DetailPage.vue'),
+      component: DetailPage,
       meta: { title: '物品详情 — 邻里好物' },
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },

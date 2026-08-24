@@ -16,10 +16,10 @@
   --salmon: #f4a261;
   --ink: #1d1e2c;
 
-  /* ── 字体 ── */
-  --font-serif: 'DM Serif Display', 'Songti SC', 'SimSun', serif;       /* 中文回退宋体 */
-  --font-display: 'Bungee', Impact, 'PingFang SC', sans-serif;          /* 仅西文 display */
-  --font-mono: 'Space Mono', ui-monospace, Menlo, Consolas, monospace;
+  /* ── 字体（离线容器：仅系统字体栈，无任何外链字体） ── */
+  --font-serif: 'Songti SC', 'STSong', 'STZhongsong', 'SimSun', Georgia, serif;   /* 标题衬线，中文宋体 */
+  --font-display: 'Arial Black', Impact, 'PingFang SC', sans-serif;               /* 仅西文 display */
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
   --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
 

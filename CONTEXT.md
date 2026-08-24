@@ -2,31 +2,35 @@
 
 > 本文件由架构复查 + grilling 过程中沉淀的领域术语。词汇是良好 seam 的名字来源；新增/修改术语时同步更新这里。
 
+## 产品形态
+
+**小红书 mini-tool（离线 H5 小工具）**：整站打包为 zip 在容器 WebView 内运行，纯本地不联网。技术栈 Vue 3 + Vite + TS，孟菲斯复古拼贴设计（ADR-0002/0003）。
+
 ## 核心实体
 
-- **Item（闲置物品）**：社区里可被借阅分享的实物。一个 Item 对应 GitHub 仓库里一个带 `item` 标签的 Issue。
-  - 字段：`id`(issue 编号) / `name` / `desc` / `contact` / `building` / `lat` / `lng` / `imgUrl` / `status` / `requests[]` / `category`
-- **Category（分类）**：Item 的内容类目，v2 新增（home/electronics/kids/outdoor/tools/books/clothing/other）。发布时手动选择；旧数据无该字段时由关键词推断、仅展示层生效不回写（`src/lib/categories.ts`）。
-- **ItemStore**：数据层接口（module）。方法 `list() / create(item) / setStatus(id, status) / remove(id)`；由 `GitHubIssuesAdapter` 实现，Token / 编码 / labels 全藏在 adapter 内部。见 ADR-0001。
-- **BorrowRequest（借阅请求）**：借阅人对某 Item 发起的借物意向，存于 Item 的 `requests` 数组。
-  - 字段：`id` / `fromName`(昵称) / `contact`(微信/楼号) / `message`(留言) / `createdAt` / `status`(pending|accepted|rejected|cancelled)
+- **Item（闲置物品）**：社区里可被借阅分享的实物，存于本机 localStorage（键 `linli_haowu_items_v1`）。
+  - 字段：`id`(本机自增) / `name` / `desc` / `contact` / `building` / `imgUrl`(data:URI) / `status` / `requests[]` / `category` / `archived`
+- **Category（分类）**：内容类目（home/electronics/kids/outdoor/tools/books/clothing/other）。发布时手动选择。
+- **BorrowRequest（借阅申请）**：借阅人对某 Item 发起的借用意向，存于 Item 的 `requests` 数组。
+  - 字段：`id` / `fromName` / `contact` / `message` / `createdAt` / `status`(pending|accepted|rejected|cancelled|returned)
+- **Seed（种子数据）**：首次启动导入的 6 件示例物品（`src/lib/seed.ts`），仅本地存储为空时生效。
 
 ## 状态机
 
 Item.status：`available → requested → borrowed → available`
 
-- `available` — 闲置中，可被借
-- `requested` — 有人发起借阅请求、待物主确认
+- `available` — 闲置中，可被申请
+- `requested` — 有 pending 借阅申请、待物主确认
 - `borrowed` — 已借出
-- 归还后回到 `available`（即"再次分享"，复用同一 listing，无需重新发布）
+- 确认归还后回到 `available`（同一 listing 再次可借）
+- **Archived（下架）**：独立布尔标记，与 status 正交；下架物品从列表隐藏但保留数据，可重新上架
 
 ## 角色
 
-- **Owner（物主）**：Item 的发布者，凭 PIN（由代理加密存储）管理物品——确认借出 / 确认归还 / 下架。
-- **Borrower（借阅人）**：轻量身份（昵称 + 联系方式），无 GitHub 账号；非 OAuth。
+单设备单身份：使用者同时扮演物主与借阅人（数据在本机隔离）。无账号体系。
 
 ## 架构约束（来自决策）
 
-- 无数据库、无自建服务器；数据走 GitHub Issues。读路径三级降级：items.json 快照 → 本地缓存 → 匿名 API（`src/lib/api.ts`）。
-- 写路径当前为「方案1」：发布 = 预填 GitHub Issue 创建链接；管理 = GitHub 标签 / 关 Issue。Serverless 代理端点（ADR-0001）留作站内借阅闭环的升级路线。
-- 前端技术栈与设计语言见 ADR-0002：Vue 3 + Vite + TS，孟菲斯复古拼贴风格。
+- 纯离线：禁网络请求、禁 geolocation/clipboard/window.open 等（清单见 `.skill/references/device-capabilities.md`）；脚本必须经典外置形态。
+- 数据层 seam：`src/lib/localStore.ts`（loadItems/saveItems），store 只做编排；筛选逻辑纯函数在 `src/lib/filters.ts`。
+- 打包门禁：`npm run package` = 构建 + HTML 后处理 + 18 项合规扫描 + zip。见 ADR-0003。
