@@ -109,8 +109,12 @@ export const useItemsStore = defineStore('items', () => {
     return distanceKm(userPosition.value, p)
   }
 
-  /** 卡片/详情页用的距离文案 */
+  /** 卡片/详情页用的距离文案：无定位且用户已定位 → 「距离未知」 */
   function distanceLabel(item: Item): string | null {
+    const p = itemLatLng(item)
+    if (!p) {
+      return userPosition.value ? '距离未知' : null
+    }
     const d = distanceOf(item)
     return d === null ? null : formatDistance(d)
   }

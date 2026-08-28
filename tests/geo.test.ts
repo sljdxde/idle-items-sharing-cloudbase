@@ -85,7 +85,7 @@ describe('matchesRadius（距离筛选，x 为可配置半径）', () => {
     expect(matchesRadius(noPos, null, 1)).toBe(true)
   })
 
-  it('有半径限制时，无定位物品不展示（无法证明在范围内）', () => {
-    expect(matchesRadius(noPos, CENTER, 1)).toBe(false)
+  it('无定位物品不被距离筛选排除（显示「距离未知」而非隐藏）', () => {
+    expect(matchesRadius(noPos, CENTER, 1)).toBe(true)
   })
 })

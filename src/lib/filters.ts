@@ -30,7 +30,7 @@ export function matchesSearch(item: Item, rawQuery: string): boolean {
 
 /**
  * 距离筛选：radius='all' 或用户未定位时不限制；
- * 有半径限制时，无定位的物品不参与展示（无法证明在范围内）
+ * 物品无定位时**不排除**（显示为「距离未知」，排在列表末尾），避免发布者找不到自己的物品
  */
 export function matchesRadius(
   item: Item,
@@ -39,7 +39,7 @@ export function matchesRadius(
 ): boolean {
   if (radius === 'all' || !userPos) return true
   const p = itemLatLng(item)
-  if (!p) return false
+  if (!p) return true // 无定位物品始终可见（标注距离未知）
   return distanceKm(userPos, p) <= radius
 }
 
