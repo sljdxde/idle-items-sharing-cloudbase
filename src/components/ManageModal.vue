@@ -41,8 +41,8 @@ const borrowedAtText = computed(() => {
   return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`
 })
 
-function onToggleArchive(): void {
-  if (props.item && store.setArchived(props.item.id, !props.item.archived)) {
+async function onToggleArchive(): Promise<void> {
+  if (props.item && (await store.setArchived(props.item.id, !props.item.archived))) {
     emit('close')
   }
 }
@@ -89,13 +89,13 @@ function onToggleArchive(): void {
         </div>
 
         <ul class="guide-list">
-          <li>下架 / 上架在 GitHub 上通过评论命令完成（已自动复制）</li>
+          <li>下架 / 上架在本站一键完成，操作后全站即时可见</li>
           <li>下架后物品从公开列表隐藏（不影响已发生的借用）</li>
-          <li>物品被借用时状态自动变为「已借出」，发「归还」命令后自动恢复「可借」</li>
+          <li>物品被借用时状态自动变为「已借出」，借阅人归还后自动恢复「可借」</li>
         </ul>
 
-        <button type="button" class="btn-memphis-primary btn-block" @click="onToggleArchive">
-          {{ item.archived ? '去 GitHub 上架' : '去 GitHub 下架' }}
+        <button type="button" class="btn-memphis-primary btn-block" :disabled="store.writing" @click="onToggleArchive">
+          {{ item.archived ? '重新上架' : '下架' }}
         </button>
       </template>
     </div>

@@ -13,18 +13,18 @@
 
 ## 项目简介
 
-「邻里好物」让好物在邻里间流转：按距离发现附近的闲置、手机号登录后借用 / 归还、发布自己的好物。**全体用户共享同一份数据**——物品存在云端 GitHub Issues，任何人打开网站看到的都是同一份列表。
+「邻里好物」让好物在邻里间流转：按距离发现附近的闲置、手机号登录后借用 / 归还、发布自己的好物。**全体用户共享同一份数据**——物品存在云端（GitHub Issues 承载，用户对 GitHub 全程无感），任何人打开网站看到的都是同一份列表。
 
 ### 核心功能
 
 - **地理位置**：发布闲置时自动获取定位并保存；列表默认展示距离用户 **x 公里**内的物品（x 为可配置参数，见 `src/lib/geo.ts` 的 `DEFAULT_RADIUS_KM` / `RADIUS_OPTIONS`），按距离由近到远排序；无定位物品显示「距离未知」并排在末尾
 - **手机号登录**：本地模拟登录，用于区分「我的发布」与「我的借用」视图
-- **联系方式二选一**：发布时在「手机号」或「楼号门牌」中选择一种填写；展示时楼牌号在前
-- **共享数据层（GitHub Issues）**：每条物品 = 一条带 `item` 标签的 Issue，隐藏数据块 `<!--DATA_START ... DATA_END-->` 存 JSON；Actions 自动生成 `items.json` 快照供全站读取
-- **零写凭证**：前端不持有 Token——
-  - **发布**：打开预填的 `issues/new` 链接，GitHub 提交即上架
-  - **借用 / 归还 / 下架 / 上架**：在物品 Issue 评论区发送命令，Actions 自动处理（`借用 138xxxx` → 已借出；`归还` → 恢复可借；`下架` / `上架` → 仅发布者）
-- **状态筛选**：默认不展示已借出物品，可通过「显示已借出」开关切换；「我的发布 / 我的借用」互斥切换（点击其一自动取消另一个）
+- **联系方式二选一**：发布时在「楼号门牌」或「手机号」中选择一种填写（楼号优先）；展示时楼牌号在前
+- **共享数据层**：每条物品 = 一条带 `item` 标签的 Issue，隐藏数据块 `<!--DATA_START ... DATA_END-->` 存 JSON；Actions 自动生成 `items.json` 同源快照供全站读取
+- **站内完成所有操作（用户无感 GitHub）**：前端不持有 Token——
+  - **发布 / 借用 / 归还 / 下架 / 上架**：浏览器调用 Cloudflare Worker 薄代理（`cloudflare-worker/`，ADR-0001），代理持 GitHub Token 写 Issues；Token 永不进客户端
+  - 代理未部署时读操作仍可用（快照 → 种子兜底），写操作友好提示「云端服务尚未开通」
+- **状态筛选**：默认不展示已借出物品，可通过「显示已借出」开关切换；「我的发布 / 我的借用」双大卡互斥切换（点击其一自动取消另一个）
 - **图片上传**：发布时可上传单张图片（自动压缩），不上传时显示「小主没有上传图片哦」
 
 ## 开发
@@ -37,17 +37,28 @@ npm run build      # 类型检查(vue-tsc) + 构建 dist/
 npm run preview    # 本地预览构建产物
 ```
 
-## 部署（GitHub Pages + Issues 同步）
+## 部署（GitHub Pages + Issues 同步 + Worker 代理）
 
 仓库已开启 **Settings → Pages → Source: GitHub Actions**（`build_type: workflow`）。`.github/workflows/deploy.yml` 触发 `push` / `issues` / `issue_comment`：
 
-1. （评论事件时）`scripts/handle-comment.mjs` 处理借 / 还 / 下架 / 上架命令
-2. `scripts/gen-items.mjs` 从 Issues 生成 `public/items.json` 快照
+1. （评论事件时，历史兼容）`scripts/handle-comment.mjs` 处理借 / 还 / 下架 / 上架命令
+2. `scripts/gen-items.mjs` 从 Issues 生成 `public/items.json` 同源快照
 3. `npm run build` → 部署 Pages
+
+写操作代理（Cloudflare Worker，用户无感 GitHub 的关键）：
+
+```bash
+cd cloudflare-worker
+wrangler deploy
+wrangler secret put GITHUB_TOKEN   # 本仓 repo 权限 PAT
+wrangler secret put SITE_KEY       # 可选；需与 src/lib/api.ts 的 SITE_KEY 一致
+```
+
+部署后把 worker 地址回填 `src/lib/api.ts` 顶部的 `API_PROXY` 常量，提交推送即可。
 
 线上地址：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
 
-> 说明：写操作（发布 / 借用 / 归还 / 管理）需 GitHub 账号，这是「零服务器 + 全员共享」的代价；读操作任何访客无需登录。
+> 说明：写操作（发布 / 借用 / 归还 / 管理）经 Worker 代理在站内完成，用户无需 GitHub 账号；读操作任何访客无需登录。代理未部署时写操作会友好提示「云端服务尚未开通」。
 
 ## 目录结构
 

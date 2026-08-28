@@ -32,12 +32,12 @@ const mineLent = computed(() =>
 /** 联系方式行：楼牌号在前、手机号在后 */
 const contactRowsList = computed(() => (props.item ? contactRows(props.item) : []))
 
-function onConfirmBorrow(): void {
-  if (props.item && store.borrow(props.item.id)) emit('close')
+async function onConfirmBorrow(): Promise<void> {
+  if (props.item && (await store.borrow(props.item.id))) emit('close')
 }
 
-function onReturn(): void {
-  if (props.item && store.returnBack(props.item.id)) emit('close')
+async function onReturn(): Promise<void> {
+  if (props.item && (await store.returnBack(props.item.id))) emit('close')
 }</script>
 
 <template>
@@ -86,15 +86,15 @@ function onReturn(): void {
           </div>
         </div>
 
-        <p class="privacy-tip">点击下方按钮会打开该物品的 GitHub 评论区，命令已自动复制，粘贴发送即可借出（全站实时可见）。</p>
+        <p class="privacy-tip">确认借用后物品将标记为「已借出」，全站实时可见；请按上方联系方式与物主交接。</p>
 
         <button
           type="button"
           class="btn-memphis-primary btn-block"
-          :disabled="!borrowable"
+          :disabled="!borrowable || store.writing"
           @click="onConfirmBorrow"
         >
-          去 GitHub 借阅
+          确认借用
         </button>
       </template>
     </div>

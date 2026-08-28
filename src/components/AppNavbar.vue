@@ -31,13 +31,13 @@ function onLogout(): void {
     </div>
     <nav class="nav-links" aria-label="主导航">
       <RouterLink to="/" class="nav-item" exact-active-class="active">首页</RouterLink>
-      <RouterLink to="/publish" class="nav-item nav-publish" active-class="active">
+      <RouterLink to="/publish" class="nav-item nav-publish" active-class="active" aria-label="发布闲置">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
           aria-hidden="true">
           <line x1="12" y1="5" x2="12" y2="19"></line>
           <line x1="5" y1="12" x2="19" y2="12"></line>
         </svg>
-        发布闲置
+        <span class="nav-publish-text">发布闲置</span>
       </RouterLink>
 
       <!-- 登录态 -->
@@ -76,6 +76,7 @@ function onLogout(): void {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  flex-wrap: nowrap;
 }
 
 @media (min-width: 768px) {
@@ -88,6 +89,7 @@ function onLogout(): void {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-shrink: 0;
 }
 
 .brand-geom-icon {
@@ -112,12 +114,14 @@ function onLogout(): void {
   font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-wrap: nowrap;
 }
 
 .nav-item {
@@ -130,6 +134,8 @@ function onLogout(): void {
   font-size: 0.88rem;
   font-weight: 700;
   border: 2px solid transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition:
     background var(--ease-snap),
     border-color var(--ease-snap),
@@ -224,6 +230,94 @@ function onLogout(): void {
     padding: 0 0.55rem;
     font-size: 0.72rem;
     gap: 0.25rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .memphis-header {
+    padding: 0.7rem 0.6rem 0.35rem;
+    gap: 0.4rem;
+  }
+
+  .brand-geom-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .brand-geom-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .brand-group {
+    gap: 0.4rem;
+  }
+
+  .brand-title {
+    font-size: 1rem;
+  }
+
+  .nav-links {
+    gap: 0.25rem;
+  }
+
+  /* 发布入口图标化，文字隐藏（aria-label 保留） */
+  .nav-publish-text {
+    display: none;
+  }
+
+  .nav-item {
+    min-height: 36px;
+    padding: 0 0.4rem;
+    font-size: 0.72rem;
+  }
+
+  .user-chip {
+    min-height: 32px;
+    padding: 0 0.45rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .memphis-header {
+    padding: 0.6rem 0.5rem 0.3rem;
+    gap: 0.3rem;
+  }
+
+  .brand-geom-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .brand-geom-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .brand-title {
+    font-size: 0.9rem;
+  }
+
+  .nav-links {
+    gap: 0.2rem;
+  }
+
+  .nav-item {
+    padding: 0 0.35rem;
+    font-size: 0.68rem;
+  }
+
+  /* 手机号 chip 隐藏图标、缩字号，保住 320px 单行 */
+  .user-chip svg {
+    display: none;
+  }
+
+  .user-chip {
+    min-height: 28px;
+    padding: 0 0.35rem;
+    font-size: 0.6rem;
+    gap: 0;
   }
 }
 </style>

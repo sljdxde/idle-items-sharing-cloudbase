@@ -128,21 +128,21 @@ const contactRowsList = computed(() => (item.value ? contactRows(item.value) : [
             <button type="button" class="btn-memphis-primary" @click="manageOpen = true">
               管理此物品
             </button>
-            <button type="button" class="btn-memphis-secondary"
+            <button type="button" class="btn-memphis-secondary" :disabled="store.writing"
               @click="store.setArchived(item.id, !item.archived)">
               {{ item.archived ? '重新上架' : '下架' }}
             </button>
           </template>
 
           <!-- 借阅人本人：归还 -->
-          <button v-else-if="mineLent" type="button" class="btn-memphis-primary"
+          <button v-else-if="mineLent" type="button" class="btn-memphis-primary" :disabled="store.writing"
             @click="store.returnBack(item.id)">
             我要归还
           </button>
 
           <!-- 其他人：借用 -->
           <button v-else type="button" class="btn-memphis-primary"
-            :disabled="!borrowable || item.status === 'lent' || item.archived"
+            :disabled="!borrowable || item.status === 'lent' || item.archived || store.writing"
             @click="borrowOpen = true">
             {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
           </button>

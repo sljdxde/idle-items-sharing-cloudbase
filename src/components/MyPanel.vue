@@ -1,80 +1,73 @@
 <script setup lang="ts">
 // ================================================
 // MyPanel — 「我的发布 / 我的借用」互斥视图切换（登录后显示）
-// 置于页面靠上位置、与搜索框分离；点击其一自动取消另一个的高亮
+// 双大卡 + 数量角标，置于 Hero 上方；点击其一自动取消另一个的高亮
 // ================================================
 
+import { computed } from 'vue'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 
 const store = useItemsStore()
 const auth = useAuthStore()
+
+/** 数量口径与视图一致：我的发布含已下架；我的借用含已下架（便于归还） */
+const mineCount = computed(() =>
+  store.items.filter((it) => it.ownerPhone === auth.phone).length,
+)
+const borrowedCount = computed(() =>
+  store.items.filter((it) => it.borrowedBy === auth.phone).length,
+)
 </script>
 
 <template>
   <section v-if="auth.isLoggedIn" class="memphis-mypanel" aria-label="我的视图切换">
-    <div class="mypanel-title">我的</div>
-    <div class="mypanel-chips" role="group" aria-label="我的视图">
-      <button
-        type="button"
-        class="filter-chip mine-chip"
-        :class="{ active: store.onlyMine }"
-        :aria-pressed="store.onlyMine"
-        @click="store.toggleMine()"
-      >
-        我的发布
-      </button>
-      <button
-        type="button"
-        class="filter-chip borrowed-chip"
-        :class="{ active: store.onlyBorrowed }"
-        :aria-pressed="store.onlyBorrowed"
-        @click="store.toggleBorrowed()"
-      >
-        我的借用
-      </button>
-    </div>
-    <p class="mypanel-hint">「我的发布」含已下架物品，可重新上架；「我的借用」用于归还。</p>
+    <button
+      type="button"
+      class="mycard mine"
+      :class="{ active: store.onlyMine }"
+      :aria-pressed="store.onlyMine"
+      @click="store.toggleMine()"
+    >
+      <span class="mycard-head">
+        <span class="mycard-title">我的发布</span>
+        <span class="mycard-count" aria-label="共 {{ mineCount }} 件">{{ mineCount }}</span>
+      </span>
+      <span class="mycard-desc">含已下架，可重新上架</span>
+    </button>
+
+    <button
+      type="button"
+      class="mycard borrowed"
+      :class="{ active: store.onlyBorrowed }"
+      :aria-pressed="store.onlyBorrowed"
+      @click="store.toggleBorrowed()"
+    >
+      <span class="mycard-head">
+        <span class="mycard-title">我的借用</span>
+        <span class="mycard-count" aria-label="共 {{ borrowedCount }} 件">{{ borrowedCount }}</span>
+      </span>
+      <span class="mycard-desc">借来的好物，用完归还</span>
+    </button>
   </section>
 </template>
 
 <style scoped>
 .memphis-mypanel {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--retro-purple);
-  padding: 0.8rem 0.9rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
   margin-bottom: 1.2rem;
 }
 
-.mypanel-title {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--royal-blue);
-  padding-right: 0.5rem;
-  border-right: 2px solid var(--ink);
-}
-
-.mypanel-chips {
+.mycard {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.filter-chip {
-  min-height: 40px;
-  padding: 0 0.85rem;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
   background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  color: var(--ink);
+  border: 3px solid var(--ink);
+  padding: 0.75rem 0.85rem;
   transition:
     transform 0.15s var(--ease),
     box-shadow 0.15s var(--ease),
@@ -82,32 +75,87 @@ const auth = useAuthStore()
     color var(--ease-snap);
 }
 
-.filter-chip:hover {
+.mycard.mine {
+  box-shadow: 5px 5px 0 var(--olive);
+}
+
+.mycard.borrowed {
+  box-shadow: 5px 5px 0 var(--retro-red);
+}
+
+.mycard:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
 }
 
-.filter-chip.active {
-  background: var(--ink);
-  color: var(--mustard);
+.mycard:active {
   transform: translate(1px, 1px);
-  box-shadow: none;
 }
 
-.mine-chip.active {
+.mycard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mycard-title {
+  font-family: var(--font-serif);
+  font-size: 1.02rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mycard-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6rem;
+  height: 1.6rem;
+  padding: 0 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  background: var(--mustard);
+  color: var(--ink);
+}
+
+.mycard-desc {
+  font-size: 0.72rem;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 选中态：撞色反白 + 阴影收回 */
+.mycard.mine.active {
   background: var(--olive);
   color: var(--paper-cream);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
-.borrowed-chip.active {
+.mycard.borrowed.active {
   background: var(--retro-red);
   color: #fff;
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
-.mypanel-hint {
-  margin: 0;
-  flex-basis: 100%;
-  font-size: 0.75rem;
-  color: #999;
+.mycard.active .mycard-count {
+  background: var(--paper-cream);
+  color: var(--ink);
+}
+
+.mycard.active .mycard-desc {
+  color: inherit;
+  opacity: 0.75;
+}
+
+@media (max-width: 360px) {
+  .mycard-desc {
+    display: none;
+  }
 }
 </style>

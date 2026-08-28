@@ -35,6 +35,9 @@ function onRefresh(): void {
 
 <template>
   <main class="memphis-container home-main">
+    <!-- 我的发布 / 我的借用（登录后显示，置于首屏靠上、与搜索框分离） -->
+    <MyPanel />
+
     <!-- Hero：拼贴卡 -->
     <section class="memphis-hero">
       <div class="hero-collage-card">
@@ -74,9 +77,6 @@ function onRefresh(): void {
       <span class="deco-circle" aria-hidden="true"></span>
       <span class="deco-triangle" aria-hidden="true"></span>
     </section>
-
-    <!-- 我的发布 / 我的借用（登录后显示，与搜索框分离） -->
-    <MyPanel />
 
     <!-- 工具栏：搜索 / 分类 / 距离 / 状态 / 刷新 -->
     <FilterToolbar @refresh="onRefresh" />
@@ -142,7 +142,7 @@ function onRefresh(): void {
         </span>
         <div>
           <h2 class="data-manage-title">社区共享</h2>
-          <p class="data-manage-desc">物品数据由全体邻居共享（云端 GitHub Issues）。发布 / 借用 / 归还 / 上下架会在页面引导下前往 GitHub 完成，操作后全站即时可见。</p>
+          <p class="data-manage-desc">物品数据由全体邻居共享。发布 / 借用 / 归还 / 上下架均在本站完成，操作后全站即时可见。</p>
         </div>
       </div>
     </section>
@@ -269,6 +269,16 @@ function onRefresh(): void {
   .deco-circle,
   .deco-triangle {
     display: none;
+  }
+
+  .hero-button-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-button-group .btn-memphis-primary,
+  .hero-button-group .btn-memphis-secondary {
+    width: 100%;
   }
 }
 
@@ -434,14 +444,5 @@ function onRefresh(): void {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: #777;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
 </style>

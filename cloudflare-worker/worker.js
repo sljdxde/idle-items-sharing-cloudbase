@@ -1,11 +1,15 @@
 // ================================================
 // cloudflare-worker/worker.js — 邻里好物 薄代理（ADR-0001）
-// 持有 GitHub Token（env secret），加密 PIN，实现借阅/归还 loop 的写端点。
-// 浏览器只调本代理，Token 永不进客户端。
+// 持有 GitHub Token（env secret），浏览器只调 /api/*，Token 永不进客户端。
+// Issue 写入格式与 scripts/gen-items.mjs / handle-comment.mjs 严格一致：
+//   - title：`[闲置物品] 名称`
+//   - labels：item 必备；借出加 lent（POST /labels），归还删 lent（DELETE /labels/lent）
+//   - state：closed = 已下架，open = 在架
+//   - body：含 <!--DATA_START\n{json}\nDATA_END--> 隐藏数据块
+// 鉴权：x-site-key 头（挡普通爬虫）+ 手机号匹配（物主/借阅人）；按 IP 限流。
 // ================================================
 
 let GH_TOKEN = '';
-let PIN_SECRET = '';
 const OWNER = 'sljdxde';
 const REPO = 'idle-items-sharing-cloudbase';
 const SITE_KEY_DEFAULT = 'neighborhood-share-2026';
@@ -18,7 +22,7 @@ function corsHeaders() {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-site-key',
-    'Cache-Control': 'public, max-age=30', // 读缓存 30s
+    'Cache-Control': 'no-store',
   };
 }
 function json(status, obj) {
@@ -35,34 +39,13 @@ function rateOk(request) {
   const now = Date.now();
   const arr = (hits.get(ip) || []).filter(t => now - t < 10 * 60 * 1000);
   if (arr.length >= 30) { hits.set(ip, arr); return false; }
-  arr.push(now); hits.set(ip, arr); return true;
-}
-
-// ─── PIN 加密（AES-GCM，密钥由 PIN_SECRET 派生） ───
-async function getKey() {
-  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(PIN_SECRET));
-  return crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
-}
-async function encryptPin(pin) {
-  const key = await getKey();
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(pin));
-  const combined = new Uint8Array(iv.length + ct.byteLength);
-  combined.set(iv, 0); combined.set(new Uint8Array(ct), iv.length);
-  let bin = ''; for (const b of combined) bin += String.fromCharCode(b);
-  return btoa(bin);
-}
-async function decryptPin(cipher) {
-  const key = await getKey();
-  const combined = Uint8Array.from(atob(cipher), c => c.charCodeAt(0));
-  const iv = combined.slice(0, 12); const ct = combined.slice(12);
-  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
-  return new TextDecoder().decode(pt);
+  arr.push(now); hits.set(ip, arr);
+  return true;
 }
 
 // ─── GitHub 封装 ───
 async function gh(path, method = 'GET', body) {
-  const res = await fetch(`${API}${path}`, {
+  return fetch(`${API}${path}`, {
     method,
     headers: {
       'Authorization': `Bearer ${GH_TOKEN}`,
@@ -72,177 +55,152 @@ async function gh(path, method = 'GET', body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
-  return res;
 }
-async function readItem(num) {
+
+function extractData(body) {
+  const m = body ? body.match(DATA_RE) : null;
+  if (!m || !m[1]) return {};
+  try { return JSON.parse(m[1].trim()); } catch (e) { return {}; }
+}
+
+/** Issue → Item（与 src/lib/github.ts parseIssue / scripts/gen-items.mjs 同构） */
+function toItem(issue) {
+  const d = extractData(issue.body);
+  const isLent = (issue.labels || []).some(l => l.name === 'lent');
+  return {
+    id: issue.number,
+    name: typeof d.name === 'string' && d.name.trim() ? d.name : String(issue.title || '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品',
+    desc: typeof d.desc === 'string' ? d.desc : '',
+    contactType: d.contactType === 'building' ? 'building' : 'phone',
+    contact: typeof d.contact === 'string' ? d.contact : '',
+    imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
+    status: isLent ? 'lent' : 'available',
+    borrowedBy: typeof d.borrowedBy === 'string' ? d.borrowedBy : undefined,
+    borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
+    ownerPhone: typeof d.ownerPhone === 'string' ? d.ownerPhone : '',
+    lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
+    lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
+    category: typeof d.category === 'string' ? d.category : 'other',
+    createTime: typeof d.createTime === 'string' ? d.createTime : (issue.created_at || new Date().toISOString()),
+    archived: issue.state === 'closed',
+  };
+}
+
+/** 把 data 写回 body 的 DATA 块（无块则追加） */
+function withDataBlock(oldBody, data) {
+  const block = `<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`;
+  return DATA_RE.test(oldBody || '') ? (oldBody || '').replace(DATA_RE, () => block) : `${oldBody || ''}\n\n${block}`;
+}
+
+async function readIssue(num) {
   const res = await gh(`/${num}`);
-  if (!res.ok) return null;
-  const issue = await res.json();
-  const m = issue.body ? issue.body.match(DATA_RE) : null;
-  let data = {};
-  if (m && m[1]) { try { data = JSON.parse(m[1].trim()); } catch (e) { data = {}; } }
-  return { issue, data, labels: (issue.labels || []).map(l => l.name) };
-}
-async function writeItem(num, data, labels) {
-  const cur = await readItem(num);
-  const oldBody = (cur && cur.issue.body) || '';
-  const newData = `<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`;
-  const newBody = DATA_RE.test(oldBody) ? oldBody.replace(DATA_RE, () => newData) : oldBody + '\n\n' + newData;
-  await gh(`/${num}`, 'PATCH', { body: newBody });
-  if (labels) await gh(`/${num}/labels`, 'PUT', { labels });
-}
-async function comment(num, text) {
-  await gh(`/${num}/comments`, 'POST', { body: text });
-}
-async function verifyPin(data, pin) {
-  if (data.pinCipher) { try { return (await decryptPin(data.pinCipher)) === pin; } catch (e) { return false; } }
-  if (data.pin) return data.pin === pin; // 兼容旧 item 明文 PIN
-  return false;
-}
-function noPending(data) {
-  return !((data.requests || []).some(r => r.status === 'pending'));
+  if (res.status === 404) return { missing: true };
+  if (!res.ok) return { error: `GitHub API 错误: ${res.status}` };
+  return { issue: await res.json() };
 }
 
 // ─── 路由 ───
 export default {
   async fetch(request, env) {
     GH_TOKEN = env.GITHUB_TOKEN || '';
-    PIN_SECRET = env.PIN_SECRET || 'change-me';
     const expectedSiteKey = env.SITE_KEY || SITE_KEY_DEFAULT;
 
     if (request.method === 'OPTIONS') return preflight();
-    const url = new URL(request.url);
-    const p = url.pathname;
-    if (request.headers.get('x-site-key') !== expectedSiteKey) return json(403, { error: 'site key 错误' });
+    if (!GH_TOKEN) return json(500, { error: '服务配置错误，请联系站长' });
+    if (request.headers.get('x-site-key') !== expectedSiteKey) return json(403, { error: '站点密钥错误' });
     if (!rateOk(request)) return json(429, { error: '请求过于频繁，请稍后再试' });
 
-    // ─── GET：读取物品列表（带 30s 边缘缓存，绕过匿名限流） ───
-    if (request.method === 'GET' && p === '/api/items') {
-      try {
-        const res = await gh('?state=open&per_page=100&labels=item&sort=updated');
+    const url = new URL(request.url);
+    const p = url.pathname;
+    let m;
+
+    try {
+      // ─── 读取物品列表 ───
+      if (request.method === 'GET' && p === '/api/items') {
+        const res = await gh('?state=all&labels=item&per_page=100&sort=updated&direction=desc');
         if (!res.ok) return json(res.status, { error: `GitHub API 错误: ${res.status}` });
         const issues = await res.json();
-        const items = issues.map(issue => {
-          try {
-            const m = issue.body ? issue.body.match(DATA_RE) : null;
-            let d = {};
-            if (m && m[1]) d = JSON.parse(m[1].trim());
-            const isLentLabel = issue.labels && issue.labels.some(l => l.name === 'lent');
-            return {
-              id: issue.number,
-              name: d.name || issue.title || '未知物品',
-              desc: d.desc || '',
-              contact: d.contact || '',
-              building: d.building || '',
-              lat: d.lat || null,
-              lng: d.lng || null,
-              imgUrl: d.imgUrl || '',
-              status: d.status || (isLentLabel ? 'borrowed' : 'available'),
-              requests: Array.isArray(d.requests) ? d.requests : [],
-              pinCipher: d.pinCipher || '',
-              hasLegacyPin: !!d.pin,
-              createTime: issue.created_at,
-            };
-          } catch (e) { return null; }
-        }).filter(Boolean);
-        return json(200, items);
-      } catch (e) {
-        return json(500, { error: '读取失败: ' + e.message });
+        return json(200, issues.map(toItem));
       }
-    }
 
-    if (request.method !== 'POST') return json(405, { error: '仅支持 POST' });
+      if (request.method !== 'POST') return json(405, { error: '仅支持 GET/POST' });
 
-    let m;
-    try {
+      // ─── 发布 ───
       if (p === '/api/items') {
         const b = await request.json();
-        if (!b.name) return json(400, { error: '缺少物品名称' });
+        if (!b || !String(b.name || '').trim()) return json(400, { error: '缺少物品名称' });
+        if (!String(b.ownerPhone || '').trim()) return json(400, { error: '缺少发布者手机号' });
         const data = {
-          name: b.name, desc: b.desc || '', contact: b.contact || '', building: b.building || '',
-          lat: b.lat || null, lng: b.lng || null, imgUrl: b.imgUrl || '',
-          status: 'available', requests: [], pinCipher: b.pin ? await encryptPin(b.pin) : '',
+          name: String(b.name).trim(),
+          desc: String(b.desc || ''),
+          contactType: b.contactType === 'building' ? 'building' : 'phone',
+          contact: String(b.contact || ''),
+          imgUrl: String(b.imgUrl || ''),
+          category: String(b.category || 'other'),
+          ownerPhone: String(b.ownerPhone).trim(),
+          lat: Number.isFinite(b.lat) ? b.lat : null,
+          lng: Number.isFinite(b.lng) ? b.lng : null,
+          createTime: new Date().toISOString(),
         };
-        const readable = `## 闲置物品：${b.name}\n\n**描述**：${b.desc || ''}\n\n**联系/位置**：${b.contact ? b.contact : (b.building ? ('楼号 ' + b.building) : '')}\n\n> 本 Issue 由系统自动创建，请勿修改隐藏数据！\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`;
-        const res = await gh('', 'POST', { title: `[闲置物品] ${b.name}`, body: readable, labels: ['item'] });
-        if (!res.ok) { const e = await res.json().catch(() => ({})); return json(res.status, { error: e.message || '创建失败' }); }
+        const body = `${data.desc}\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->\n\n— 以下为自动生成的数据块，请勿删除 —`;
+        const res = await gh('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); return json(res.status, { error: e.message || '发布失败，请稍后再试' }); }
         const created = await res.json();
-        return json(200, { id: created.number });
+        return json(200, { ok: true, id: created.number });
       }
 
-      if ((m = p.match(/^\/api\/items\/(\d+)\/request$/))) {
-        const num = +m[1];
-        const b = await request.json();
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        const data = item.data;
-        const rid = crypto.randomUUID();
-        const req = { id: rid, fromName: b.fromName || '匿名', contact: b.contact || '', message: b.message || '', createdAt: new Date().toISOString(), status: 'pending' };
-        data.requests = data.requests || [];
-        data.requests.push(req);
-        if (data.status === 'available') data.status = 'requested';
-        await writeItem(num, data, ['item']);
-        await comment(num, `**${req.fromName}**${req.contact ? ('（' + req.contact + '）') : ''} 想借阅《${data.name}》：${req.message || '（无留言）'}`);
-        return json(200, { id: rid });
-      }
-
-      if ((m = p.match(/^\/api\/items\/(\d+)\/confirm-borrow$/))) {
-        const num = +m[1];
-        const b = await request.json();
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        if (!(await verifyPin(item.data, b.pin))) return json(403, { error: '管理密码错误' });
-        const req = b.requestId ? item.data.requests.find(r => r.id === b.requestId) : item.data.requests.find(r => r.status === 'pending');
-        if (req) req.status = 'accepted';
-        item.data.status = 'borrowed';
-        await writeItem(num, item.data, ['item', 'lent']);
+      // ─── 借用 ───
+      if ((m = p.match(/^\/api\/items\/(\d+)\/borrow$/))) {
+        const { issue, missing, error } = await readIssue(+m[1]);
+        if (missing) return json(404, { error: '物品不存在' });
+        if (error) return json(500, { error });
+        const b = await request.json().catch(() => ({}));
+        const phone = String(b.operatorPhone || '').trim();
+        if (!phone) return json(400, { error: '请先登录' });
+        if (issue.state !== 'open') return json(409, { error: '该物品已下架' });
+        const data = extractData(issue.body);
+        if ((issue.labels || []).some(l => l.name === 'lent')) return json(409, { error: '该物品当前不可借用' });
+        if (data.ownerPhone === phone) return json(409, { error: '不能借用自己发布的物品' });
+        data.borrowedBy = phone;
+        data.borrowedAt = new Date().toISOString();
+        await gh(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) });
+        await gh(`/${issue.number}/labels`, 'POST', { labels: ['lent'] });
         return json(200, { ok: true });
       }
 
-      if ((m = p.match(/^\/api\/items\/(\d+)\/confirm-return$/))) {
-        const num = +m[1];
-        const b = await request.json();
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        if (!(await verifyPin(item.data, b.pin))) return json(403, { error: '管理密码错误' });
-        const req = item.data.requests.find(r => r.status === 'accepted');
-        if (req) req.status = 'returned';
-        item.data.status = 'available';
-        await writeItem(num, item.data, ['item']);
+      // ─── 归还 ───
+      if ((m = p.match(/^\/api\/items\/(\d+)\/return$/))) {
+        const { issue, missing, error } = await readIssue(+m[1]);
+        if (missing) return json(404, { error: '物品不存在' });
+        if (error) return json(500, { error });
+        const b = await request.json().catch(() => ({}));
+        const phone = String(b.operatorPhone || '').trim();
+        const data = extractData(issue.body);
+        if (!phone || data.borrowedBy !== phone) return json(403, { error: '只有借阅人本人可以操作归还' });
+        delete data.borrowedBy;
+        delete data.borrowedAt;
+        await gh(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) });
+        await gh(`/${issue.number}/labels/lent`, 'DELETE');
         return json(200, { ok: true });
       }
 
-      if ((m = p.match(/^\/api\/items\/(\d+)\/request\/([^/]+)\/cancel$/))) {
-        const num = +m[1]; const rid = m[2];
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        const req = item.data.requests.find(r => r.id === rid);
-        if (req) req.status = 'cancelled';
-        if (noPending(item.data)) item.data.status = 'available';
-        await writeItem(num, item.data, item.data.status === 'borrowed' ? ['item', 'lent'] : ['item']);
-        return json(200, { ok: true });
-      }
-
-      if ((m = p.match(/^\/api\/items\/(\d+)\/request\/([^/]+)\/reject$/))) {
-        const num = +m[1]; const rid = m[2];
-        const b = await request.json();
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        if (!(await verifyPin(item.data, b.pin))) return json(403, { error: '管理密码错误' });
-        const req = item.data.requests.find(r => r.id === rid);
-        if (req) req.status = 'rejected';
-        if (noPending(item.data)) item.data.status = 'available';
-        await writeItem(num, item.data, ['item']);
-        return json(200, { ok: true });
-      }
-
-      if ((m = p.match(/^\/api\/items\/(\d+)\/remove$/))) {
-        const num = +m[1];
-        const b = await request.json();
-        const item = await readItem(num); if (!item) return json(404, { error: '物品不存在' });
-        if (!(await verifyPin(item.data, b.pin))) return json(403, { error: '管理密码错误' });
-        await gh(`/${num}`, 'PATCH', { state: 'closed' });
+      // ─── 下架 / 上架 ───
+      if ((m = p.match(/^\/api\/items\/(\d+)\/(archive|unarchive)$/))) {
+        const wantClosed = m[2] === 'archive';
+        const { issue, missing, error } = await readIssue(+m[1]);
+        if (missing) return json(404, { error: '物品不存在' });
+        if (error) return json(500, { error });
+        const b = await request.json().catch(() => ({}));
+        const phone = String(b.operatorPhone || '').trim();
+        const data = extractData(issue.body);
+        if (!phone || data.ownerPhone !== phone) return json(403, { error: '只有发布者可以管理自己的物品' });
+        await gh(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' });
         return json(200, { ok: true });
       }
 
       return json(404, { error: '未找到接口' });
     } catch (e) {
-      return json(500, { error: '服务器错误: ' + e.message });
+      return json(500, { error: '服务暂时不可用，请稍后再试' });
     }
   },
 };

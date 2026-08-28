@@ -37,6 +37,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
+  /* 硬阴影/错位旋转装饰不应产生横向滚动条 */
+  overflow-x: clip;
 }
 
 a {
@@ -257,4 +259,14 @@ img {
 
 .grid-move {
   transition: transform 0.4s var(--ease);
+}
+
+/* ── 视觉隐藏（保留可访问性；隐藏原生 file input 等） ── */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

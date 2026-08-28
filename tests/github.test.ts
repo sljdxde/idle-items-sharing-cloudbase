@@ -1,19 +1,10 @@
 // ================================================
-// tests/github.test.ts — GitHub Issues 数据层契约测试
-// DATA 块解析 / 标签与状态映射 / 发布 URL / 评论命令文案
+// tests/github.test.ts — 共享数据层读取契约测试
+// DATA 块解析 / 标签与状态映射（与 scripts/gen-items.mjs、cloudflare-worker 同构）
 // ================================================
 
 import { describe, expect, it } from 'vitest'
-import {
-  DATA_END,
-  DATA_START,
-  borrowCommand,
-  buildPublishUrl,
-  extractDataBlock,
-  issueUrl,
-  parseIssue,
-  type IssueLike,
-} from '@/lib/github'
+import { DATA_END, DATA_START, extractDataBlock, parseIssue, type IssueLike } from '@/lib/github'
 
 function makeIssue(partial: Partial<IssueLike>): IssueLike {
   return {
@@ -85,43 +76,5 @@ describe('parseIssue（Issue → Item）', () => {
 
   it('非 item 前缀标题原样保留', () => {
     expect(parseIssue(makeIssue({ title: '普通标题' })).name).toBe('普通标题')
-  })
-})
-
-describe('buildPublishUrl / issueUrl', () => {
-  it('拼出 issues/new：标题带前缀、labels=item、body 含数据块', () => {
-    const url = buildPublishUrl({
-      name: '小米加湿器',
-      desc: '静音款',
-      contactType: 'phone',
-      contact: '13800000002',
-      imgUrl: '',
-      category: 'home',
-      ownerPhone: '13800000002',
-      lat: 30.2,
-      lng: 120.1,
-    })
-    expect(url).toContain('/issues/new?')
-    expect(url).toContain('labels=item')
-    const params = new URLSearchParams(url.split('?')[1])
-    // 标题带「[闲置物品]」前缀
-    expect(params.get('title')).toBe('[闲置物品] 小米加湿器')
-    const body = params.get('body')!
-    // body 含数据块与关键字段
-    expect(body).toContain(DATA_START)
-    expect(body).toContain(DATA_END)
-    expect(body).toContain('"ownerPhone":"13800000002"')
-    expect(body).toContain('"lat":30.2')
-    expect(body).toContain('"lng":120.1')
-  })
-
-  it('issueUrl 指向对应 Issue', () => {
-    expect(issueUrl(42)).toContain('/issues/42')
-  })
-})
-
-describe('评论命令文案（与 Actions 脚本一致）', () => {
-  it('借用命令带手机号', () => {
-    expect(borrowCommand('13812345678')).toBe('借用 13812345678')
   })
 })

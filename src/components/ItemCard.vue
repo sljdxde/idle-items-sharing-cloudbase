@@ -118,18 +118,18 @@ function onToggleArchive(): void {
       <!-- 物主：管理 + 快捷上下架 -->
       <template v-if="ownerIsMe">
         <button type="button" class="btn-item-borrow" @click="$emit('manage', item)">管理</button>
-        <button type="button" class="btn-item-manage" @click="onToggleArchive">
+        <button type="button" class="btn-item-manage" :disabled="store.writing" @click="onToggleArchive">
           {{ item.archived ? '上架' : '下架' }}
         </button>
       </template>
       <!-- 借阅人本人：归还 -->
       <button v-else-if="canReturnMine" type="button" class="btn-item-borrow btn-return"
-        @click="store.returnBack(item.id)">
+        :disabled="store.writing" @click="store.returnBack(item.id)">
         我要归还
       </button>
       <!-- 其他人：借用 -->
-      <button v-else type="button" class="btn-item-borrow" :disabled="item.status === 'lent' || item.archived"
-        @click="$emit('borrow', item)">
+      <button v-else type="button" class="btn-item-borrow"
+        :disabled="item.status === 'lent' || item.archived || store.writing" @click="$emit('borrow', item)">
         {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
       </button>
     </div>
@@ -328,5 +328,10 @@ function onToggleArchive(): void {
 
 .btn-item-manage:hover {
   background: var(--mustard);
+}
+
+.btn-item-manage:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

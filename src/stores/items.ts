@@ -1,18 +1,18 @@
 // ================================================
 // src/stores/items.ts — 物品与筛选的全局状态（Pinia）
-// 数据源：GitHub Issues 共享数据层（items.json 快照 → 实时 API → 种子兜底）
-// 写操作：发布=预填 issues/new；借/还/上下架=评论命令（Actions 自动处理）
+// 读：items.json 同源快照 → 代理实时 → 种子兜底（lib/github.ts）
+// 写：发布/借用/归还/上下架 → 云端代理（lib/api.ts），用户全程无感 GitHub
 // ================================================
 
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { CategoryId, Item } from '@/lib/types'
-import { listItems, buildPublishUrl, issueUrl, borrowCommand, RETURN_COMMAND, ARCHIVE_COMMAND, UNARCHIVE_COMMAND } from '@/lib/github'
+import { listItems } from '@/lib/github'
+import { api } from '@/lib/api'
 import { matchesCategory, matchesRadius, matchesSearch } from '@/lib/filters'
 import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
-import { copyText } from '@/lib/clipboard'
 import {
   DEFAULT_RADIUS_KM,
   distanceKm,
@@ -37,11 +37,8 @@ function readStoredPos(): LatLng | null {
   }
 }
 
-/** 打开 Issue 评论区并尝试复制命令文本 */
-async function openIssueWithCommand(id: number, cmd: string, tip: string): Promise<void> {
-  await copyText(cmd)
-  window.open(issueUrl(id), '_blank', 'noopener')
-  window.alert(`已复制「${cmd}」到剪贴板\n\n${tip}`)
+function errMsg(e: unknown): string {
+  return e instanceof Error && e.message ? e.message : '请稍后再试'
 }
 
 export const useItemsStore = defineStore('items', () => {
@@ -63,12 +60,25 @@ export const useItemsStore = defineStore('items', () => {
   const userPosition = ref<LatLng | null>(null)
   const locating = ref(false)
   const loading = ref(false)
+  /** 任一写操作进行中（发布/借用/归还/上下架），用于按钮防重复点击 */
+  const writing = ref(false)
 
-  // ---------- 加载（GitHub Issues 共享数据） ----------
-  async function load(): Promise<void> {
+  // 登出后重置「我的」筛选，避免残留状态影响下次登录
+  watch(
+    () => auth.phone,
+    (phone) => {
+      if (!phone) {
+        onlyMine.value = false
+        onlyBorrowed.value = false
+      }
+    },
+  )
+
+  // ---------- 加载（共享数据） ----------
+  async function load(force = false): Promise<void> {
     loading.value = true
     try {
-      items.value = await listItems()
+      items.value = await listItems(force)
     } catch {
       if (items.value.length === 0) items.value = []
     } finally {
@@ -79,8 +89,9 @@ export const useItemsStore = defineStore('items', () => {
 
   load()
 
+  /** 刷新：代理实时优先（写操作后立即见新状态），失败回快照 */
   async function refresh(): Promise<void> {
-    await load()
+    await load(true)
   }
 
   /** 重新获取定位（发布页/工具栏的「定位」按钮） */
@@ -160,8 +171,8 @@ export const useItemsStore = defineStore('items', () => {
     return items.value.find((it) => it.id === id)
   }
 
-  // ---------- 发布（打开预填 GitHub Issue 创建页） ----------
-  function publish(draft: {
+  // ---------- 发布（云端代理，站内完成） ----------
+  async function publish(draft: {
     name: string
     desc: string
     contactType: 'phone' | 'building'
@@ -169,77 +180,110 @@ export const useItemsStore = defineStore('items', () => {
     imgUrl: string
     category: CategoryId
     position: LatLng | null
-  }): boolean {
+  }): Promise<boolean> {
     if (!auth.phone) {
       toast.error('请先登录', '发布闲置需要先登录')
       return false
     }
-    const url = buildPublishUrl({
-      name: draft.name,
-      desc: draft.desc,
-      contactType: draft.contactType,
-      contact: draft.contact,
-      imgUrl: draft.imgUrl,
-      category: draft.category,
-      ownerPhone: auth.phone,
-      lat: draft.position?.lat ?? null,
-      lng: draft.position?.lng ?? null,
-    })
-    const w = window.open(url, '_blank', 'noopener')
-    if (!w) {
-      toast.warning('弹窗被拦截', '请允许本站点弹出窗口后重试')
-    } else {
-      toast.info('正在打开发布页', '在 GitHub 上提交后，物品即对所有邻居可见')
+    if (writing.value) return false
+    writing.value = true
+    const phone = auth.phone
+    try {
+      await api.publish({
+        name: draft.name,
+        desc: draft.desc,
+        contactType: draft.contactType,
+        contact: draft.contact,
+        imgUrl: draft.imgUrl,
+        category: draft.category,
+        ownerPhone: phone,
+        lat: draft.position?.lat ?? null,
+        lng: draft.position?.lng ?? null,
+      })
+      toast.success('发布成功', '你的好物已对所有邻居可见')
+      await refresh()
+      return true
+    } catch (e) {
+      toast.error('发布失败', errMsg(e))
+      return false
+    } finally {
+      writing.value = false
     }
-    return true
   }
 
-  // ---------- 借阅 / 归还 / 上下架（评论命令引导） ----------
-  function borrow(id: number): boolean {
+  // ---------- 借用 / 归还 / 上下架（云端代理，站内完成） ----------
+  async function borrow(id: number): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
     if (!auth.phone) {
       toast.error('请先登录', '借用前请先用手机号登录')
       return false
     }
-    if (!canBorrow(it, auth.phone)) {
+    const phone = auth.phone
+    if (!canBorrow(it, phone)) {
       toast.warning('暂时借不了', '该物品当前不可借用')
       return false
     }
-    void openIssueWithCommand(
-      id,
-      borrowCommand(auth.phone),
-      `在评论区粘贴并发送，物品即标记为「已借出」。`,
-    )
-    return true
+    if (writing.value) return false
+    writing.value = true
+    try {
+      await api.borrow(id, phone)
+      toast.success('借用成功', '物品已标记为「已借出」，请按联系方式与物主交接')
+      await refresh()
+      return true
+    } catch (e) {
+      toast.error('借用失败', errMsg(e))
+      return false
+    } finally {
+      writing.value = false
+    }
   }
 
-  function returnBack(id: number): boolean {
+  async function returnBack(id: number): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
-    if (!canReturn(it, auth.phone)) {
+    const phone = auth.phone
+    if (!phone || !canReturn(it, phone)) {
       toast.error('无法归还', '只有借阅人本人可以操作归还')
       return false
     }
-    void openIssueWithCommand(id, RETURN_COMMAND, '在评论区粘贴并发送「归还」，物品恢复可借。')
-    return true
+    if (writing.value) return false
+    writing.value = true
+    try {
+      await api.returnBack(id, phone)
+      toast.success('归还成功', '物品已恢复「可借」，感谢分享')
+      await refresh()
+      return true
+    } catch (e) {
+      toast.error('归还失败', errMsg(e))
+      return false
+    } finally {
+      writing.value = false
+    }
   }
 
-  function setArchived(id: number, archived: boolean): boolean {
+  async function setArchived(id: number, archived: boolean): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
-    if (!isOwner(it, auth.phone)) {
+    const phone = auth.phone
+    if (!phone || !isOwner(it, phone)) {
       toast.error('无权操作', '只有发布者可以管理自己的物品')
       return false
     }
-    void openIssueWithCommand(
-      id,
-      archived ? ARCHIVE_COMMAND : UNARCHIVE_COMMAND,
-      archived
-        ? '在评论区粘贴并发送「下架」，物品将从公开列表隐藏。'
-        : '在评论区粘贴并发送「上架」，物品重新可见。',
-    )
-    return true
+    if (writing.value) return false
+    writing.value = true
+    try {
+      if (archived) await api.archive(id, phone)
+      else await api.unarchive(id, phone)
+      toast.success(archived ? '已下架' : '已上架', archived ? '物品已从公开列表隐藏' : '物品已重新对邻居可见')
+      await refresh()
+      return true
+    } catch (e) {
+      toast.error(archived ? '下架失败' : '上架失败', errMsg(e))
+      return false
+    } finally {
+      writing.value = false
+    }
   }
 
   // ---------- 筛选 ----------
@@ -278,6 +322,7 @@ export const useItemsStore = defineStore('items', () => {
     userPosition,
     locating,
     loading,
+    writing,
     load,
     refresh,
     locate,

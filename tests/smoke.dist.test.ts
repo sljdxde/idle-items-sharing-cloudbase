@@ -101,8 +101,8 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     back.click()
     await flush(120)
     const btns = [...document.querySelectorAll<HTMLButtonElement>('button')]
-    const mine = btns.find((b) => b.textContent?.trim() === '我的发布')!
-    const borrowed = btns.find((b) => b.textContent?.trim() === '我的借用')!
+    const mine = btns.find((b) => b.textContent?.includes('我的发布'))!
+    const borrowed = btns.find((b) => b.textContent?.includes('我的借用'))!
     expect(mine).toBeTruthy()
     expect(borrowed).toBeTruthy()
     // 点「我的发布」→ 高亮

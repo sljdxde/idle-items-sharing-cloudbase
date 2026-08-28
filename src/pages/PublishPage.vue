@@ -5,8 +5,10 @@
 // ================================================
 
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId, ContactType } from '@/lib/types'
 import { isValidPhone } from '@/lib/validate'
@@ -15,6 +17,8 @@ import LoginBox from '@/components/LoginBox.vue'
 
 const store = useItemsStore()
 const auth = useAuthStore()
+const toast = useToast()
+const router = useRouter()
 
 const name = ref('')
 const desc = ref('')
@@ -25,8 +29,8 @@ const fileInput = ref<HTMLInputElement | null>(null)
 /** 上传图片压缩后的 data URI（可选） */
 const imgDataUri = ref('')
 
-// 联系方式：手机号 / 楼号 二选一
-const contactType = ref<ContactType>('phone')
+// 联系方式：楼号门牌 / 手机号 二选一（楼号优先）
+const contactType = ref<ContactType>('building')
 const contact = ref('')
 
 // 定位状态
@@ -52,11 +56,11 @@ async function tryLocate(): Promise<void> {
 function validateContact(): boolean {
   const v = contact.value.trim()
   if (!v) {
-    window.alert(`请填写${contactLabel.value}（联系方式必填）`)
+    toast.warning('请填写联系方式', `${contactLabel.value}为必填项`)
     return false
   }
   if (contactType.value === 'phone' && !isValidPhone(v)) {
-    window.alert('手机号格式不正确（1 开头 11 位数字）')
+    toast.warning('手机号格式不正确', '需为 1 开头 11 位数字')
     return false
   }
   return true
@@ -79,17 +83,17 @@ function clearImage(): void {
   if (fileInput.value) fileInput.value.value = ''
 }
 
-function onSubmit(): void {
+async function onSubmit(): Promise<void> {
   if (publishing.value) return
   if (!name.value.trim() || !desc.value.trim()) {
-    window.alert('请填写物品名称和描述')
+    toast.warning('信息不完整', '请填写物品名称和描述')
     return
   }
   if (!validateContact()) return
 
   publishing.value = true
   try {
-    store.publish({
+    const ok = await store.publish({
       name: name.value,
       desc: desc.value,
       contactType: contactType.value,
@@ -98,6 +102,14 @@ function onSubmit(): void {
       category: category.value,
       position: store.userPosition,
     })
+    if (ok) {
+      name.value = ''
+      desc.value = ''
+      contact.value = ''
+      imgDataUri.value = ''
+      if (fileInput.value) fileInput.value.value = ''
+      router.push('/')
+    }
   } finally {
     publishing.value = false
   }
@@ -202,15 +214,15 @@ function onSubmit(): void {
 
           <!-- 联系方式：手机号 / 楼号 二选一 -->
           <div class="field">
-            <span class="field-label">联系方式 <i class="req">*</i> <small>（手机号 或 楼号，二选一）</small></span>
+            <span class="field-label">联系方式 <i class="req">*</i> <small>（楼号 或 手机号，二选一）</small></span>
             <div class="contact-type-group" role="radiogroup" aria-label="联系方式类型">
-              <label class="contact-type-option" :class="{ active: contactType === 'phone' }">
-                <input v-model="contactType" type="radio" value="phone" name="contactType" />
-                手机号
-              </label>
               <label class="contact-type-option" :class="{ active: contactType === 'building' }">
                 <input v-model="contactType" type="radio" value="building" name="contactType" />
                 楼号门牌
+              </label>
+              <label class="contact-type-option" :class="{ active: contactType === 'phone' }">
+                <input v-model="contactType" type="radio" value="phone" name="contactType" />
+                手机号
               </label>
             </div>
             <input v-model="contact" type="text" class="memphis-input" maxlength="40"
@@ -220,10 +232,10 @@ function onSubmit(): void {
           </div>
         </fieldset>
 
-        <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing">
-          {{ publishing ? '打开中…' : '去 GitHub 发布' }}
+        <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing || store.writing">
+          {{ publishing ? '发布中…' : '发布闲置' }}
         </button>
-        <p class="submit-hint">点击后将打开 GitHub 发布页，提交即向全体邻居发布（新标签页）。</p>
+        <p class="submit-hint">提交后物品即对所有邻居可见。</p>
       </form>
     </div>
   </main>

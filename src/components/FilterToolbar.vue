@@ -119,6 +119,7 @@ async function onLocate(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .tool-row.wrap {
@@ -127,12 +128,12 @@ async function onLocate(): Promise<void> {
 
 /* 搜索框 */
 .search-box {
-  flex: 1;
+  flex: 1 1 220px;
   display: flex;
   align-items: center;
   gap: 0.45rem;
   min-height: 44px;
-  min-width: 180px;
+  min-width: 0;
   padding: 0 0.7rem;
   border: 2px solid var(--ink);
   background: #fff;
