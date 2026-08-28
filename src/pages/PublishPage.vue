@@ -1,17 +1,15 @@
 <script setup lang="ts">
 // ================================================
-// PublishPage — 发布闲置：站内直发（本地存储），图片本机压缩后内嵌
-// 离线容器：无定位/无外链图床，位置=楼号门牌
+// PublishPage — 发布闲置：提交后打开预填的 GitHub Issue 创建页
+// 零服务器：图片用外链（GitHub Issue 正文或图床链接），位置=楼号门牌
 // ================================================
 
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
-import { useToast } from '@/composables/useToast'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId } from '@/lib/types'
 
-const toast = useToast()
 const router = useRouter()
 const store = useItemsStore()
 
@@ -23,64 +21,20 @@ const imgUrl = ref('')
 const category = ref<CategoryId>('other')
 const publishing = ref(false)
 
-/** 选图 → canvas 压缩为 data:URI（包内可用，离线可见） */
-const fileInput = ref<HTMLInputElement | null>(null)
-function pickImage(): void {
-  fileInput.value?.click()
-}
-
-function onFileChange(e: Event): void {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  if (!file.type.startsWith('image/')) {
-    toast.warning('仅支持图片', '请选择照片文件')
-    return
-  }
-  const reader = new FileReader()
-  reader.onload = () => {
-    const img = new Image()
-    img.onload = () => {
-      const MAX = 1000
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(img.width * scale)
-      canvas.height = Math.round(img.height * scale)
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
-      if (dataUrl.length > 1_500_000) {
-        toast.warning('图片过大', '换一张小一点的照片试试')
-        return
-      }
-      imgUrl.value = dataUrl
-    }
-    img.onerror = () => toast.warning('图片读取失败', '换一张试试')
-    img.src = String(reader.result)
-  }
-  reader.readAsDataURL(file)
-  input.value = '' // 允许重复选择同一张
-}
-
-function clearImage(): void {
-  imgUrl.value = ''
-}
-
 async function onSubmit(): Promise<void> {
   if (publishing.value) return
   if (!name.value.trim() || !desc.value.trim()) {
-    toast.warning('请填写完整', '物品名称和描述为必填项')
+    window.alert('请填写物品名称和描述')
     return
   }
   if (!contact.value.trim() && !building.value.trim()) {
-    toast.warning('请填写联系方式', '楼号与联系方式至少填写一项')
+    window.alert('楼号与联系方式至少填写一项')
     return
   }
 
   publishing.value = true
   try {
-    store.publish({
+    await store.publish({
       name: name.value,
       desc: desc.value,
       contact: contact.value,
@@ -88,7 +42,6 @@ async function onSubmit(): Promise<void> {
       imgUrl: imgUrl.value,
       category: category.value,
     })
-    toast.success('发布成功', '物品已上架，邻居们可以看到啦')
     router.push('/')
   } finally {
     publishing.value = false
@@ -128,19 +81,10 @@ async function onSubmit(): Promise<void> {
           </label>
 
           <div class="field">
-            <span class="field-label">物品照片 <small>（选填，自动压缩保存在本机）</small></span>
-            <input ref="fileInput" type="file" accept="image/*" class="visually-hidden" @change="onFileChange" />
+            <span class="field-label">物品照片链接 <small>（选填，外链图片地址）</small></span>
+            <input v-model="imgUrl" type="url" class="memphis-input" maxlength="500"
+              placeholder="粘贴图片链接，例如图床 / 相册分享链接" />
             <img v-if="imgUrl" :src="imgUrl" alt="图片预览" class="img-preview" />
-            <button v-if="imgUrl" type="button" class="btn-ghost btn-sm" @click="clearImage">移除照片</button>
-            <button v-else type="button" class="btn-photo" @click="pickImage">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-                aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18"></rect>
-                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                <polyline points="21 15 16 10 5 21"></polyline>
-              </svg>
-              从相册选择照片
-            </button>
           </div>
         </fieldset>
 

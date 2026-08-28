@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ================================================
 // HomePage — Hero 拼贴 + 工具栏（搜索/分类）+ 卡片网格
-// 数据来自本地存储，加载即时完成，无网络态
+// 数据来自 GitHub Issues（经 items.json 快照），加载为异步网络请求
 // ================================================
 
 import { onMounted, ref } from 'vue'
@@ -25,8 +25,8 @@ onMounted(() => {
 })
 
 function onRefresh(): void {
-  store.load()
-  toast.success('已刷新', '数据已从本机重新载入')
+  store.refresh()
+  toast.success('已刷新', '已重新从 GitHub 拉取社区好物')
 }
 </script>
 
@@ -42,10 +42,10 @@ function onRefresh(): void {
             aria-hidden="true">
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
           </svg>
-          社区闲置 · 互助共享 · 离线可用
+          社区闲置 · 互助共享 · GitHub 协作
         </div>
         <h1 class="hero-headline">让好物在<span class="retro-tag">邻里间流转</span></h1>
-        <p class="hero-subhead">发现邻居的闲置好物，借用或分享，让每一件物品继续发挥价值。数据保存在你的设备上。</p>
+        <p class="hero-subhead">发现邻居的闲置好物，借用或分享，让每一件物品继续发挥价值。物品由社区通过 GitHub Issues 协作维护。</p>
         <div class="hero-button-group">
           <RouterLink to="/publish" class="btn-memphis-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -74,8 +74,14 @@ function onRefresh(): void {
     <!-- 工具栏：搜索 / 分类 / 刷新 -->
     <FilterToolbar @refresh="onRefresh" />
 
+    <!-- 加载态 -->
+    <div v-if="store.loading && store.visibleItems.length === 0" class="loading-box">
+      <span class="loading-dot" aria-hidden="true"></span>
+      正在从 GitHub 加载社区好物…
+    </div>
+
     <!-- 空状态 -->
-    <div v-if="store.visibleItems.length === 0" class="empty-box">
+    <div v-else-if="store.visibleItems.length === 0" class="empty-box">
       <div class="empty-geom" aria-hidden="true">
         <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
       </div>
@@ -93,7 +99,7 @@ function onRefresh(): void {
     </div>
 
     <!-- 网格 -->
-    <section id="item-grid" class="memphis-grid" aria-label="闲置物品列表">
+    <section v-else id="item-grid" class="memphis-grid" aria-label="闲置物品列表">
       <TransitionGroup name="grid">
         <div v-for="(item, i) in store.visibleItems" :key="item.id" class="grid-cell">
           <ItemCard :item="item" :index="i" @borrow="borrowItem = $event" @manage="manageItem = $event" />
@@ -223,6 +229,45 @@ function onRefresh(): void {
   .deco-circle,
   .deco-triangle {
     display: none;
+  }
+}
+
+/* ── 加载态 ── */
+.loading-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #555;
+  background: var(--paper-cream);
+  border: 2.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--royal-blue);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 2rem;
+}
+
+.loading-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--retro-red);
+  border: 2px solid var(--ink);
+  animation: loadingPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 

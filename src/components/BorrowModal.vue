@@ -1,9 +1,8 @@
 <script setup lang="ts">
-// 借阅弹窗：站内发起借用申请（本地数据，无需任何外部账号）
-import { reactive, watch } from 'vue'
+// 借阅弹窗：零服务器方案下，展示物主联系方式并引导到 GitHub 沟通
 import BaseModal from './BaseModal.vue'
 import type { Item } from '@/lib/types'
-import { useItemsStore } from '@/stores/items'
+import { issueUrl } from '@/lib/github'
 
 const props = defineProps<{
   open: boolean
@@ -12,30 +11,8 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const store = useItemsStore()
-
-const form = reactive({ fromName: '', contact: '', message: '' })
-
-watch(
-  () => props.open,
-  (open) => {
-    if (open) {
-      form.fromName = ''
-      form.contact = ''
-      form.message = ''
-    }
-  },
-)
-
-function submit(): void {
-  if (!props.item) return
-  if (!form.fromName.trim() || !form.contact.trim()) return
-  store.requestBorrow(props.item.id, {
-    fromName: form.fromName,
-    contact: form.contact,
-    message: form.message,
-  })
-  emit('close')
+function openIssue(): void {
+  if (props.item) window.open(issueUrl(props.item.id), '_blank')
 }
 </script>
 
@@ -50,30 +27,27 @@ function submit(): void {
           </svg>
         </span>
         <div>
-          <h3 id="borrow-title" class="head-title">申请借用</h3>
+          <h3 id="borrow-title" class="head-title">借用联系</h3>
           <div class="head-sub">「{{ item.name }}」</div>
         </div>
       </div>
 
-      <form class="borrow-form" @submit.prevent="submit">
-        <label class="field">
-          <span class="field-label">你的称呼 *</span>
-          <input v-model="form.fromName" class="input" type="text" required maxlength="20"
-            placeholder="如：3栋小王">
-        </label>
-        <label class="field">
-          <span class="field-label">联系方式 *</span>
-          <input v-model="form.contact" class="input" type="text" required maxlength="40"
-            placeholder="微信 / 手机号">
-        </label>
-        <label class="field">
-          <span class="field-label">想借多久、做什么用</span>
-          <textarea v-model="form.message" class="input textarea" rows="3" maxlength="120"
-            placeholder="说明用途与归还时间，更容易借到"></textarea>
-        </label>
-        <button type="submit" class="btn-memphis-primary btn-block">提交申请，等物主确认</button>
-        <p class="privacy-tip">申请会连同称呼与联系方式一起展示给物主。</p>
-      </form>
+      <div class="contact-card">
+        <div class="contact-row">
+          <span class="k">物主联系方式</span>
+          <b class="v selectable">{{ item.contact || '未填写' }}</b>
+        </div>
+        <div class="contact-row">
+          <span class="k">楼号门牌</span>
+          <b class="v selectable">{{ item.building || '未填写' }}</b>
+        </div>
+      </div>
+
+      <p class="privacy-tip">本平台不托管隐私信息，请在 GitHub 上与物主沟通借用细节与时间。</p>
+
+      <button type="button" class="btn-memphis-primary btn-block" @click="openIssue">
+        在 GitHub 上与物主沟通
+      </button>
     </div>
   </BaseModal>
 </template>
@@ -114,27 +88,42 @@ function submit(): void {
   color: #777;
 }
 
-.borrow-form {
+.contact-card {
+  border: 2px solid var(--ink);
+  background: var(--bg-cream);
+  box-shadow: 3px 3px 0 var(--ink);
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
 }
 
-.field {
+.contact-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
 }
 
-.field-label {
+.contact-row + .contact-row {
+  border-top: 1.5px dashed rgba(29, 30, 44, 0.25);
+}
+
+.contact-row .k {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #555;
+  color: #777;
 }
 
-.textarea {
-  resize: none;
+.contact-row .v {
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+/* 容器禁剪贴板 API：联系方式保持可选中，供长按手动复制 */
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .btn-block {

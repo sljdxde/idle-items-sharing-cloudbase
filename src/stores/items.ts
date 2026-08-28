@@ -1,23 +1,17 @@
 // ================================================
 // src/stores/items.ts — 物品与筛选的全局状态（Pinia）
-// 数据源：localStorage（离线自持），无任何网络依赖
+// 数据源：GitHub Issues（零服务器、零写凭证）。读取经 items.json 快照 + 实时 API 兜底。
 // ================================================
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { BorrowRequest, CategoryId, Item } from '@/lib/types'
-import * as store from '@/lib/localStore'
+import type { CategoryId, Item } from '@/lib/types'
+import { issueUrl, listItems, buildPublishUrl, type PublishDraft } from '@/lib/github'
 import { matchesCategory, matchesSearch } from '@/lib/filters'
 import { useToast } from '@/composables/useToast'
 
-export interface PublishDraft {
-  name: string
-  desc: string
-  contact: string
-  building: string
-  imgUrl: string
-  category: CategoryId
-}
+export { issueUrl }
+export type { PublishDraft }
 
 export const useItemsStore = defineStore('items', () => {
   const toast = useToast()
@@ -26,17 +20,23 @@ export const useItemsStore = defineStore('items', () => {
   const items = ref<Item[]>([])
   const search = ref('')
   const category = ref<CategoryId | 'all'>('all')
+  const loading = ref(false)
 
-  // ---------- 加载 ----------
-  function load(): void {
-    items.value = store.loadItems()
+  // ---------- 加载（异步，GitHub Issues）----------
+  async function load(): Promise<void> {
+    loading.value = true
+    try {
+      items.value = await listItems()
+    } catch {
+      if (items.value.length === 0) items.value = []
+    } finally {
+      loading.value = false
+    }
   }
 
-  /** 持久化兜底提示 */
-  function persist(): void {
-    if (!store.saveItems(items.value)) {
-      toast.warning('存储空间不足', '本次改动仅在本页生效')
-    }
+  /** 强制重新拉取（绕过本地缓存与快照） */
+  function refresh(): void {
+    load()
   }
 
   // ---------- 派生 ----------
@@ -46,7 +46,10 @@ export const useItemsStore = defineStore('items', () => {
       .filter((it) => !it.archived)
       .filter((it) => matchesCategory(it, category.value))
       .filter((it) => matchesSearch(it, search.value))
-      .sort((a, b) => b.createTime.localeCompare(a.createTime) || b.id - a.id),
+      .sort(
+        (a, b) =>
+          new Date(b.createTime).getTime() - new Date(a.createTime).getTime() || b.id - a.id,
+      ),
   )
 
   function itemById(id: number): Item | undefined {
@@ -61,99 +64,28 @@ export const useItemsStore = defineStore('items', () => {
     search.value = q
   }
 
-  // ---------- 写操作 ----------
-  function publish(draft: PublishDraft): Item {
-    const item: Item = {
-      id: store.nextId(items.value),
-      name: draft.name.trim(),
-      desc: draft.desc.trim(),
-      contact: draft.contact.trim(),
-      building: draft.building.trim(),
-      imgUrl: draft.imgUrl,
-      status: 'available',
-      requests: [],
-      category: draft.category,
-      createTime: new Date().toISOString(),
-      archived: false,
+  // ---------- 发布（跳转到预填的 GitHub Issue 创建页）----------
+  async function publish(draft: PublishDraft): Promise<void> {
+    const url = buildPublishUrl(draft)
+    const w = window.open(url, '_blank')
+    if (!w) {
+      toast.warning('弹窗被拦截', '请允许本站点弹出窗口后重试')
+    } else {
+      toast.success('已打开 GitHub', '登录并提交后，物品将在几秒内自动上架')
     }
-    items.value.unshift(item)
-    persist()
-    return item
-  }
-
-  /** 借阅人发起申请 → requested */
-  function requestBorrow(id: number, input: Omit<BorrowRequest, 'id' | 'createdAt' | 'status'>): void {
-    const it = itemById(id)
-    if (!it || it.status === 'borrowed') return
-    it.requests.push({
-      ...input,
-      id: store.uid(),
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-    })
-    it.status = 'requested'
-    persist()
-  }
-
-  /** 物主确认借出 → borrowed */
-  function confirmBorrow(id: number, requestId: string): void {
-    const it = itemById(id)
-    const req = it?.requests.find((r) => r.id === requestId && r.status === 'pending')
-    if (!it || !req) return
-    req.status = 'accepted'
-    it.status = 'borrowed'
-    persist()
-  }
-
-  /** 物主婉拒；无其他待处理则回退可借 */
-  function rejectRequest(id: number, requestId: string): void {
-    const it = itemById(id)
-    const req = it?.requests.find((r) => r.id === requestId && r.status === 'pending')
-    if (!it || !req) return
-    req.status = 'rejected'
-    if (!it.requests.some((r) => r.status === 'pending')) it.status = 'available'
-    persist()
-  }
-
-  /** 确认归还 → available（同一 listing 再次上架） */
-  function confirmReturn(id: number): void {
-    const it = itemById(id)
-    if (!it) return
-    for (const r of it.requests) {
-      if (r.status === 'accepted') r.status = 'returned'
-      else if (r.status === 'pending') r.status = 'rejected'
-    }
-    it.status = 'available'
-    persist()
-  }
-
-  function setArchived(id: number, archived: boolean): void {
-    const it = itemById(id)
-    if (!it) return
-    it.archived = archived
-    persist()
-  }
-
-  function removeItem(id: number): void {
-    items.value = items.value.filter((it) => it.id !== id)
-    persist()
   }
 
   return {
     items,
     search,
     category,
+    loading,
     load,
+    refresh,
     visibleItems,
     itemById,
     setCategory,
     setSearch,
     publish,
-    requestBorrow,
-    confirmBorrow,
-    rejectRequest,
-    confirmReturn,
-    setArchived,
-    removeItem,
   }
 })

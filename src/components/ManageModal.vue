@@ -1,9 +1,8 @@
 <script setup lang="ts">
-// 物主管理弹窗：站内完成 借出确认/婉拒/归还/下架/重新上架/删除
+// 物主管理弹窗：零服务器方案下，引导到 GitHub 对 Issue 操作（标签 / 关闭）
 import BaseModal from './BaseModal.vue'
 import type { Item } from '@/lib/types'
-import { formatDateShort } from '@/lib/filters'
-import { useItemsStore } from '@/stores/items'
+import { issueUrl } from '@/lib/github'
 
 const props = defineProps<{
   open: boolean
@@ -12,46 +11,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const store = useItemsStore()
-
 const STATUS_TEXT = {
   available: '闲置中',
   requested: '待确认',
   borrowed: '已借出',
 } as const
 
-function pending(item: Item) {
-  return item.requests.filter((r) => r.status === 'pending')
-}
-
-function onConfirmBorrow(id: number, requestId: string): void {
-  store.confirmBorrow(id, requestId)
-}
-
-function onReject(id: number, requestId: string): void {
-  store.rejectRequest(id, requestId)
-}
-
-function onReturn(): void {
-  if (!props.item) return
-  if (window.confirm('确认物品已归还？将恢复为「闲置中」。')) {
-    store.confirmReturn(props.item.id)
-  }
-}
-
-function onToggleArchive(): void {
-  if (!props.item) return
-  const next = !props.item.archived
-  store.setArchived(props.item.id, next)
-  emit('close')
-}
-
-function onDelete(): void {
-  if (!props.item) return
-  if (window.confirm(`确定永久删除「${props.item.name}」吗？此操作不可恢复。`)) {
-    store.removeItem(props.item.id)
-    emit('close')
-  }
+function openIssue(): void {
+  if (props.item) window.open(issueUrl(props.item.id), '_blank')
 }
 </script>
 
@@ -71,39 +38,17 @@ function onDelete(): void {
         </div>
       </div>
 
-      <!-- 待处理借阅申请 -->
-      <section v-if="pending(item).length" class="req-section">
-        <h4 class="sec-title">待处理申请</h4>
-        <div v-for="r in pending(item)" :key="r.id" class="req-card">
-          <div class="req-line">
-            <b>{{ r.fromName }}</b>
-            <span class="mono">{{ formatDateShort(r.createdAt) }}</span>
-          </div>
-          <div class="req-contact">{{ r.contact }}</div>
-          <p v-if="r.message" class="req-msg">{{ r.message }}</p>
-          <div class="req-actions">
-            <button type="button" class="btn-memphis-primary btn-sm" @click="onConfirmBorrow(item.id, r.id)">
-              同意并标记借出
-            </button>
-            <button type="button" class="btn-ghost btn-sm" @click="onReject(item.id, r.id)">婉拒</button>
-          </div>
-        </div>
-      </section>
-      <p v-else class="empty-tip">暂无待处理的借阅申请。</p>
+      <p class="guide-title">在 GitHub 上管理此物品：</p>
+      <ul class="guide-list">
+        <li>添加 <code>lent</code> 标签 → 标记为「已借出」</li>
+        <li>移除 <code>lent</code> 标签 → 标记「已归还」</li>
+        <li>关闭 Issue → 下架（从列表隐藏）</li>
+        <li>重新打开 Issue → 重新上架</li>
+      </ul>
 
-      <!-- 状态操作 -->
-      <section class="ops">
-        <button v-if="item.status === 'borrowed'" type="button" class="btn-memphis-primary btn-block"
-          @click="onReturn">
-          确认归还，恢复可借
-        </button>
-        <button type="button" class="btn-ghost btn-block" @click="onToggleArchive">
-          {{ item.archived ? '重新上架' : '下架（从列表隐藏）' }}
-        </button>
-        <button type="button" class="btn-danger btn-block" @click="onDelete">
-          永久删除
-        </button>
-      </section>
+      <button type="button" class="btn-memphis-primary btn-block" @click="openIssue">
+        在 GitHub 打开此物品
+      </button>
     </div>
   </BaseModal>
 </template>
@@ -144,82 +89,36 @@ function onDelete(): void {
   color: #555;
 }
 
-.sec-title {
+.guide-title {
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #555;
-  margin-bottom: 0.5rem;
 }
 
-.req-section {
+.guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
 }
 
-.req-card {
-  border: 2px solid var(--ink);
-  background: var(--bg-cream);
-  box-shadow: 3px 3px 0 var(--ink);
-  padding: 0.75rem 0.9rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.req-card + .req-card {
-  margin-top: 0.6rem;
-}
-
-.req-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.mono {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: #777;
-}
-
-.req-contact {
-  font-size: 0.85rem;
-  color: #444;
-}
-
-.req-msg {
+.guide-list li {
   font-size: 0.88rem;
   line-height: 1.6;
+  color: #333;
   border-left: 3px solid var(--mustard);
   padding-left: 0.6rem;
 }
 
-.req-actions {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 0.25rem;
-}
-
-.btn-sm {
-  padding: 0.45rem 0.8rem;
-  font-size: 0.8rem;
-  box-shadow: 2px 2px 0 var(--ink);
-}
-
-.empty-tip {
-  font-size: 0.85rem;
-  color: #999;
-  text-align: center;
+.guide-list code {
+  font-family: var(--font-mono);
+  font-weight: 700;
   background: var(--bg-cream);
-  border: 1.5px dashed rgba(29, 30, 44, 0.3);
-  padding: 0.8rem;
-}
-
-.ops {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  border: 1.5px solid var(--ink);
+  padding: 0 0.3em;
 }
 
 .btn-block {
