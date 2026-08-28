@@ -14,17 +14,25 @@ export const SITE_KEY = 'neighborhood-share-2026'
 
 export class ApiError extends Error {}
 
+/** 请求超时：workers.dev 在部分网络被墙时 TCP 会挂住，必须有上限才能给用户明确反馈 */
+const REQUEST_TIMEOUT_MS = 12000
+
 async function request<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   if (!API_PROXY) throw new ApiError('云端服务尚未开通，请联系站长')
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
   let res: Response
   try {
     res = await fetch(`${API_PROXY}${path}`, {
       method: init?.method ?? 'GET',
       headers: { 'Content-Type': 'application/json', 'x-site-key': SITE_KEY },
       body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+      signal: ctrl.signal,
     })
   } catch {
     throw new ApiError('网络异常，请稍后再试')
+  } finally {
+    clearTimeout(timer)
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string } & T
   if (!res.ok) throw new ApiError(data.error || '服务暂时不可用，请稍后再试')
