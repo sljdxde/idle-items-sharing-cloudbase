@@ -53,6 +53,12 @@ jobs:
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
         run: node scripts/handle-comment.mjs
 
+      # handle-comment 修改 Issue 后，GitHub API 存在最终一致性延迟；
+      # 立即拉取可能读到旧状态（如 closed 仍显示 open），等待片刻再生成快照
+      - name: Wait for GitHub API consistency
+        if: github.event_name == 'issue_comment'
+        run: sleep 6
+
       - name: Generate items.json from GitHub Issues
         run: node scripts/gen-items.mjs
         env:
