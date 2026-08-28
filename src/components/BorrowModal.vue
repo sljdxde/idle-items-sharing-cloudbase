@@ -1,8 +1,13 @@
 <script setup lang="ts">
-// 借阅弹窗：零服务器方案下，展示物主联系方式并引导到 GitHub 沟通
+// 借阅弹窗：展示物主联系方式（手机号/楼号二选一）→ 确认借用后状态变「已借出」
+// 未登录时内嵌手机号登录表单
+import { computed } from 'vue'
 import BaseModal from './BaseModal.vue'
+import LoginBox from './LoginBox.vue'
 import type { Item } from '@/lib/types'
-import { issueUrl } from '@/lib/github'
+import { useItemsStore } from '@/stores/items'
+import { useAuthStore } from '@/stores/auth'
+import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
 
 const props = defineProps<{
   open: boolean
@@ -11,8 +16,28 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-function openIssue(): void {
-  if (props.item) window.open(issueUrl(props.item.id), '_blank')
+const store = useItemsStore()
+const auth = useAuthStore()
+
+const needLogin = computed(() => !auth.isLoggedIn)
+const ownerIsMe = computed(() => (props.item ? isOwner(props.item, auth.phone) : false))
+const borrowable = computed(() =>
+  props.item ? canBorrow(props.item, auth.phone) : false,
+)
+const mineLent = computed(() =>
+  props.item ? canReturn(props.item, auth.phone) : false,
+)
+
+const contactLabel = computed(() =>
+  props.item?.contactType === 'phone' ? '物主手机号' : '楼号门牌',
+)
+
+function onConfirmBorrow(): void {
+  if (props.item && store.borrow(props.item.id)) emit('close')
+}
+
+function onReturn(): void {
+  if (props.item && store.returnBack(props.item.id)) emit('close')
 }
 </script>
 
@@ -27,27 +52,48 @@ function openIssue(): void {
           </svg>
         </span>
         <div>
-          <h3 id="borrow-title" class="head-title">借用联系</h3>
-          <div class="head-sub">「{{ item.name }}」</div>
+          <h3 id="borrow-title" class="head-title">借用「{{ item.name }}」</h3>
+          <div class="head-sub">{{ item.status === 'lent' ? '当前状态：已借出' : '当前状态：可借' }}</div>
         </div>
       </div>
 
-      <div class="contact-card">
-        <div class="contact-row">
-          <span class="k">物主联系方式</span>
-          <b class="v selectable">{{ item.contact || '未填写' }}</b>
-        </div>
-        <div class="contact-row">
-          <span class="k">楼号门牌</span>
-          <b class="v selectable">{{ item.building || '未填写' }}</b>
-        </div>
-      </div>
+      <!-- ① 未登录：先登录（登录后自动切换到确认借用视图） -->
+      <LoginBox v-if="needLogin" />
 
-      <p class="privacy-tip">本平台不托管隐私信息，请在 GitHub 上与物主沟通借用细节与时间。</p>
+      <!-- ② 物主本人 -->
+      <template v-else-if="ownerIsMe">
+        <p class="owner-tip">这是你自己发布的物品。邻居借用后，这里会展示借用与归还进度。</p>
+      </template>
 
-      <button type="button" class="btn-memphis-primary btn-block" @click="openIssue">
-        在 GitHub 上与物主沟通
-      </button>
+      <!-- ③ 已借出 -->
+      <template v-else-if="item.status === 'lent'">
+        <p v-if="mineLent" class="lent-tip">你已借走这件物品，用完记得归还哦。</p>
+        <p v-else class="lent-tip">这件物品已被邻居借走，晚点再来看看吧。</p>
+        <button v-if="mineLent" type="button" class="btn-memphis-primary btn-block" @click="onReturn">
+          我要归还
+        </button>
+      </template>
+
+      <!-- ④ 可借：展示联系方式 + 确认借用 -->
+      <template v-else>
+        <div class="contact-card">
+          <div class="contact-row">
+            <span class="k">{{ contactLabel }}</span>
+            <b class="v selectable">{{ item.contact || '未填写' }}</b>
+          </div>
+        </div>
+
+        <p class="privacy-tip">点击「确认借用」后物品会标记为「已借出」；请通过上方联系方式与物主约取件。</p>
+
+        <button
+          type="button"
+          class="btn-memphis-primary btn-block"
+          :disabled="!borrowable"
+          @click="onConfirmBorrow"
+        >
+          确认借用
+        </button>
+      </template>
     </div>
   </BaseModal>
 </template>
@@ -79,7 +125,8 @@ function openIssue(): void {
 
 .head-title {
   font-family: var(--font-serif);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
+  text-wrap: balance;
 }
 
 .head-sub {
@@ -104,10 +151,6 @@ function openIssue(): void {
   padding: 0.7rem 0.9rem;
 }
 
-.contact-row + .contact-row {
-  border-top: 1.5px dashed rgba(29, 30, 44, 0.25);
-}
-
 .contact-row .k {
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -120,10 +163,18 @@ function openIssue(): void {
   color: var(--ink);
 }
 
-/* 容器禁剪贴板 API：联系方式保持可选中，供长按手动复制 */
+/* 联系方式保持可选中，供长按手动复制 */
 .selectable {
   -webkit-user-select: text;
   user-select: text;
+}
+
+.owner-tip,
+.lent-tip {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #555;
 }
 
 .btn-block {
@@ -134,5 +185,6 @@ function openIssue(): void {
   font-size: 0.75rem;
   color: #999;
   text-align: center;
+  margin: 0;
 }
 </style>

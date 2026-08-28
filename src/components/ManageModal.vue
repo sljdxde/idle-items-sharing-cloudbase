@@ -1,8 +1,11 @@
 <script setup lang="ts">
-// 物主管理弹窗：零服务器方案下，引导到 GitHub 对 Issue 操作（标签 / 关闭）
+// 物主管理弹窗：状态总览 + 借阅人信息 + 上架/下架（全本地操作）
+import { computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import type { Item } from '@/lib/types'
-import { issueUrl } from '@/lib/github'
+import { useItemsStore } from '@/stores/items'
+import { useAuthStore } from '@/stores/auth'
+import { isOwner } from '@/lib/itemOps'
 
 const props = defineProps<{
   open: boolean
@@ -11,14 +14,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const STATUS_TEXT = {
-  available: '闲置中',
-  requested: '待确认',
-  borrowed: '已借出',
-} as const
+const store = useItemsStore()
+const auth = useAuthStore()
 
-function openIssue(): void {
-  if (props.item) window.open(issueUrl(props.item.id), '_blank')
+const ownerIsMe = computed(() => (props.item ? isOwner(props.item, auth.phone) : false))
+
+const statusText = computed(() => {
+  const it = props.item
+  if (!it) return ''
+  if (it.archived) return '已下架'
+  return it.status === 'lent' ? '已借出' : '可借'
+})
+
+const borrowerMasked = computed(() => {
+  const p = props.item?.borrowedBy
+  return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : ''
+})
+
+function onToggleArchive(): void {
+  if (props.item && store.setArchived(props.item.id, !props.item.archived)) {
+    emit('close')
+  }
 }
 </script>
 
@@ -34,21 +50,40 @@ function openIssue(): void {
         </span>
         <div>
           <h3 id="manage-title" class="head-title">物品管理</h3>
-          <div class="head-sub">{{ item.name }} · 当前：{{ item.archived ? '已下架' : STATUS_TEXT[item.status] }}</div>
+          <div class="head-sub">{{ item.name }} · 当前：{{ statusText }}</div>
         </div>
       </div>
 
-      <p class="guide-title">在 GitHub 上管理此物品：</p>
-      <ul class="guide-list">
-        <li>添加 <code>lent</code> 标签 → 标记为「已借出」</li>
-        <li>移除 <code>lent</code> 标签 → 标记「已归还」</li>
-        <li>关闭 Issue → 下架（从列表隐藏）</li>
-        <li>重新打开 Issue → 重新上架</li>
-      </ul>
+      <!-- 非物主：无权管理 -->
+      <p v-if="!ownerIsMe" class="deny-tip">只有发布者可以管理这件物品。</p>
 
-      <button type="button" class="btn-memphis-primary btn-block" @click="openIssue">
-        在 GitHub 打开此物品
-      </button>
+      <!-- 物主面板 -->
+      <template v-else>
+        <div class="info-card">
+          <div class="info-row">
+            <span class="k">当前状态</span>
+            <b class="v">{{ statusText }}</b>
+          </div>
+          <div v-if="item.borrowedBy" class="info-row">
+            <span class="k">借阅人手机号</span>
+            <b class="v selectable">{{ borrowerMasked }}</b>
+          </div>
+          <div class="info-row">
+            <span class="k">联系方式</span>
+            <b class="v selectable">{{ item.contactType === 'phone' ? '手机号' : '楼号' }} · {{ item.contact }}</b>
+          </div>
+        </div>
+
+        <ul class="guide-list">
+          <li>下架后物品从公共列表隐藏（不影响已发生的借用）</li>
+          <li>重新上架即可恢复展示</li>
+          <li>物品被借用时状态自动变为「已借出」，归还后自动恢复「可借」</li>
+        </ul>
+
+        <button type="button" class="btn-memphis-primary btn-block" @click="onToggleArchive">
+          {{ item.archived ? '重新上架' : '下架物品' }}
+        </button>
+      </template>
     </div>
   </BaseModal>
 </template>
@@ -89,11 +124,47 @@ function openIssue(): void {
   color: #555;
 }
 
-.guide-title {
+.deny-tip {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #777;
+}
+
+.info-card {
+  border: 2px solid var(--ink);
+  background: var(--bg-cream);
+  box-shadow: 3px 3px 0 var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.7rem 0.9rem;
+}
+
+.info-row + .info-row {
+  border-top: 1.5px dashed rgba(29, 30, 44, 0.25);
+}
+
+.info-row .k {
   font-family: var(--font-mono);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: #555;
+  color: #777;
+}
+
+.info-row .v {
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+
+.selectable {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .guide-list {
@@ -111,14 +182,6 @@ function openIssue(): void {
   color: #333;
   border-left: 3px solid var(--mustard);
   padding-left: 0.6rem;
-}
-
-.guide-list code {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  background: var(--bg-cream);
-  border: 1.5px solid var(--ink);
-  padding: 0 0.3em;
 }
 
 .btn-block {

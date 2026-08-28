@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // ================================================
-// HomePage — Hero 拼贴 + 工具栏（搜索/分类）+ 卡片网格
-// 数据来自 GitHub Issues（经 items.json 快照），加载为异步网络请求
+// HomePage — Hero 拼贴 + 工具栏（搜索/分类/距离/状态）+ 卡片网格
+// 数据为本地持久层（同步加载）；挂载时静默尝试定位以启用距离排序
 // ================================================
 
 import { onMounted, ref } from 'vue'
@@ -22,11 +22,13 @@ const manageItem = ref<Item | null>(null)
 
 onMounted(() => {
   store.load()
+  // 静默定位：成功则按距离排序，失败不打扰（工具栏有手动入口）
+  store.locate()
 })
 
 function onRefresh(): void {
-  store.refresh()
-  toast.success('已刷新', '已重新从 GitHub 拉取社区好物')
+  store.load()
+  toast.success('已刷新', '已重新载入本地社区好物')
 }
 </script>
 
@@ -40,12 +42,13 @@ function onRefresh(): void {
         <div class="hero-badge-pill">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             aria-hidden="true">
-            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
           </svg>
-          社区闲置 · 互助共享 · GitHub 协作
+          社区闲置 · 邻里互助 · 就在附近
         </div>
         <h1 class="hero-headline">让好物在<span class="retro-tag">邻里间流转</span></h1>
-        <p class="hero-subhead">发现邻居的闲置好物，借用或分享，让每一件物品继续发挥价值。物品由社区通过 GitHub Issues 协作维护。</p>
+        <p class="hero-subhead">发现附近的闲置好物，按距离找到身边的邻居；借用、归还，让每一件物品继续发挥价值。</p>
         <div class="hero-button-group">
           <RouterLink to="/publish" class="btn-memphis-primary">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -71,25 +74,28 @@ function onRefresh(): void {
       <span class="deco-triangle" aria-hidden="true"></span>
     </section>
 
-    <!-- 工具栏：搜索 / 分类 / 刷新 -->
+    <!-- 工具栏：搜索 / 分类 / 距离 / 状态 / 刷新 -->
     <FilterToolbar @refresh="onRefresh" />
 
-    <!-- 加载态 -->
-    <div v-if="store.loading && store.visibleItems.length === 0" class="loading-box">
-      <span class="loading-dot" aria-hidden="true"></span>
-      正在从 GitHub 加载社区好物…
-    </div>
-
     <!-- 空状态 -->
-    <div v-else-if="store.visibleItems.length === 0" class="empty-box">
+    <div v-if="store.visibleItems.length === 0" class="empty-box">
       <div class="empty-geom" aria-hidden="true">
         <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
       </div>
-      <template v-if="store.search || store.category !== 'all'">
+      <template v-if="store.search || store.category !== 'all' || store.showLent || store.onlyMine">
         <h2 class="empty-title">没找到匹配的好物</h2>
         <p class="empty-desc">换个关键词，或清除筛选条件试试。</p>
         <button type="button" class="btn-memphis-secondary"
-          @click="store.search = ''; store.setCategory('all')">清除筛选</button>
+          @click="store.search = ''; store.setCategory('all'); store.showLent = false; store.onlyMine = false">
+          清除筛选
+        </button>
+      </template>
+      <template v-else-if="store.radiusKm !== 'all'">
+        <h2 class="empty-title">附近暂无闲置物品</h2>
+        <p class="empty-desc">{{ store.userPosition ? '试着扩大距离范围，或改选「全部距离」看看。' : '尚未获取定位，点击「获取定位」或改选「全部距离」看看。' }}</p>
+        <button type="button" class="btn-memphis-secondary" @click="store.setRadius('all')">
+          查看全部距离
+        </button>
       </template>
       <template v-else>
         <h2 class="empty-title">暂无闲置物品</h2>
@@ -229,45 +235,6 @@ function onRefresh(): void {
   .deco-circle,
   .deco-triangle {
     display: none;
-  }
-}
-
-/* ── 加载态 ── */
-.loading-box {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #555;
-  background: var(--paper-cream);
-  border: 2.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--royal-blue);
-  padding: 1.2rem 1.4rem;
-  margin-bottom: 2rem;
-}
-
-.loading-dot {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--retro-red);
-  border: 2px solid var(--ink);
-  animation: loadingPulse 0.9s ease-in-out infinite;
-}
-
-@keyframes loadingPulse {
-
-  0%,
-  100% {
-    transform: scale(0.7);
-    opacity: 0.6;
-  }
-
-  50% {
-    transform: scale(1);
-    opacity: 1;
   }
 }
 

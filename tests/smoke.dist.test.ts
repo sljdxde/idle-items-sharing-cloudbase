@@ -1,6 +1,6 @@
 // ================================================
 // tests/smoke.dist.test.ts — 生产包冒烟测试（happy-dom 真跑 dist 产物）
-// 先 npm run build 再跑；验证：挂载成功 / 首屏渲染 / hash 导航 / 持久化
+// 先 npm run build 再跑；验证：挂载成功 / 首屏渲染（默认隐藏已借出）/ hash 导航 / 登录态
 // ================================================
 
 // @vitest-environment happy-dom
@@ -14,19 +14,19 @@ function flush(ms = 60): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
 }
 
-describe('dist 产物冒烟（模拟容器 WebView）', () => {
+describe('dist 产物冒烟（模拟浏览器）', () => {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8')
   const js = readFileSync(join(DIST, 'assets', 'app.js'), 'utf8')
 
   beforeAll(() => {
-    // 模拟离线：fetch 立即失败，使数据层回退到种子兜底（仅验证 UI 渲染，与部署网络无关）
-    ;(window as any).fetch = () => Promise.reject(new Error('offline'))
+    // 预置手机号登录态（种子物品的物主是 1380000000x，登录 13812345678 即「非物主」视角）
+    localStorage.setItem('linli_haowu_user_v1', '13812345678')
     document.head.innerHTML = html.slice(
       html.indexOf('<head>') + 6,
       html.indexOf('</head>'),
     )
     document.body.innerHTML = '<div id="app"></div>'
-    // 以经典脚本方式执行产物（等价容器的 <script src> defer）
+    // 以经典脚本方式执行产物
     // eslint-disable-next-line no-eval
     window.eval(js)
   })
@@ -39,25 +39,40 @@ describe('dist 产物冒烟（模拟容器 WebView）', () => {
     expect(app.innerHTML).toContain('发布我的闲置')
   })
 
-  it('② 首屏渲染物品卡片（快照/种子兜底）', async () => {
+  it('② 首屏渲染物品卡片（本地种子数据）', async () => {
     await flush(120)
     expect(document.querySelectorAll('.memphis-card').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('③ CSS 运行时注入生效（孟菲斯底纹 tokens 存在）', async () => {
+  it('③ 默认隐藏已借出物品（开关关闭时列表无「已借出」卡片）', async () => {
+    await flush()
+    const appHtml = document.querySelector('#app')!.innerHTML
+    // 种子里的「电钻+全套钻头」为 lent 状态，默认不应出现
+    expect(appHtml).not.toContain('电钻')
+    // 筛选开关「显示已借出」存在且默认未激活
+    const lentChip = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => b.textContent?.includes('显示已借出'),
+    )
+    expect(lentChip).toBeTruthy()
+    expect(lentChip!.classList.contains('active')).toBe(false)
+  })
+
+  it('④ CSS 运行时注入生效（孟菲斯底纹 tokens 存在）', async () => {
     await flush()
     const styles = [...document.querySelectorAll('style')].map((s) => s.textContent ?? '').join('')
     expect(styles).toContain('--bg-cream')
   })
 
-  it('④ 点击「发布闲置」链接路由到发布页', async () => {
-    // 真实用户路径：RouterLink 拦截 click 程序化导航（不依赖容器的 hashchange 派发）
+  it('⑤ 点击「发布闲置」路由到发布页（已登录 → 表单 + 自动定位区）', async () => {
     const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/publish"]')][0]!
     link.click()
     await flush(120)
-    expect(document.querySelector('#app')!.innerHTML).toContain('发布闲置物品')
-    // 分类下拉存在
+    const appHtml = document.querySelector('#app')!.innerHTML
+    expect(appHtml).toContain('发布闲置物品')
+    // 已登录：直接展示表单（分类下拉存在）
     expect(document.querySelector('select')!).toBeTruthy()
+    // 定位状态区存在（geolocation 不可用时显示失败提示，不阻塞）
+    expect(appHtml).toContain('定位')
     // 返回首页
     const back = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/"]')][0]!
     back.click()
@@ -65,13 +80,13 @@ describe('dist 产物冒烟（模拟容器 WebView）', () => {
     expect(document.querySelector('#app')!.innerHTML).toContain('让好物在')
   })
 
-  it('⑤ 点击卡片进入详情页 + 数据读取', async () => {
+  it('⑥ 点击卡片进入详情页 + 数据读取', async () => {
     const card = document.querySelector<HTMLAnchorElement>('a[href="#/items/1"]')!
     card.click()
     await flush(120)
     const appHtml = document.querySelector('#app')!.innerHTML
     expect(appHtml).toContain('戴森V8吸尘器')
-    // 管理按钮在详情页可用
-    expect(appHtml).toContain('管理此物品')
+    // 非物主视角：展示「我想借」
+    expect(appHtml).toContain('我想借')
   })
 })

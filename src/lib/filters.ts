@@ -1,10 +1,11 @@
 // ================================================
 // src/lib/filters.ts — 纯函数筛选器（可单测的 seam）
-// 离线容器无 geolocation，列表 = 分类 → 关键词搜索 → 最新排序
+// 分类 → 关键词搜索 → 状态(默认隐藏已借出) → 距离半径 → 最新排序
 // ================================================
 
 import type { CategoryId, Item } from './types'
 import { normalizeCategory } from './categories'
+import { distanceKm, itemLatLng, type LatLng } from './geo'
 
 /** 「6月12日」式短日期；无效时间返回「刚刚」 */
 export function formatDateShort(iso: string): string {
@@ -22,8 +23,24 @@ export function matchesCategory(item: Item, category: CategoryId | 'all'): boole
 export function matchesSearch(item: Item, rawQuery: string): boolean {
   const q = rawQuery.trim().toLowerCase()
   if (!q) return true
-  const haystack = `${item.name} ${item.desc} ${item.building}`.toLowerCase()
+  const haystack =
+    `${item.name} ${item.desc} ${item.contactType === 'building' ? item.contact : ''}`.toLowerCase()
   return haystack.includes(q)
+}
+
+/**
+ * 距离筛选：radius='all' 或用户未定位时不限制；
+ * 有半径限制时，无定位的物品不参与展示（无法证明在范围内）
+ */
+export function matchesRadius(
+  item: Item,
+  userPos: LatLng | null,
+  radius: number | 'all',
+): boolean {
+  if (radius === 'all' || !userPos) return true
+  const p = itemLatLng(item)
+  if (!p) return false
+  return distanceKm(userPos, p) <= radius
 }
 
 /** 最新优先（时间相同按 id 降序）；返回新数组，不改入参 */

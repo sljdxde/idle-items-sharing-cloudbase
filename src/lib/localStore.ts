@@ -1,12 +1,13 @@
 // ================================================
-// src/lib/localStore.ts — 本地持久化 ItemStore（离线小工具版）
-// 数据保存在 localStorage（容器按小工具隔离）；首启导入种子数据。
+// src/lib/localStore.ts — 本地持久化 ItemStore
+// 数据保存在 localStorage；首启导入种子数据。
+// v2：Item 契约升级（定位 / 手机号用户体系 / 借还状态机），与 v1 旧数据隔离
 // ================================================
 
 import type { Item } from './types'
 import { SEED_ITEMS } from './seed'
 
-const STORAGE_KEY = 'linli_haowu_items_v1'
+const STORAGE_KEY = 'linli_haowu_items_v2'
 
 /** 深拷贝：structuredClone 在老 WebView（<Chrome98/Safari15.4）缺失，用 JSON 兜底 */
 function deepClone<T>(value: T): T {
@@ -17,7 +18,9 @@ function revive(raw: string): Item[] | null {
   try {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return null
-    return parsed.filter((x) => x && typeof x.id === 'number' && typeof x.name === 'string')
+    return parsed.filter(
+      (x) => x && typeof x.id === 'number' && typeof x.name === 'string',
+    ) as Item[]
   } catch {
     return null
   }
@@ -53,7 +56,11 @@ export function nextId(items: Item[]): number {
   return items.reduce((m, x) => Math.max(m, x.id), 0) + 1
 }
 
-/** 借阅请求等子资源 id */
-export function uid(prefix = 'req'): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+/** 清空本地数据（回退到种子）——调试/演示用 */
+export function resetItems(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
 }

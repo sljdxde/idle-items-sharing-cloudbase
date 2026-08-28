@@ -1,15 +1,29 @@
 <script setup lang="ts">
 // ================================================
-// FilterToolbar — 搜索框 + 分类 chips + 计数 + 刷新
-// 离线容器无 geolocation，距离筛选已移除（ADR-0003）
+// FilterToolbar — 搜索框 + 分类 chips + 距离/状态筛选 + 定位状态 + 刷新
+// 距离 x 公里为可配置参数（geo.ts 的 RADIUS_OPTIONS / DEFAULT_RADIUS_KM）
 // ================================================
 
 import { useItemsStore } from '@/stores/items'
+import { useAuthStore } from '@/stores/auth'
 import { CATEGORIES } from '@/lib/categories'
+import { RADIUS_OPTIONS } from '@/lib/geo'
+import { useToast } from '@/composables/useToast'
 
 const store = useItemsStore()
+const auth = useAuthStore()
+const toast = useToast()
 
 defineEmits<{ refresh: [] }>()
+
+async function onLocate(): Promise<void> {
+  const ok = await store.locate()
+  if (ok) {
+    toast.success('定位成功', '列表已按离你最近的距离排序')
+  } else {
+    toast.warning('定位失败', '请允许浏览器获取位置，或选择「全部距离」浏览')
+  }
+}
 </script>
 
 <template>
@@ -49,6 +63,50 @@ defineEmits<{ refresh: [] }>()
         </button>
       </div>
     </div>
+
+    <!-- 第三行：距离 + 定位 + 状态 + 我的 -->
+    <div class="tool-row wrap">
+      <label class="radius-select-box">
+        <span class="radius-label">距离</span>
+        <select
+          class="memphis-select radius-select"
+          :value="store.radiusKm"
+          aria-label="距离筛选"
+          @change="store.setRadius(($event.target as HTMLSelectElement).value === 'all' ? 'all' : Number(($event.target as HTMLSelectElement).value))"
+        >
+          <option v-for="o in RADIUS_OPTIONS" :key="String(o.value)" :value="o.value">
+            {{ o.label }}
+          </option>
+        </select>
+      </label>
+
+      <button type="button" class="filter-chip loc-chip" :class="{ active: !!store.userPosition }"
+        :aria-pressed="!!store.userPosition" @click="onLocate">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          aria-hidden="true">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"></path>
+          <circle cx="12" cy="10" r="3"></circle>
+        </svg>
+        <template v-if="store.locating">定位中…</template>
+        <template v-else-if="store.userPosition">已定位</template>
+        <template v-else>获取定位</template>
+      </button>
+
+      <button type="button" class="filter-chip lent-chip" :class="{ active: store.showLent }"
+        :aria-pressed="store.showLent" @click="store.showLent = !store.showLent">
+        显示已借出
+      </button>
+
+      <button v-if="auth.isLoggedIn" type="button" class="filter-chip mine-chip" :class="{ active: store.onlyMine }"
+        :aria-pressed="store.onlyMine" @click="store.onlyMine = !store.onlyMine">
+        我的发布
+      </button>
+    </div>
+
+    <!-- 未定位提示：距离筛选暂不生效 -->
+    <p v-if="store.radiusKm !== 'all' && !store.userPosition" class="loc-hint" role="status">
+      尚未获取你的定位，距离筛选暂未生效——点击「获取定位」或改选「全部距离」。
+    </p>
   </section>
 </template>
 
@@ -204,4 +262,58 @@ defineEmits<{ refresh: [] }>()
 .cat-clothing.cat-chip.active::before { background: var(--retro-red); }
 .cat-other.cat-chip.active::before,
 .cat-all.cat-chip.active::before { background: var(--paper-cream); }
+
+/* 距离下拉 */
+.radius-select-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.radius-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #555;
+}
+
+.radius-select {
+  min-height: 40px;
+  min-width: 120px;
+  font-size: 0.85rem;
+}
+
+.loc-chip,
+.lent-chip,
+.mine-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.loc-chip.active {
+  background: var(--royal-blue);
+  color: #fff;
+}
+
+.lent-chip.active {
+  background: var(--salmon);
+  color: var(--ink);
+}
+
+.mine-chip.active {
+  background: var(--olive);
+  color: var(--paper-cream);
+}
+
+/* 未定位提示 */
+.loc-hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #777;
+  border-left: 3px solid var(--mustard);
+  padding-left: 0.6rem;
+}
 </style>

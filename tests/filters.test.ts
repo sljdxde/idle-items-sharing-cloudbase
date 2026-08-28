@@ -1,6 +1,6 @@
 // ================================================
 // tests/filters.test.ts — 纯函数筛选器单测
-// 离线版：分类 / 搜索 / 最新排序 / 分类推断（距离相关已随定位移除）
+// 分类 / 搜索 / 最新排序 / 分类推断（距离筛选见 geo.test.ts）
 // ================================================
 
 import { describe, expect, it } from 'vitest'
@@ -19,14 +19,15 @@ function makeItem(partial: Partial<Item>): Item {
     id: 1,
     name: '物品',
     desc: '',
+    contactType: 'phone',
     contact: '',
-    building: '',
     imgUrl: '',
     status: 'available',
-    requests: [],
+    ownerPhone: '13800000000',
+    lat: null,
+    lng: null,
     category: 'other',
     createTime: '2026-06-01T00:00:00Z',
-    archived: false,
     ...partial,
   }
 }
@@ -45,12 +46,12 @@ describe('matchesCategory', () => {
 })
 
 describe('matchesSearch', () => {
-  const item = makeItem({ name: '戴森吸尘器', desc: '九成新', building: '3栋1801' })
+  const item = makeItem({ name: '戴森吸尘器', desc: '九成新', contactType: 'building', contact: '3栋1801' })
 
   it('命中名称', () => {
     expect(matchesSearch(item, '戴森')).toBe(true)
   })
-  it('命中描述与楼号', () => {
+  it('命中描述与楼号（联系方式为楼号时纳入搜索）', () => {
     expect(matchesSearch(item, '九成')).toBe(true)
     expect(matchesSearch(item, '1801')).toBe(true)
   })

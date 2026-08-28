@@ -1,12 +1,16 @@
 <script setup lang="ts">
 // ================================================
 // ItemCard — 孟菲斯拼贴卡片：胶带 + 网点占位图 + 错位旋转 + 撞色硬阴影
+// 按登录手机号区分角色：物主（管理/上下架）· 借阅人（归还）· 其他人（我想借）
 // ================================================
 
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Item } from '@/lib/types'
 import { formatDateShort } from '@/lib/filters'
+import { isOwner, canReturn } from '@/lib/itemOps'
+import { useAuthStore } from '@/stores/auth'
+import { useItemsStore } from '@/stores/items'
 
 const props = defineProps<{
   item: Item
@@ -19,16 +23,32 @@ defineEmits<{
   manage: [item: Item]
 }>()
 
-const STATUS_TEXT = {
-  available: '闲置中',
-  requested: '待确认',
-  borrowed: '已借出',
-} as const
+const auth = useAuthStore()
+const store = useItemsStore()
 
+const ownerIsMe = computed(() => isOwner(props.item, auth.phone))
+const canReturnMine = computed(() => canReturn(props.item, auth.phone))
+
+/** 状态徽标：可借 / 已借出 / 已下架 */
+const statusText = computed(() => {
+  if (props.item.archived) return '已下架'
+  return props.item.status === 'lent' ? '已借出' : '可借'
+})
 const statusClass = computed(() =>
-  props.item.status === 'borrowed' ? 'borrowed' : props.item.status === 'requested' ? 'pending' : 'available',
+  props.item.archived
+    ? 'pending'
+    : props.item.status === 'lent'
+      ? 'borrowed'
+      : 'available',
 )
-const statusText = computed(() => STATUS_TEXT[props.item.status])
+
+/** 距离标签（用户已定位且物品有定位时显示） */
+const distLabel = computed(() => store.distanceLabel(props.item))
+
+/** 位置文案：楼号联系方式即位置；手机号联系显示通用文案 */
+const placeText = computed(() =>
+  props.item.contactType === 'building' ? props.item.contact : '社区邻居',
+)
 
 /** 第 n 张卡片的旋转角与撞色阴影（循环复用 6 组，与样机一致） */
 const VARIANTS = [
@@ -47,6 +67,10 @@ const cardStyle = computed(() => {
     boxShadow: `6px 6px 0 ${v.shadow}`,
   }
 })
+
+function onToggleArchive(): void {
+  store.setArchived(props.item.id, !props.item.archived)
+}
 </script>
 
 <template>
@@ -70,6 +94,14 @@ const cardStyle = computed(() => {
     <div class="card-inner">
       <div class="card-meta-header">
         <span class="badge-status" :class="statusClass">{{ statusText }}</span>
+        <span v-if="distLabel" class="dist-label" aria-label="距离">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            aria-hidden="true">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+          {{ distLabel }}
+        </span>
       </div>
 
       <h2 class="card-heading">
@@ -78,17 +110,29 @@ const cardStyle = computed(() => {
       <p class="card-paragraph">{{ item.desc || '（无描述）' }}</p>
 
       <div class="card-info-strip">
-        <span>{{ item.building || '位置未填' }}</span>
+        <span>{{ placeText }}</span>
         <span>{{ formatDateShort(item.createTime) }}</span>
       </div>
     </div>
 
     <div class="card-btn-box">
-      <button type="button" class="btn-item-borrow" :disabled="item.status === 'borrowed'"
-        @click="$emit('borrow', item)">
-        {{ item.status === 'borrowed' ? '已借出' : '我想借' }}
+      <!-- 物主：管理 + 快捷上下架 -->
+      <template v-if="ownerIsMe">
+        <button type="button" class="btn-item-borrow" @click="$emit('manage', item)">管理</button>
+        <button type="button" class="btn-item-manage" @click="onToggleArchive">
+          {{ item.archived ? '上架' : '下架' }}
+        </button>
+      </template>
+      <!-- 借阅人本人：归还 -->
+      <button v-else-if="canReturnMine" type="button" class="btn-item-borrow btn-return"
+        @click="store.returnBack(item.id)">
+        我要归还
       </button>
-      <button type="button" class="btn-item-manage" @click="$emit('manage', item)">管理</button>
+      <!-- 其他人：借用 -->
+      <button v-else type="button" class="btn-item-borrow" :disabled="item.status === 'lent' || item.archived"
+        @click="$emit('borrow', item)">
+        {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
+      </button>
     </div>
   </article>
 </template>
@@ -266,6 +310,14 @@ const cardStyle = computed(() => {
   background: #d9d9d9;
   color: #888;
   cursor: not-allowed;
+}
+
+.btn-return {
+  background: var(--royal-blue);
+}
+
+.btn-return:hover:not(:disabled) {
+  background: var(--ink);
 }
 
 .btn-item-manage {

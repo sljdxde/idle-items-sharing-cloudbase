@@ -1,25 +1,28 @@
 <script setup lang="ts">
 // ================================================
-// DetailPage — 物品详情（/items/:id）：大图 + 全量信息 + 借/管操作
+// DetailPage — 物品详情（/items/:id）：大图 + 全量信息 + 按角色的借/还/管操作
 // ================================================
 
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
+import { useAuthStore } from '@/stores/auth'
 import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
+import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
 import ManageModal from '@/components/ManageModal.vue'
 
 const route = useRoute()
 const store = useItemsStore()
+const auth = useAuthStore()
 
 const borrowOpen = ref(false)
 const manageOpen = ref(false)
 
 onMounted(() => {
-  if (store.items.length === 0) store.load()
+  store.load()
 })
 
 const item = computed<Item | null>(() => {
@@ -30,6 +33,24 @@ const item = computed<Item | null>(() => {
 const categoryLabel = computed(() => {
   const c = item.value && CATEGORIES.find((x) => x.id === item.value!.category)
   return c ? c.label : '其他'
+})
+
+const ownerIsMe = computed(() => (item.value ? isOwner(item.value, auth.phone) : false))
+const borrowable = computed(() => (item.value ? canBorrow(item.value, auth.phone) : false))
+const mineLent = computed(() => (item.value ? canReturn(item.value, auth.phone) : false))
+
+const distLabel = computed(() => (item.value ? store.distanceLabel(item.value) : null))
+
+const borrowerMasked = computed(() => {
+  const p = item.value?.borrowedBy
+  return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : ''
+})
+
+const statusText = computed(() => {
+  const it = item.value
+  if (!it) return ''
+  if (it.archived) return '已下架'
+  return it.status === 'lent' ? '已借出' : '可借'
 })
 </script>
 
@@ -46,7 +67,7 @@ const categoryLabel = computed(() => {
     <!-- 未找到 -->
     <div v-if="!item" class="missing-box">
       <h1 class="head-title">没有这件物品</h1>
-      <p class="empty-desc">它可能已被删除或下架，或链接有误。</p>
+      <p class="empty-desc">它可能已被下架，或链接有误。</p>
       <RouterLink to="/" class="btn-memphis-secondary">回首页逛逛</RouterLink>
     </div>
 
@@ -65,37 +86,58 @@ const categoryLabel = computed(() => {
           <span>实物图</span>
         </div>
         <span class="badge-status float-badge"
-          :class="item.status === 'borrowed' ? 'borrowed' : item.status === 'requested' ? 'pending' : 'available'">
-          {{ item.status === 'available' ? '闲置中' : item.status === 'requested' ? '待确认' : '已借出' }}
+          :class="item.archived ? 'pending' : item.status === 'lent' ? 'borrowed' : 'available'">
+          {{ statusText }}
         </span>
       </div>
 
       <div class="info-side">
-        <p class="meta-mono">{{ categoryLabel }} · {{ formatDateShort(item.createTime) }}</p>
+        <p class="meta-mono">
+          {{ categoryLabel }} · {{ formatDateShort(item.createTime) }}
+          <template v-if="distLabel"> · 距你 {{ distLabel }}</template>
+        </p>
         <h1 class="head-title">{{ item.name }}</h1>
         <p class="desc-text">{{ item.desc || '（无描述）' }}</p>
 
         <dl class="detail-rows">
-          <div v-if="item.building" class="detail-row">
-            <dt>楼号</dt>
-            <dd>{{ item.building }}</dd>
+          <div class="detail-row">
+            <dt>{{ item.contactType === 'phone' ? '物主手机号' : '楼号门牌' }}</dt>
+            <dd class="selectable">{{ item.contact || '未填写' }}</dd>
           </div>
-          <div v-if="item.contact" class="detail-row">
-            <dt>联系方式</dt>
-            <dd class="selectable">{{ item.contact }}</dd>
+          <div v-if="ownerIsMe && item.borrowedBy" class="detail-row">
+            <dt>借阅人手机号</dt>
+            <dd class="selectable">{{ borrowerMasked }}</dd>
           </div>
           <div v-if="item.archived" class="detail-row">
             <dt>状态</dt>
-            <dd>已下架</dd>
+            <dd>已下架（仅发布者可见）</dd>
           </div>
         </dl>
 
         <div class="action-row">
-          <button v-if="!item.archived" type="button" class="btn-memphis-primary"
-            :disabled="item.status === 'borrowed'" @click="borrowOpen = true">
-            {{ item.status === 'borrowed' ? '已借出' : '我想借' }}
+          <!-- 物主：管理 + 上下架 -->
+          <template v-if="ownerIsMe">
+            <button type="button" class="btn-memphis-primary" @click="manageOpen = true">
+              管理此物品
+            </button>
+            <button type="button" class="btn-memphis-secondary"
+              @click="store.setArchived(item.id, !item.archived)">
+              {{ item.archived ? '重新上架' : '下架' }}
+            </button>
+          </template>
+
+          <!-- 借阅人本人：归还 -->
+          <button v-else-if="mineLent" type="button" class="btn-memphis-primary"
+            @click="store.returnBack(item.id)">
+            我要归还
           </button>
-          <button type="button" class="btn-memphis-secondary" @click="manageOpen = true">管理此物品</button>
+
+          <!-- 其他人：借用 -->
+          <button v-else type="button" class="btn-memphis-primary"
+            :disabled="!borrowable || item.status === 'lent' || item.archived"
+            @click="borrowOpen = true">
+            {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
+          </button>
         </div>
       </div>
     </article>
@@ -260,7 +302,7 @@ const categoryLabel = computed(() => {
   gap: 0.8rem;
 }
 
-/* 容器禁剪贴板 API：联系方式保持可选中，供长按手动复制 */
+/* 联系方式保持可选中，供长按手动复制 */
 .selectable {
   -webkit-user-select: text;
   user-select: text;

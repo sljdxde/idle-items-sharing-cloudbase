@@ -1,9 +1,21 @@
 // ================================================
 // src/lib/seed.ts — 首次启动的示例种子数据
 // 仅在本地存储为空时导入；之后一切以用户数据为准
+// 坐标围绕「社区中心」小范围散布，便于演示距离筛选
 // ================================================
 
 import type { Item } from './types'
+
+/** 演示用社区中心坐标（杭州桥西一带） */
+const CENTER = { lat: 30.2745, lng: 120.14 }
+
+/** 距社区中心约 d 米的偏移点（近似：纬度 1°≈111km） */
+function near(dNorth: number, dEast: number): { lat: number; lng: number } {
+  return {
+    lat: +(CENTER.lat + dNorth / 111000).toFixed(6),
+    lng: +(CENTER.lng + dEast / 111000).toFixed(6),
+  }
+}
 
 const now = Date.now()
 const daysAgo = (n: number) => new Date(now - n * 86400000).toISOString()
@@ -13,11 +25,12 @@ export const SEED_ITEMS: Item[] = [
     id: 1,
     name: '戴森V8吸尘器',
     desc: '九成新，滤芯上周刚换，可借周末',
-    contact: '微信 wang-mama',
-    building: '3栋1801',
+    contactType: 'phone',
+    contact: '13800000001',
     imgUrl: '',
     status: 'available',
-    requests: [],
+    ownerPhone: '13800000001',
+    ...near(150, 80),
     category: 'electronics',
     createTime: daysAgo(9),
   },
@@ -25,20 +38,12 @@ export const SEED_ITEMS: Item[] = [
     id: 2,
     name: '儿童滑板车',
     desc: '孩子长大了出闲置，轮子顺滑',
-    contact: '',
-    building: '5栋602',
+    contactType: 'building',
+    contact: '5栋602',
     imgUrl: '',
-    status: 'requested',
-    requests: [
-      {
-        id: 'req-seed-1',
-        fromName: '邻居小李',
-        contact: '微信 li-xiao',
-        message: '想借给家里娃周末玩两天',
-        createdAt: daysAgo(1),
-        status: 'pending',
-      },
-    ],
+    status: 'available',
+    ownerPhone: '13800000002',
+    ...near(-260, 340),
     category: 'kids',
     createTime: daysAgo(7),
   },
@@ -46,11 +51,12 @@ export const SEED_ITEMS: Item[] = [
     id: 3,
     name: '露营四人间帐篷',
     desc: '含防潮垫，借前沟通行程',
-    contact: '微信 camp-lover',
-    building: '7栋101',
+    contactType: 'phone',
+    contact: '13800000003',
     imgUrl: '',
     status: 'available',
-    requests: [],
+    ownerPhone: '13800000003',
+    ...near(520, -180),
     category: 'outdoor',
     createTime: daysAgo(6),
   },
@@ -58,11 +64,13 @@ export const SEED_ITEMS: Item[] = [
     id: 4,
     name: '电钻+全套钻头',
     desc: '家庭维修神器，归还时附使用心得',
-    contact: '微信 drill-master',
-    building: '2栋1203',
+    contactType: 'building',
+    contact: '2栋1203',
     imgUrl: '',
-    status: 'borrowed',
-    requests: [],
+    status: 'lent',
+    borrowedBy: '13900000003',
+    ownerPhone: '13800000004',
+    ...near(-90, -420),
     category: 'tools',
     createTime: daysAgo(5),
   },
@@ -70,11 +78,12 @@ export const SEED_ITEMS: Item[] = [
     id: 5,
     name: '英文原版绘本30册',
     desc: '适合3-6岁，整套借阅',
-    contact: '',
-    building: '8栋1502',
+    contactType: 'building',
+    contact: '8栋1502',
     imgUrl: '',
     status: 'available',
-    requests: [],
+    ownerPhone: '13800000005',
+    ...near(780, 260),
     category: 'books',
     createTime: daysAgo(3),
   },
@@ -82,11 +91,12 @@ export const SEED_ITEMS: Item[] = [
     id: 6,
     name: '小米加湿器4L',
     desc: '静音，送两根新滤芯',
-    contact: '微信 mist-user',
-    building: '1栋801',
+    contactType: 'phone',
+    contact: '13800000006',
     imgUrl: '',
     status: 'available',
-    requests: [],
+    ownerPhone: '13800000006',
+    ...near(-640, 90),
     category: 'home',
     createTime: daysAgo(1),
   },

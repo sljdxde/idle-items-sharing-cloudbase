@@ -1,6 +1,20 @@
 <script setup lang="ts">
-// 顶部导航：几何 brand 图标 + 当前页高亮
+// 顶部导航：几何 brand 图标 + 当前页高亮 + 手机号登录态
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { useToast } from '@/composables/useToast'
+import LoginModal from '@/components/LoginModal.vue'
+
+const auth = useAuthStore()
+const toast = useToast()
+
+const loginOpen = ref(false)
+
+function onLogout(): void {
+  auth.logout()
+  toast.info('已退出登录', '下次借用或发布时再登录即可')
+}
 </script>
 
 <template>
@@ -25,8 +39,32 @@ import { RouterLink } from 'vue-router'
         </svg>
         发布闲置
       </RouterLink>
+
+      <!-- 登录态 -->
+      <template v-if="auth.isLoggedIn">
+        <span class="user-chip" :title="`当前登录：${auth.phone}`">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          {{ auth.maskedPhone }}
+        </span>
+        <button type="button" class="nav-item btn-logout" @click="onLogout">退出</button>
+      </template>
+      <button v-else type="button" class="nav-item btn-login" @click="loginOpen = true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          aria-hidden="true">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+          <path d="M10 17l5-5-5-5"></path>
+          <line x1="15" y1="12" x2="3" y2="12"></line>
+        </svg>
+        登录
+      </button>
     </nav>
   </header>
+
+  <LoginModal :open="loginOpen" @close="loginOpen = false" />
 </template>
 
 <style scoped>
@@ -78,6 +116,7 @@ import { RouterLink } from 'vue-router'
 
 .nav-links {
   display: flex;
+  align-items: center;
   gap: 0.6rem;
 }
 
@@ -110,5 +149,51 @@ import { RouterLink } from 'vue-router'
 
 .nav-publish.active {
   background: var(--salmon);
+}
+
+/* 登录态 */
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--royal-blue);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  white-space: nowrap;
+}
+
+.btn-login {
+  background: var(--ink);
+  color: var(--mustard);
+  border-color: var(--ink);
+}
+
+.btn-login:hover {
+  background: var(--retro-red);
+  color: #fff;
+  border-color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn-logout {
+  background: transparent;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .brand-title {
+    font-size: 1.2rem;
+  }
+
+  .nav-item {
+    padding: 0 0.55rem;
+    font-size: 0.8rem;
+  }
 }
 </style>
