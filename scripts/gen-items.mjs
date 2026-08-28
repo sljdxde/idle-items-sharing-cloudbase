@@ -7,7 +7,7 @@
 //   - body 中 <!--DATA_START ... DATA_END--> 为数据块
 // ================================================
 
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -73,6 +73,8 @@ async function main() {
   try {
     const issues = await api(`/issues?state=all&labels=item&per_page=100&sort=updated&direction=desc`)
     const items = issues.map(parseIssue)
+    // 空目录不被 git 跟踪，checkout 后 public/ 可能不存在，先建目录
+    mkdirSync(dirname(OUT), { recursive: true })
     writeFileSync(OUT, JSON.stringify(items, null, 2), 'utf8')
     console.log(`gen-items: 已写入 ${items.length} 件物品 -> public/items.json`)
   } catch (err) {
