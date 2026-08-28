@@ -7,7 +7,7 @@
 import type { CategoryId, ContactType, Item } from './types'
 
 /** Worker 部署地址（公开信息，非秘密）；空串 = 未开通，写操作友好降级 */
-export const API_PROXY = ''
+export const API_PROXY = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.workers.dev'
 
 /** 与 worker 约定的站点 key（仅挡普通爬虫，非秘密） */
 export const SITE_KEY = 'neighborhood-share-2026'
