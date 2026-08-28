@@ -10,6 +10,7 @@ import { useItemsStore } from '@/stores/items'
 import { useToast } from '@/composables/useToast'
 import type { Item } from '@/lib/types'
 import FilterToolbar from '@/components/FilterToolbar.vue'
+import MyPanel from '@/components/MyPanel.vue'
 import ItemCard from '@/components/ItemCard.vue'
 import BorrowModal from '@/components/BorrowModal.vue'
 import ManageModal from '@/components/ManageModal.vue'
@@ -19,7 +20,6 @@ const toast = useToast()
 
 const borrowItem = ref<Item | null>(null)
 const manageItem = ref<Item | null>(null)
-const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => {
   store.load()
@@ -28,22 +28,8 @@ onMounted(() => {
 })
 
 function onRefresh(): void {
-  store.load()
-  toast.success('已刷新', '已重新载入本地社区好物')
-}
-
-function onImportFile(e: Event): void {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  const reader = new FileReader()
-  reader.onload = () => {
-    if (typeof reader.result === 'string') store.importData(reader.result)
-  }
-  reader.onerror = () => toast.error('读取失败', '无法读取所选文件')
-  reader.readAsText(file)
-  // 允许连续选择同一个文件
-  input.value = ''
+  store.refresh()
+  toast.success('已刷新', '已从云端重新载入社区好物')
 }
 </script>
 
@@ -89,8 +75,17 @@ function onImportFile(e: Event): void {
       <span class="deco-triangle" aria-hidden="true"></span>
     </section>
 
+    <!-- 我的发布 / 我的借用（登录后显示，与搜索框分离） -->
+    <MyPanel />
+
     <!-- 工具栏：搜索 / 分类 / 距离 / 状态 / 刷新 -->
     <FilterToolbar @refresh="onRefresh" />
+
+    <!-- 加载态（云端数据） -->
+    <div v-if="store.loading && store.visibleItems.length === 0" class="loading-box">
+      <span class="loading-dot" aria-hidden="true"></span>
+      正在从云端加载社区好物…
+    </div>
 
     <!-- 空状态 -->
     <div v-if="store.visibleItems.length === 0" class="empty-box">
@@ -100,7 +95,7 @@ function onImportFile(e: Event): void {
       <template v-if="store.onlyBorrowed">
         <h2 class="empty-title">你还没有借用的物品</h2>
         <p class="empty-desc">去列表里逛逛，看到心仪的好物点「我想借」吧。</p>
-        <button type="button" class="btn-memphis-secondary" @click="store.onlyBorrowed = false">
+        <button type="button" class="btn-memphis-secondary" @click="store.toggleBorrowed()">
           去逛逛
         </button>
       </template>
@@ -108,7 +103,7 @@ function onImportFile(e: Event): void {
         <h2 class="empty-title">没找到匹配的好物</h2>
         <p class="empty-desc">换个关键词，或清除筛选条件试试。</p>
         <button type="button" class="btn-memphis-secondary"
-          @click="store.search = ''; store.setCategory('all'); store.showLent = false; store.onlyMine = false">
+          @click="store.search = ''; store.setCategory('all'); store.showLent = false; store.onlyMine = false; store.onlyBorrowed = false">
           清除筛选
         </button>
       </template>
@@ -135,8 +130,8 @@ function onImportFile(e: Event): void {
       </TransitionGroup>
     </section>
 
-    <!-- 数据管理：单机数据的导出/导入/重置（换设备迁移通道） -->
-    <section class="data-manage-box" aria-label="数据管理">
+    <!-- 共享说明：数据在云端，全员可见 -->
+    <section class="data-manage-box" aria-label="共享说明">
       <div class="data-manage-head">
         <span class="data-manage-icon" aria-hidden="true">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -146,21 +141,9 @@ function onImportFile(e: Event): void {
           </svg>
         </span>
         <div>
-          <h2 class="data-manage-title">数据管理</h2>
-          <p class="data-manage-desc">数据保存在本机浏览器。换设备时可导出文件带走，换完再导入回来。</p>
+          <h2 class="data-manage-title">社区共享</h2>
+          <p class="data-manage-desc">物品数据由全体邻居共享（云端 GitHub Issues）。发布 / 借用 / 归还 / 上下架会在页面引导下前往 GitHub 完成，操作后全站即时可见。</p>
         </div>
-      </div>
-      <div class="data-manage-actions">
-        <button type="button" class="btn-data-manage" @click="store.exportData()">
-          导出数据
-        </button>
-        <button type="button" class="btn-data-manage" @click="fileInput?.click()">
-          导入数据
-        </button>
-        <button type="button" class="btn-data-manage btn-data-danger" @click="store.resetData()">
-          重置演示数据
-        </button>
-        <input ref="fileInput" type="file" accept="application/json,.json" class="visually-hidden" @change="onImportFile" />
       </div>
     </section>
 
@@ -374,6 +357,45 @@ function onImportFile(e: Event): void {
   color: #555;
 }
 
+/* ── 加载态 ── */
+.loading-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #555;
+  background: var(--paper-cream);
+  border: 2.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--royal-blue);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 2rem;
+}
+
+.loading-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--retro-red);
+  border: 2px solid var(--ink);
+  animation: loadingPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* ── 数据管理卡 ── */
 .data-manage-box {
   margin-top: 2.5rem;
@@ -412,42 +434,6 @@ function onImportFile(e: Event): void {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: #777;
-}
-
-.data-manage-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-}
-
-.btn-data-manage {
-  min-height: 42px;
-  padding: 0 1rem;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--royal-blue);
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap);
-}
-
-.btn-data-manage:hover {
-  background: var(--royal-blue);
-  color: #fff;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.btn-data-danger {
-  box-shadow: 2px 2px 0 var(--retro-red);
-}
-
-.btn-data-danger:hover {
-  background: var(--retro-red);
 }
 
 .visually-hidden {

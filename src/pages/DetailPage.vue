@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth'
 import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
 import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
+import { contactRows } from '@/lib/contact'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
 import ManageModal from '@/components/ManageModal.vue'
@@ -52,6 +53,9 @@ const statusText = computed(() => {
   if (it.archived) return '已下架'
   return it.status === 'lent' ? '已借出' : '可借'
 })
+
+/** 联系方式行：楼牌号在前、手机号在后 */
+const contactRowsList = computed(() => (item.value ? contactRows(item.value) : []))
 </script>
 
 <template>
@@ -83,7 +87,7 @@ const statusText = computed(() => {
             <circle cx="8.5" cy="8.5" r="1.5"></circle>
             <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
-          <span>实物图</span>
+          <span>小主没有上传图片哦</span>
         </div>
         <span class="badge-status float-badge"
           :class="item.archived ? 'pending' : item.status === 'lent' ? 'borrowed' : 'available'">
@@ -100,9 +104,13 @@ const statusText = computed(() => {
         <p class="desc-text">{{ item.desc || '（无描述）' }}</p>
 
         <dl class="detail-rows">
-          <div class="detail-row">
-            <dt>{{ item.contactType === 'phone' ? '物主手机号' : '楼号门牌' }}</dt>
-            <dd class="selectable">{{ item.contact || '未填写' }}</dd>
+          <div v-for="row in contactRowsList" :key="row.label" class="detail-row">
+            <dt>{{ row.label }}</dt>
+            <dd class="selectable">{{ row.value }}</dd>
+          </div>
+          <div v-if="contactRowsList.length === 0" class="detail-row">
+            <dt>联系方式</dt>
+            <dd>未填写</dd>
           </div>
           <div v-if="ownerIsMe && item.borrowedBy" class="detail-row">
             <dt>借阅人手机号</dt>
@@ -300,6 +308,13 @@ const statusText = computed(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .action-row .btn-memphis-primary,
+  .action-row .btn-memphis-secondary {
+    flex: 1 1 100%;
+  }
 }
 
 /* 联系方式保持可选中，供长按手动复制 */

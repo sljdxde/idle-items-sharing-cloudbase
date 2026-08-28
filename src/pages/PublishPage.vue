@@ -5,23 +5,25 @@
 // ================================================
 
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useItemsStore, type PublishDraft } from '@/stores/items'
+import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId, ContactType } from '@/lib/types'
 import { isValidPhone } from '@/lib/validate'
+import { compressImage } from '@/lib/image'
 import LoginBox from '@/components/LoginBox.vue'
 
-const router = useRouter()
 const store = useItemsStore()
 const auth = useAuthStore()
 
 const name = ref('')
 const desc = ref('')
-const imgUrl = ref('')
 const category = ref<CategoryId>('other')
 const publishing = ref(false)
+const imgError = ref('')
+const fileInput = ref<HTMLInputElement | null>(null)
+/** 上传图片压缩后的 data URI（可选） */
+const imgDataUri = ref('')
 
 // 联系方式：手机号 / 楼号 二选一
 const contactType = ref<ContactType>('phone')
@@ -60,6 +62,23 @@ function validateContact(): boolean {
   return true
 }
 
+async function onPickImage(e: Event): Promise<void> {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  imgError.value = ''
+  try {
+    imgDataUri.value = await compressImage(file)
+  } catch {
+    imgError.value = '图片处理失败，请换一张图片试试'
+    imgDataUri.value = ''
+  }
+}
+
+function clearImage(): void {
+  imgDataUri.value = ''
+  if (fileInput.value) fileInput.value.value = ''
+}
+
 function onSubmit(): void {
   if (publishing.value) return
   if (!name.value.trim() || !desc.value.trim()) {
@@ -70,18 +89,15 @@ function onSubmit(): void {
 
   publishing.value = true
   try {
-    const draft: PublishDraft = {
+    store.publish({
       name: name.value,
       desc: desc.value,
       contactType: contactType.value,
       contact: contact.value,
-      imgUrl: imgUrl.value,
+      imgUrl: imgDataUri.value,
       category: category.value,
       position: store.userPosition,
-    }
-    if (store.publish(draft)) {
-      router.push('/')
-    }
+    })
   } finally {
     publishing.value = false
   }
@@ -129,10 +145,32 @@ function onSubmit(): void {
           </label>
 
           <div class="field">
-            <span class="field-label">物品照片链接 <small>（选填，外链图片地址）</small></span>
-            <input v-model="imgUrl" type="url" class="memphis-input" maxlength="500"
-              placeholder="粘贴图片链接，例如图床 / 相册分享链接" />
-            <img v-if="imgUrl" :src="imgUrl" alt="图片预览" class="img-preview" />
+            <span class="field-label">物品照片 <small>（选填，上传单张图片）</small></span>
+            <div v-if="imgDataUri" class="img-uploaded">
+              <img :src="imgDataUri" alt="图片预览" class="img-preview" />
+              <button type="button" class="btn-img-remove" @click="clearImage">移除图片</button>
+            </div>
+            <div v-else class="img-empty" role="status">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              <span>小主没有上传图片哦</span>
+            </div>
+            <p v-if="imgError" class="img-error" role="alert">{{ imgError }}</p>
+            <button type="button" class="btn-photo" @click="fileInput?.click()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              {{ imgDataUri ? '重新选择图片' : '上传图片' }}
+            </button>
+            <input ref="fileInput" type="file" accept="image/*" class="visually-hidden"
+              @change="onPickImage" />
           </div>
         </fieldset>
 
@@ -183,8 +221,9 @@ function onSubmit(): void {
         </fieldset>
 
         <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing">
-          {{ publishing ? '发布中…' : '发布物品' }}
+          {{ publishing ? '打开中…' : '去 GitHub 发布' }}
         </button>
+        <p class="submit-hint">点击后将打开 GitHub 发布页，提交即向全体邻居发布（新标签页）。</p>
       </form>
     </div>
   </main>
@@ -292,8 +331,69 @@ function onSubmit(): void {
   transform: rotate(0.6deg);
 }
 
+.img-uploaded {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.img-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 108px;
+  border: 2.5px dashed var(--ink);
+  background: var(--bg-cream);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #888;
+}
+
+.img-empty svg {
+  color: #b0aaa0;
+}
+
+.img-error {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--retro-red);
+}
+
+.btn-img-remove {
+  min-height: 36px;
+  padding: 0 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: var(--paper-cream);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--retro-red);
+  transition:
+    transform 0.15s var(--ease),
+    box-shadow 0.15s var(--ease),
+    background var(--ease-snap);
+}
+
+.btn-img-remove:hover {
+  background: var(--retro-red);
+  color: #fff;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
 .btn-submit {
   width: 100%;
+}
+
+.submit-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #999;
+  text-align: center;
 }
 
 /* ── 定位状态盒 ── */

@@ -9,6 +9,7 @@ import { RouterLink } from 'vue-router'
 import type { Item } from '@/lib/types'
 import { formatDateShort } from '@/lib/filters'
 import { isOwner, canReturn } from '@/lib/itemOps'
+import { cardPlaceText } from '@/lib/contact'
 import { useAuthStore } from '@/stores/auth'
 import { useItemsStore } from '@/stores/items'
 
@@ -45,10 +46,8 @@ const statusClass = computed(() =>
 /** 距离标签（用户已定位且物品有定位时显示） */
 const distLabel = computed(() => store.distanceLabel(props.item))
 
-/** 位置文案：楼号联系方式即位置；手机号联系显示通用文案 */
-const placeText = computed(() =>
-  props.item.contactType === 'building' ? props.item.contact : '社区邻居',
-)
+/** 位置文案：楼号优先展示；手机号联系方式显示脱敏号（楼在前、号在后） */
+const placeText = computed(() => cardPlaceText(props.item))
 
 /** 第 n 张卡片的旋转角与撞色阴影（循环复用 6 组，与样机一致） */
 const VARIANTS = [
@@ -86,7 +85,7 @@ function onToggleArchive(): void {
           <circle cx="8.5" cy="8.5" r="1.5"></circle>
           <polyline points="21 15 16 10 5 21"></polyline>
         </svg>
-        <span>实物图</span>
+        <span>小主没有上传图片哦</span>
       </template>
       <span v-if="item.imgUrl" class="photo-veil" aria-hidden="true"></span>
     </RouterLink>

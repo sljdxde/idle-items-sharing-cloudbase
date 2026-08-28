@@ -1,24 +1,18 @@
 // ================================================
 // src/stores/items.ts — 物品与筛选的全局状态（Pinia）
-// 数据源：localStorage 本地持久层（发布/借阅/归还/上下架全在本地完成）
-// 用户体系：登录手机号区分物主与借阅者（stores/auth.ts）
+// 数据源：GitHub Issues 共享数据层（items.json 快照 → 实时 API → 种子兜底）
+// 写操作：发布=预填 issues/new；借/还/上下架=评论命令（Actions 自动处理）
 // ================================================
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { CategoryId, ContactType, Item } from '@/lib/types'
-import { loadItems, saveItems, clearItems, nextId } from '@/lib/localStore'
+import type { CategoryId, Item } from '@/lib/types'
+import { listItems, buildPublishUrl, issueUrl, borrowCommand, RETURN_COMMAND, ARCHIVE_COMMAND, UNARCHIVE_COMMAND } from '@/lib/github'
 import { matchesCategory, matchesRadius, matchesSearch } from '@/lib/filters'
-import { exportFileName, exportItems, parseImportedItems } from '@/lib/dataPort'
-import {
-  borrowItem as borrowOp,
-  canBorrow,
-  canReturn,
-  isOwner,
-  returnItem as returnOp,
-} from '@/lib/itemOps'
+import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { copyText } from '@/lib/clipboard'
 import {
   DEFAULT_RADIUS_KM,
   distanceKm,
@@ -27,17 +21,6 @@ import {
   itemLatLng,
   type LatLng,
 } from '@/lib/geo'
-
-export interface PublishDraft {
-  name: string
-  desc: string
-  contactType: ContactType
-  contact: string
-  imgUrl: string
-  category: CategoryId
-  /** 发布时自动获取的用户定位；获取失败为 null */
-  position: LatLng | null
-}
 
 const POS_KEY = 'linli_haowu_pos_v1'
 
@@ -54,6 +37,13 @@ function readStoredPos(): LatLng | null {
   }
 }
 
+/** 打开 Issue 评论区并尝试复制命令文本 */
+async function openIssueWithCommand(id: number, cmd: string, tip: string): Promise<void> {
+  await copyText(cmd)
+  window.open(issueUrl(id), '_blank', 'noopener')
+  window.alert(`已复制「${cmd}」到剪贴板\n\n${tip}`)
+}
+
 export const useItemsStore = defineStore('items', () => {
   const toast = useToast()
   const auth = useAuthStore()
@@ -66,23 +56,31 @@ export const useItemsStore = defineStore('items', () => {
   const radiusKm = ref<number | 'all'>(DEFAULT_RADIUS_KM)
   /** 默认隐藏已借出物品；打开后在列表中展示并标记状态 */
   const showLent = ref(false)
-  /** 只看我的发布（含已下架，便于重新上架） */
+  /** 我的发布 / 我的借用：互斥（点击其一自动取消另一个） */
   const onlyMine = ref(false)
-  /** 只看我借用的（借给我的物品始终可见，便于归还） */
   const onlyBorrowed = ref(false)
   /** 当前用户定位 */
   const userPosition = ref<LatLng | null>(null)
   const locating = ref(false)
+  const loading = ref(false)
 
-  // ---------- 加载（本地数据，同步即可） ----------
-  function load(): void {
-    items.value = loadItems()
-    userPosition.value = readStoredPos()
+  // ---------- 加载（GitHub Issues 共享数据） ----------
+  async function load(): Promise<void> {
+    loading.value = true
+    try {
+      items.value = await listItems()
+    } catch {
+      if (items.value.length === 0) items.value = []
+    } finally {
+      loading.value = false
+      userPosition.value = readStoredPos()
+    }
   }
+
   load()
 
-  function persist(): void {
-    saveItems(items.value)
+  async function refresh(): Promise<void> {
+    await load()
   }
 
   /** 重新获取定位（发布页/工具栏的「定位」按钮） */
@@ -112,9 +110,7 @@ export const useItemsStore = defineStore('items', () => {
   /** 卡片/详情页用的距离文案：无定位且用户已定位 → 「距离未知」 */
   function distanceLabel(item: Item): string | null {
     const p = itemLatLng(item)
-    if (!p) {
-      return userPosition.value ? '距离未知' : null
-    }
+    if (!p) return userPosition.value ? '距离未知' : null
     const d = distanceOf(item)
     return d === null ? null : formatDistance(d)
   }
@@ -164,36 +160,41 @@ export const useItemsStore = defineStore('items', () => {
     return items.value.find((it) => it.id === id)
   }
 
-  // ---------- 发布（自动携带定位） ----------
-  function publish(draft: PublishDraft): boolean {
+  // ---------- 发布（打开预填 GitHub Issue 创建页） ----------
+  function publish(draft: {
+    name: string
+    desc: string
+    contactType: 'phone' | 'building'
+    contact: string
+    imgUrl: string
+    category: CategoryId
+    position: LatLng | null
+  }): boolean {
     if (!auth.phone) {
       toast.error('请先登录', '发布闲置需要先登录')
       return false
     }
-    const item: Item = {
-      id: nextId(items.value),
-      name: draft.name.trim(),
-      desc: draft.desc.trim(),
+    const url = buildPublishUrl({
+      name: draft.name,
+      desc: draft.desc,
       contactType: draft.contactType,
-      contact: draft.contact.trim(),
-      imgUrl: draft.imgUrl.trim(),
-      status: 'available',
+      contact: draft.contact,
+      imgUrl: draft.imgUrl,
+      category: draft.category,
       ownerPhone: auth.phone,
       lat: draft.position?.lat ?? null,
       lng: draft.position?.lng ?? null,
-      category: draft.category,
-      createTime: new Date().toISOString(),
+    })
+    const w = window.open(url, '_blank', 'noopener')
+    if (!w) {
+      toast.warning('弹窗被拦截', '请允许本站点弹出窗口后重试')
+    } else {
+      toast.info('正在打开发布页', '在 GitHub 上提交后，物品即对所有邻居可见')
     }
-    items.value.unshift(item)
-    persist()
-    toast.success(
-      '发布成功',
-      draft.position ? '已带上你的定位，附近邻居能按距离找到它' : '物品已上架',
-    )
     return true
   }
 
-  // ---------- 借阅 / 归还 ----------
+  // ---------- 借阅 / 归还 / 上下架（评论命令引导） ----------
   function borrow(id: number): boolean {
     const it = itemById(id)
     if (!it) return false
@@ -202,18 +203,14 @@ export const useItemsStore = defineStore('items', () => {
       return false
     }
     if (!canBorrow(it, auth.phone)) {
-      if (it.ownerPhone === auth.phone) {
-        toast.warning('这是你自己的物品', '不能借用自己发布的物品')
-      } else if (it.status !== 'available' || it.archived) {
-        toast.warning('暂时借不了', '该物品当前不可借用')
-      } else {
-        toast.warning('暂时借不了', '该物品当前不可借用')
-      }
+      toast.warning('暂时借不了', '该物品当前不可借用')
       return false
     }
-    Object.assign(it, borrowOp(it, auth.phone))
-    persist()
-    toast.success('借用成功', '请联系物主取物，用完记得归还')
+    void openIssueWithCommand(
+      id,
+      borrowCommand(auth.phone),
+      `在评论区粘贴并发送，物品即标记为「已借出」。`,
+    )
     return true
   }
 
@@ -224,13 +221,10 @@ export const useItemsStore = defineStore('items', () => {
       toast.error('无法归还', '只有借阅人本人可以操作归还')
       return false
     }
-    Object.assign(it, returnOp(it))
-    persist()
-    toast.success('归还成功', '物品已恢复为可借状态')
+    void openIssueWithCommand(id, RETURN_COMMAND, '在评论区粘贴并发送「归还」，物品恢复可借。')
     return true
   }
 
-  // ---------- 上下架（仅物主） ----------
   function setArchived(id: number, archived: boolean): boolean {
     const it = itemById(id)
     if (!it) return false
@@ -238,9 +232,13 @@ export const useItemsStore = defineStore('items', () => {
       toast.error('无权操作', '只有发布者可以管理自己的物品')
       return false
     }
-    it.archived = archived
-    persist()
-    toast.success(archived ? '已下架' : '已上架', archived ? '物品已从列表隐藏' : '物品重新对邻居可见')
+    void openIssueWithCommand(
+      id,
+      archived ? ARCHIVE_COMMAND : UNARCHIVE_COMMAND,
+      archived
+        ? '在评论区粘贴并发送「下架」，物品将从公开列表隐藏。'
+        : '在评论区粘贴并发送「上架」，物品重新可见。',
+    )
     return true
   }
 
@@ -257,50 +255,16 @@ export const useItemsStore = defineStore('items', () => {
     radiusKm.value = r
   }
 
-  // ---------- 数据管理（单机设计的迁移/重置通道） ----------
-  /** 导出全部物品为 JSON 文件（换设备时带走数据） */
-  function exportData(): boolean {
-    try {
-      const text = exportItems(items.value)
-      const blob = new Blob([text], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = exportFileName()
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      toast.success('导出成功', `共 ${items.value.length} 件物品，请妥善保存文件`)
-      return true
-    } catch {
-      toast.error('导出失败', '当前环境不支持文件下载')
-      return false
-    }
+  /** 切换「我的发布」；开启时自动取消「我的借用」 */
+  function toggleMine(): void {
+    onlyMine.value = !onlyMine.value
+    if (onlyMine.value) onlyBorrowed.value = false
   }
 
-  /** 导入 JSON 文本并覆盖当前数据（覆盖前确认） */
-  function importData(text: string): boolean {
-    const imported = parseImportedItems(text)
-    if (!imported) {
-      toast.error('导入失败', '文件格式不正确，请选择本站导出的 JSON 文件')
-      return false
-    }
-    if (!window.confirm(`将导入 ${imported.length} 件物品并覆盖当前全部数据，确定继续吗？`)) {
-      return false
-    }
-    items.value = imported
-    persist()
-    toast.success('导入成功', `已恢复 ${imported.length} 件物品`)
-    return true
-  }
-
-  /** 清空本地数据并恢复演示种子（二次确认） */
-  function resetData(): void {
-    if (!window.confirm('将清空全部本地数据并恢复演示数据，确定继续吗？')) return
-    clearItems()
-    load()
-    toast.success('已重置', '演示数据已恢复')
+  /** 切换「我的借用」；开启时自动取消「我的发布」 */
+  function toggleBorrowed(): void {
+    onlyBorrowed.value = !onlyBorrowed.value
+    if (onlyBorrowed.value) onlyMine.value = false
   }
 
   return {
@@ -313,7 +277,9 @@ export const useItemsStore = defineStore('items', () => {
     onlyBorrowed,
     userPosition,
     locating,
+    loading,
     load,
+    refresh,
     locate,
     distanceOf,
     distanceLabel,
@@ -326,8 +292,7 @@ export const useItemsStore = defineStore('items', () => {
     setCategory,
     setSearch,
     setRadius,
-    exportData,
-    importData,
-    resetData,
+    toggleMine,
+    toggleBorrowed,
   }
 })

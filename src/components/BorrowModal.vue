@@ -8,6 +8,7 @@ import type { Item } from '@/lib/types'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
+import { contactRows } from '@/lib/contact'
 
 const props = defineProps<{
   open: boolean
@@ -28,9 +29,8 @@ const mineLent = computed(() =>
   props.item ? canReturn(props.item, auth.phone) : false,
 )
 
-const contactLabel = computed(() =>
-  props.item?.contactType === 'phone' ? '物主手机号' : '楼号门牌',
-)
+/** 联系方式行：楼牌号在前、手机号在后 */
+const contactRowsList = computed(() => (props.item ? contactRows(props.item) : []))
 
 function onConfirmBorrow(): void {
   if (props.item && store.borrow(props.item.id)) emit('close')
@@ -38,8 +38,7 @@ function onConfirmBorrow(): void {
 
 function onReturn(): void {
   if (props.item && store.returnBack(props.item.id)) emit('close')
-}
-</script>
+}</script>
 
 <template>
   <BaseModal :open="open" labelled-by="borrow-title" @close="emit('close')">
@@ -74,16 +73,20 @@ function onReturn(): void {
         </button>
       </template>
 
-      <!-- ④ 可借：展示联系方式 + 确认借用 -->
+      <!-- ④ 可借：展示联系方式 + 评论命令借阅 -->
       <template v-else>
         <div class="contact-card">
-          <div class="contact-row">
-            <span class="k">{{ contactLabel }}</span>
-            <b class="v selectable">{{ item.contact || '未填写' }}</b>
+          <div v-for="row in contactRowsList" :key="row.label" class="contact-row">
+            <span class="k">{{ row.label }}</span>
+            <b class="v selectable">{{ row.value }}</b>
+          </div>
+          <div v-if="contactRowsList.length === 0" class="contact-row">
+            <span class="k">联系方式</span>
+            <b class="v">未填写</b>
           </div>
         </div>
 
-        <p class="privacy-tip">点击「确认借用」后物品会标记为「已借出」；请通过上方联系方式与物主约取件。</p>
+        <p class="privacy-tip">点击下方按钮会打开该物品的 GitHub 评论区，命令已自动复制，粘贴发送即可借出（全站实时可见）。</p>
 
         <button
           type="button"
@@ -91,7 +94,7 @@ function onReturn(): void {
           :disabled="!borrowable"
           @click="onConfirmBorrow"
         >
-          确认借用
+          去 GitHub 借阅
         </button>
       </template>
     </div>

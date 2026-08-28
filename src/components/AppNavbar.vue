@@ -187,13 +187,43 @@ function onLogout(): void {
 }
 
 @media (max-width: 640px) {
+  .memphis-header {
+    padding: 0.9rem 0.75rem 0.4rem;
+    gap: 0.5rem;
+  }
+
+  .brand-geom-icon {
+    width: 34px;
+    height: 34px;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .brand-geom-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
   .brand-title {
-    font-size: 1.2rem;
+    font-size: 1.12rem;
+    letter-spacing: 0.01em;
+  }
+
+  .nav-links {
+    gap: 0.35rem;
   }
 
   .nav-item {
+    min-height: 40px;
+    padding: 0 0.5rem;
+    font-size: 0.78rem;
+    gap: 0.25rem;
+  }
+
+  .user-chip {
+    min-height: 36px;
     padding: 0 0.55rem;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
+    gap: 0.25rem;
   }
 }
 </style>

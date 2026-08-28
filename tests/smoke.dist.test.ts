@@ -21,6 +21,11 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
   beforeAll(() => {
     // 预置手机号登录态（种子物品的物主是 1380000000x，登录 13812345678 即「非物主」视角）
     localStorage.setItem('linli_haowu_user_v1', '13812345678')
+    // 模拟离线：全局 fetch 立即失败（happy-dom 中 window 与 globalThis 不同步，两处都要设），
+    // 使数据层回退到种子兜底（仅验证 UI 渲染，与部署网络无关）
+    const offlineFetch = () => Promise.reject(new Error('offline'))
+    ;(window as any).fetch = offlineFetch
+    ;(globalThis as any).fetch = offlineFetch
     document.head.innerHTML = html.slice(
       html.indexOf('<head>') + 6,
       html.indexOf('</head>'),
@@ -88,5 +93,26 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     expect(appHtml).toContain('戴森V8吸尘器')
     // 非物主视角：展示「我想借」
     expect(appHtml).toContain('我想借')
+  })
+
+  it('⑦ 「我的发布 / 我的借用」互斥切换（点击其一取消另一个）', async () => {
+    // 回到首页
+    const back = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/"]')][0]!
+    back.click()
+    await flush(120)
+    const btns = [...document.querySelectorAll<HTMLButtonElement>('button')]
+    const mine = btns.find((b) => b.textContent?.trim() === '我的发布')!
+    const borrowed = btns.find((b) => b.textContent?.trim() === '我的借用')!
+    expect(mine).toBeTruthy()
+    expect(borrowed).toBeTruthy()
+    // 点「我的发布」→ 高亮
+    mine.click()
+    await flush(60)
+    expect(mine.classList.contains('active')).toBe(true)
+    // 点「我的借用」→ 借用高亮、发布取消
+    borrowed.click()
+    await flush(60)
+    expect(borrowed.classList.contains('active')).toBe(true)
+    expect(mine.classList.contains('active')).toBe(false)
   })
 })

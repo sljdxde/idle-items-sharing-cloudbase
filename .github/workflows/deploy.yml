@@ -1,9 +1,9 @@
 # ================================================
-# Deploy to GitHub Pages (Actions 部署模式)
-# 触发：push 到 master / 手动
-# 流程：npm ci → vite build → 部署 Pages
-# 数据层为纯前端本地存储（localStorage），无外部数据源步骤
-# 前置：仓库 Settings → Pages → Source 已设为 "GitHub Actions"（build_type: workflow）
+# Deploy to GitHub Pages + Issues 共享数据层
+# 触发：push 到 master / Issues 变更 / 评论命令（借还·上下架）/ 手动
+# 流程：处理评论命令（借/还/下架/上架）→ 生成 items.json 快照 → vite build → 部署 Pages
+# 零服务器：站点读取共享快照；写操作走 Issue + 评论命令（Actions 自动处理）
+# 前置：Pages Source=GitHub Actions（build_type: workflow）；Actions 权限=write；issues: write
 # ================================================
 
 name: Deploy to GitHub Pages
@@ -11,10 +11,15 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [master]
+  issues:
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
 
 permissions:
   contents: read
+  issues: write
   pages: write
   id-token: write
 
@@ -37,6 +42,21 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Handle comment commands (借/还/下架/上架)
+        if: github.event_name == 'issue_comment'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_USER: ${{ github.event.comment.user.login }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+        run: node scripts/handle-comment.mjs
+
+      - name: Generate items.json from GitHub Issues
+        run: node scripts/gen-items.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
         run: npm run build

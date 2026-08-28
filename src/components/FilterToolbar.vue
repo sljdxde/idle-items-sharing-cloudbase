@@ -5,13 +5,11 @@
 // ================================================
 
 import { useItemsStore } from '@/stores/items'
-import { useAuthStore } from '@/stores/auth'
 import { CATEGORIES } from '@/lib/categories'
 import { RADIUS_OPTIONS } from '@/lib/geo'
 import { useToast } from '@/composables/useToast'
 
 const store = useItemsStore()
-const auth = useAuthStore()
 const toast = useToast()
 
 defineEmits<{ refresh: [] }>()
@@ -95,17 +93,6 @@ async function onLocate(): Promise<void> {
       <button type="button" class="filter-chip lent-chip" :class="{ active: store.showLent }"
         :aria-pressed="store.showLent" @click="store.showLent = !store.showLent">
         显示已借出
-      </button>
-
-      <button v-if="auth.isLoggedIn" type="button" class="filter-chip mine-chip" :class="{ active: store.onlyMine }"
-        :aria-pressed="store.onlyMine" @click="store.onlyMine = !store.onlyMine">
-        我的发布
-      </button>
-
-      <button v-if="auth.isLoggedIn" type="button" class="filter-chip borrowed-chip"
-        :class="{ active: store.onlyBorrowed }" :aria-pressed="store.onlyBorrowed"
-        @click="store.onlyBorrowed = !store.onlyBorrowed">
-        我的借用
       </button>
     </div>
 
@@ -290,9 +277,7 @@ async function onLocate(): Promise<void> {
 }
 
 .loc-chip,
-.lent-chip,
-.mine-chip,
-.borrowed-chip {
+.lent-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -306,16 +291,6 @@ async function onLocate(): Promise<void> {
 .lent-chip.active {
   background: var(--salmon);
   color: var(--ink);
-}
-
-.mine-chip.active {
-  background: var(--olive);
-  color: var(--paper-cream);
-}
-
-.borrowed-chip.active {
-  background: var(--retro-red);
-  color: #fff;
 }
 
 /* 未定位提示 */

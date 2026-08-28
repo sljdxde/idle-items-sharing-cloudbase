@@ -89,13 +89,13 @@ function onToggleArchive(): void {
         </div>
 
         <ul class="guide-list">
-          <li>下架后物品从公共列表隐藏（不影响已发生的借用）</li>
-          <li>重新上架即可恢复展示</li>
-          <li>物品被借用时状态自动变为「已借出」，归还后自动恢复「可借」</li>
+          <li>下架 / 上架在 GitHub 上通过评论命令完成（已自动复制）</li>
+          <li>下架后物品从公开列表隐藏（不影响已发生的借用）</li>
+          <li>物品被借用时状态自动变为「已借出」，发「归还」命令后自动恢复「可借」</li>
         </ul>
 
         <button type="button" class="btn-memphis-primary btn-block" @click="onToggleArchive">
-          {{ item.archived ? '重新上架' : '下架物品' }}
+          {{ item.archived ? '去 GitHub 上架' : '去 GitHub 下架' }}
         </button>
       </template>
     </div>
