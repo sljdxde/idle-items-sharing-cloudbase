@@ -101,6 +101,12 @@ async function onLocate(): Promise<void> {
         :aria-pressed="store.onlyMine" @click="store.onlyMine = !store.onlyMine">
         我的发布
       </button>
+
+      <button v-if="auth.isLoggedIn" type="button" class="filter-chip borrowed-chip"
+        :class="{ active: store.onlyBorrowed }" :aria-pressed="store.onlyBorrowed"
+        @click="store.onlyBorrowed = !store.onlyBorrowed">
+        我的借用
+      </button>
     </div>
 
     <!-- 未定位提示：距离筛选暂不生效 -->
@@ -285,7 +291,8 @@ async function onLocate(): Promise<void> {
 
 .loc-chip,
 .lent-chip,
-.mine-chip {
+.mine-chip,
+.borrowed-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -304,6 +311,11 @@ async function onLocate(): Promise<void> {
 .mine-chip.active {
   background: var(--olive);
   color: var(--paper-cream);
+}
+
+.borrowed-chip.active {
+  background: var(--retro-red);
+  color: #fff;
 }
 
 /* 未定位提示 */

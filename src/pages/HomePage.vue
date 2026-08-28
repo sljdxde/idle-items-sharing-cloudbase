@@ -19,6 +19,7 @@ const toast = useToast()
 
 const borrowItem = ref<Item | null>(null)
 const manageItem = ref<Item | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => {
   store.load()
@@ -29,6 +30,20 @@ onMounted(() => {
 function onRefresh(): void {
   store.load()
   toast.success('已刷新', '已重新载入本地社区好物')
+}
+
+function onImportFile(e: Event): void {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    if (typeof reader.result === 'string') store.importData(reader.result)
+  }
+  reader.onerror = () => toast.error('读取失败', '无法读取所选文件')
+  reader.readAsText(file)
+  // 允许连续选择同一个文件
+  input.value = ''
 }
 </script>
 
@@ -82,7 +97,14 @@ function onRefresh(): void {
       <div class="empty-geom" aria-hidden="true">
         <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
       </div>
-      <template v-if="store.search || store.category !== 'all' || store.showLent || store.onlyMine">
+      <template v-if="store.onlyBorrowed">
+        <h2 class="empty-title">你还没有借用的物品</h2>
+        <p class="empty-desc">去列表里逛逛，看到心仪的好物点「我想借」吧。</p>
+        <button type="button" class="btn-memphis-secondary" @click="store.onlyBorrowed = false">
+          去逛逛
+        </button>
+      </template>
+      <template v-else-if="store.search || store.category !== 'all' || store.showLent || store.onlyMine">
         <h2 class="empty-title">没找到匹配的好物</h2>
         <p class="empty-desc">换个关键词，或清除筛选条件试试。</p>
         <button type="button" class="btn-memphis-secondary"
@@ -111,6 +133,35 @@ function onRefresh(): void {
           <ItemCard :item="item" :index="i" @borrow="borrowItem = $event" @manage="manageItem = $event" />
         </div>
       </TransitionGroup>
+    </section>
+
+    <!-- 数据管理：单机数据的导出/导入/重置（换设备迁移通道） -->
+    <section class="data-manage-box" aria-label="数据管理">
+      <div class="data-manage-head">
+        <span class="data-manage-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+            <path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
+            <path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+          </svg>
+        </span>
+        <div>
+          <h2 class="data-manage-title">数据管理</h2>
+          <p class="data-manage-desc">数据保存在本机浏览器。换设备时可导出文件带走，换完再导入回来。</p>
+        </div>
+      </div>
+      <div class="data-manage-actions">
+        <button type="button" class="btn-data-manage" @click="store.exportData()">
+          导出数据
+        </button>
+        <button type="button" class="btn-data-manage" @click="fileInput?.click()">
+          导入数据
+        </button>
+        <button type="button" class="btn-data-manage btn-data-danger" @click="store.resetData()">
+          重置演示数据
+        </button>
+        <input ref="fileInput" type="file" accept="application/json,.json" class="visually-hidden" @change="onImportFile" />
+      </div>
     </section>
 
     <BorrowModal :open="borrowItem !== null" :item="borrowItem" @close="borrowItem = null" />
@@ -321,5 +372,90 @@ function onRefresh(): void {
 
 .empty-desc {
   color: #555;
+}
+
+/* ── 数据管理卡 ── */
+.data-manage-box {
+  margin-top: 2.5rem;
+  background: var(--bg-cream);
+  border: 2.5px dashed var(--ink);
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.data-manage-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.data-manage-icon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--mustard);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.data-manage-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+}
+
+.data-manage-desc {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.data-manage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.btn-data-manage {
+  min-height: 42px;
+  padding: 0 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: var(--paper-cream);
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--royal-blue);
+  transition:
+    transform 0.15s var(--ease),
+    box-shadow 0.15s var(--ease),
+    background var(--ease-snap);
+}
+
+.btn-data-manage:hover {
+  background: var(--royal-blue);
+  color: #fff;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn-data-danger {
+  box-shadow: 2px 2px 0 var(--retro-red);
+}
+
+.btn-data-danger:hover {
+  background: var(--retro-red);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 </style>

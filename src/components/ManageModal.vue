@@ -31,6 +31,16 @@ const borrowerMasked = computed(() => {
   return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : ''
 })
 
+/** 借出时间（ISO → 「M月D日 HH:mm」）；无则空 */
+const borrowedAtText = computed(() => {
+  const t = props.item?.borrowedAt
+  if (!t) return ''
+  const d = new Date(t)
+  if (Number.isNaN(d.getTime())) return ''
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${p(d.getHours())}:${p(d.getMinutes())}`
+})
+
 function onToggleArchive(): void {
   if (props.item && store.setArchived(props.item.id, !props.item.archived)) {
     emit('close')
@@ -67,6 +77,10 @@ function onToggleArchive(): void {
           <div v-if="item.borrowedBy" class="info-row">
             <span class="k">借阅人手机号</span>
             <b class="v selectable">{{ borrowerMasked }}</b>
+          </div>
+          <div v-if="item.borrowedBy" class="info-row">
+            <span class="k">借出时间</span>
+            <b class="v">{{ borrowedAtText || '—' }}</b>
           </div>
           <div class="info-row">
             <span class="k">联系方式</span>

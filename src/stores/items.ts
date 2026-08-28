@@ -7,8 +7,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { CategoryId, ContactType, Item } from '@/lib/types'
-import { loadItems, saveItems, nextId } from '@/lib/localStore'
+import { loadItems, saveItems, clearItems, nextId } from '@/lib/localStore'
 import { matchesCategory, matchesRadius, matchesSearch } from '@/lib/filters'
+import { exportFileName, exportItems, parseImportedItems } from '@/lib/dataPort'
 import {
   borrowItem as borrowOp,
   canBorrow,
@@ -67,6 +68,8 @@ export const useItemsStore = defineStore('items', () => {
   const showLent = ref(false)
   /** 只看我的发布（含已下架，便于重新上架） */
   const onlyMine = ref(false)
+  /** 只看我借用的（借给我的物品始终可见，便于归还） */
+  const onlyBorrowed = ref(false)
   /** 当前用户定位 */
   const userPosition = ref<LatLng | null>(null)
   const locating = ref(false)
@@ -115,21 +118,29 @@ export const useItemsStore = defineStore('items', () => {
   // ---------- 派生：可见列表 ----------
   const visibleItems = computed(() =>
     items.value
-      // 下架不可见；但「我的发布」里物主可见自己的下架物品（可重新上架）
-      .filter(
-        (it) =>
-          !it.archived ||
-          (onlyMine.value && !!auth.phone && it.ownerPhone === auth.phone),
-      )
+      // ① 角色视图优先：「我的发布」看自己全部（含已下架）；「我的借用」看借给我的（即便已下架）
+      .filter((it) => {
+        if (onlyMine.value && !!auth.phone && it.ownerPhone === auth.phone) return true
+        if (onlyBorrowed.value && !!auth.phone && it.borrowedBy === auth.phone) return true
+        return !it.archived
+      })
       .filter((it) =>
         onlyMine.value && auth.phone ? it.ownerPhone === auth.phone : true,
       )
+      .filter((it) =>
+        onlyBorrowed.value && auth.phone ? it.borrowedBy === auth.phone : true,
+      )
       .filter((it) => matchesCategory(it, category.value))
       .filter((it) => matchesSearch(it, search.value))
-      // 默认不展示已借出物品；打开开关后展示并标记
-      .filter((it) => (showLent.value ? true : it.status === 'available'))
+      // ② 默认隐藏已借出；但「我的发布/我的借用」里自己的物品始终显示
+      .filter((it) => {
+        if (showLent.value) return true
+        if (onlyMine.value && auth.phone && it.ownerPhone === auth.phone) return true
+        if (onlyBorrowed.value && auth.phone && it.borrowedBy === auth.phone) return true
+        return it.status === 'available'
+      })
       .filter((it) => matchesRadius(it, userPosition.value, radiusKm.value))
-      // 用户已定位时按距离升序（无定位物品排最后），否则最新优先
+      // ③ 用户已定位时按距离升序（无定位物品排最后），否则最新优先
       .sort((a, b) => {
         if (userPosition.value) {
           const da = distanceOf(a)
@@ -242,6 +253,52 @@ export const useItemsStore = defineStore('items', () => {
     radiusKm.value = r
   }
 
+  // ---------- 数据管理（单机设计的迁移/重置通道） ----------
+  /** 导出全部物品为 JSON 文件（换设备时带走数据） */
+  function exportData(): boolean {
+    try {
+      const text = exportItems(items.value)
+      const blob = new Blob([text], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = exportFileName()
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      toast.success('导出成功', `共 ${items.value.length} 件物品，请妥善保存文件`)
+      return true
+    } catch {
+      toast.error('导出失败', '当前环境不支持文件下载')
+      return false
+    }
+  }
+
+  /** 导入 JSON 文本并覆盖当前数据（覆盖前确认） */
+  function importData(text: string): boolean {
+    const imported = parseImportedItems(text)
+    if (!imported) {
+      toast.error('导入失败', '文件格式不正确，请选择本站导出的 JSON 文件')
+      return false
+    }
+    if (!window.confirm(`将导入 ${imported.length} 件物品并覆盖当前全部数据，确定继续吗？`)) {
+      return false
+    }
+    items.value = imported
+    persist()
+    toast.success('导入成功', `已恢复 ${imported.length} 件物品`)
+    return true
+  }
+
+  /** 清空本地数据并恢复演示种子（二次确认） */
+  function resetData(): void {
+    if (!window.confirm('将清空全部本地数据并恢复演示数据，确定继续吗？')) return
+    clearItems()
+    load()
+    toast.success('已重置', '演示数据已恢复')
+  }
+
   return {
     items,
     search,
@@ -249,6 +306,7 @@ export const useItemsStore = defineStore('items', () => {
     radiusKm,
     showLent,
     onlyMine,
+    onlyBorrowed,
     userPosition,
     locating,
     load,
@@ -264,5 +322,8 @@ export const useItemsStore = defineStore('items', () => {
     setCategory,
     setSearch,
     setRadius,
+    exportData,
+    importData,
+    resetData,
   }
 })

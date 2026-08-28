@@ -52,6 +52,15 @@ export function saveItems(items: Item[]): boolean {
   }
 }
 
+/** 清空存储（重置用）；下次 loadItems 会重新播种种子数据 */
+export function clearItems(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
 export function nextId(items: Item[]): number {
   return items.reduce((m, x) => Math.max(m, x.id), 0) + 1
 }

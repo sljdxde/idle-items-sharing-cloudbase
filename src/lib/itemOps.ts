@@ -20,9 +20,9 @@ export function canBorrow(item: Item, phone: string | null | undefined): boolean
   )
 }
 
-/** 借阅：状态 → 已借出，记录借阅人手机号；返回新对象（入参不变） */
+/** 借阅：状态 → 已借出，记录借阅人手机号与借出时间；返回新对象（入参不变） */
 export function borrowItem(item: Item, phone: string): Item {
-  return { ...item, status: 'lent', borrowedBy: phone }
+  return { ...item, status: 'lent', borrowedBy: phone, borrowedAt: new Date().toISOString() }
 }
 
 /** 是否可归还：已借出且当前用户就是借阅人 */
@@ -30,7 +30,7 @@ export function canReturn(item: Item, phone: string | null | undefined): boolean
   return item.status === 'lent' && !!phone && item.borrowedBy === phone
 }
 
-/** 归还：状态 → 可借，清空借阅人；返回新对象（入参不变） */
+/** 归还：状态 → 可借，清空借阅人与借出时间；返回新对象（入参不变） */
 export function returnItem(item: Item): Item {
-  return { ...item, status: 'available', borrowedBy: undefined }
+  return { ...item, status: 'available', borrowedBy: undefined, borrowedAt: undefined }
 }

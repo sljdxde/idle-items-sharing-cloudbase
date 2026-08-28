@@ -54,11 +54,13 @@ describe('canBorrow / borrowItem（借用 → 已借出）', () => {
     expect(canBorrow(makeItem({ status: 'lent', borrowedBy: '13900000002' }), '13700000003')).toBe(false)
     expect(canBorrow(makeItem({ archived: true }), '13900000002')).toBe(false)
   })
-  it('借用后状态变「已借出」并记录借阅人手机号；入参不被修改', () => {
+  it('借用后状态变「已借出」并记录借阅人手机号与借出时间；入参不被修改', () => {
     const item = makeItem()
     const after = borrowItem(item, '13900000002')
     expect(after.status).toBe('lent')
     expect(after.borrowedBy).toBe('13900000002')
+    expect(after.borrowedAt).toBeTruthy() // 借出时间被记录
+    expect(new Date(after.borrowedAt!).getTime()).not.toBeNaN()
     expect(item.status).toBe('available') // 纯函数：原对象不变
   })
 })
@@ -72,10 +74,11 @@ describe('canReturn / returnItem（归还 → 可借）', () => {
     expect(canReturn(lent, null)).toBe(false)
     expect(canReturn(makeItem(), '13900000002')).toBe(false) // 未借出无归还一说
   })
-  it('归还后状态恢复「可借」且清空借阅人', () => {
+  it('归还后状态恢复「可借」且清空借阅人与借出时间', () => {
     const after = returnItem(lent)
     expect(after.status).toBe('available')
     expect(after.borrowedBy).toBeUndefined()
+    expect(after.borrowedAt).toBeUndefined()
   })
 })
 
