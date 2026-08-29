@@ -9,7 +9,7 @@ import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
-import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
+import { canReturn, isOwner } from '@/lib/itemOps'
 import { contactRows } from '@/lib/contact'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
@@ -37,7 +37,6 @@ const categoryLabel = computed(() => {
 })
 
 const ownerIsMe = computed(() => (item.value ? isOwner(item.value, auth.phone) : false))
-const borrowable = computed(() => (item.value ? canBorrow(item.value, auth.phone) : false))
 const mineLent = computed(() => (item.value ? canReturn(item.value, auth.phone) : false))
 
 const distLabel = computed(() => (item.value ? store.distanceLabel(item.value) : null))
@@ -140,9 +139,9 @@ const contactRowsList = computed(() => (item.value ? contactRows(item.value) : [
             我要归还
           </button>
 
-          <!-- 其他人：借用 -->
+          <!-- 其他人：借用（未登录也允许点击，弹窗内提供登录，与首页卡片行为一致） -->
           <button v-else type="button" class="btn-memphis-primary"
-            :disabled="!borrowable || item.status === 'lent' || item.archived || store.writing"
+            :disabled="item.status === 'lent' || item.archived || store.writing"
             @click="borrowOpen = true">
             {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
           </button>

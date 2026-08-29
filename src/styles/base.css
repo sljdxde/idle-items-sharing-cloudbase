@@ -109,7 +109,7 @@ img {
   box-shadow: 4px 4px 0 var(--retro-red);
 }
 
-.btn-memphis-primary:hover {
+.btn-memphis-primary:hover:not(:disabled) {
   background: var(--retro-red);
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--ink);
@@ -121,16 +121,24 @@ img {
   box-shadow: 4px 4px 0 var(--royal-blue);
 }
 
-.btn-memphis-secondary:hover {
+.btn-memphis-secondary:hover:not(:disabled) {
   background: var(--mustard);
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--ink);
 }
 
-.btn-memphis-primary:active,
-.btn-memphis-secondary:active {
+.btn-memphis-primary:active:not(:disabled),
+.btn-memphis-secondary:active:not(:disabled) {
   transform: translate(2px, 2px) scale(0.98);
   box-shadow: 1px 1px 0 var(--ink);
+}
+
+/* 禁用态需与可点状态有明显视觉区分，否则会被认为「点击没反应」 */
+.btn-memphis-primary:disabled,
+.btn-memphis-secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: 2px 2px 0 rgba(29, 30, 44, 0.3);
 }
 
 /* ── 共享 chip 原语 ── */
