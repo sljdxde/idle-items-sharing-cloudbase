@@ -6,8 +6,16 @@
 
 import type { CategoryId, ContactType, Item } from './types'
 
-/** Worker 部署地址（公开信息，非秘密）；空串 = 未开通，写操作友好降级 */
-export const API_PROXY = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.workers.dev'
+/** Cloudflare Worker 地址（github.io 部署时使用；公开信息，非秘密） */
+const WORKER_URL = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.workers.dev'
+
+/**
+ * 代理基址：
+ * - GitHub Pages（*.github.io）→ Worker（workers.dev 在部分网络被墙，作为 Pages 部署的写通道）
+ * - 自建服务器部署 → 同源 /api（nginx 80 → Node 代理，国内直连最快）
+ */
+export const API_PROXY =
+  typeof location !== 'undefined' && location.hostname.endsWith('github.io') ? WORKER_URL : ''
 
 /** 与 worker 约定的站点 key（仅挡普通爬虫，非秘密） */
 export const SITE_KEY = 'neighborhood-share-2026'
@@ -18,7 +26,6 @@ export class ApiError extends Error {}
 const REQUEST_TIMEOUT_MS = 12000
 
 async function request<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
-  if (!API_PROXY) throw new ApiError('云端服务尚未开通，请联系站长')
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
   let res: Response

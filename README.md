@@ -54,11 +54,24 @@ wrangler secret put GITHUB_TOKEN   # 本仓 repo 权限 PAT
 wrangler secret put SITE_KEY       # 可选；需与 src/lib/api.ts 的 SITE_KEY 一致
 ```
 
-部署后把 worker 地址回填 `src/lib/api.ts` 顶部的 `API_PROXY` 常量，提交推送即可。
+前端 `API_PROXY` 为运行时自动判定：`*.github.io` 走 Worker；其他域名/IP（自建服务器）走同源 `/api`，一份构建两处可用。
 
 线上地址：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
 
-> 说明：写操作（发布 / 借用 / 归还 / 管理）经 Worker 代理在站内完成，用户无需 GitHub 账号；读操作任何访客无需登录。代理未部署时写操作会友好提示「云端服务尚未开通」。
+### 自建服务器（可选，国内加速）
+
+workers.dev 在部分国内网络不可达；有一台服务器时可整站托管加速：
+
+```bash
+# 服务器（非 root 用户即可）：上传 dist/ 与 server/proxy-server.mjs 到 ~/linli/
+echo '<GitHub PAT>' > ~/linli/.token && chmod 600 ~/linli/.token
+nohup node ~/linli/proxy-server.mjs > ~/linli/server.log 2>&1 &   # 监听 127.0.0.1:8087
+# nginx 80 端口 server_name <服务器IP> 反代到 127.0.0.1:8087（client_max_body_size 10m）
+```
+
+`server/proxy-server.mjs` 与 Worker 同契约：`/api/*` 代理写操作，其余路径服务 `dist/` 静态站。
+
+> 说明：写操作（发布 / 借用 / 归还 / 管理）经代理在站内完成，用户无需 GitHub 账号；读操作任何访客无需登录。
 
 ## 目录结构
 
