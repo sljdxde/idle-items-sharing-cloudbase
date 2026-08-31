@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { background: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+    color: #1d1e2c;
+  }
+  .card {
+    width: 1080px; height: 2340px;
+    background: #f7f2e7;
+    background-image: radial-gradient(#f4a261 3px, transparent 3px);
+    background-size: 96px 96px;
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 420px;
+    overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 26px;
+    background: var(--accent, #e63946);
+  }
+  .tape {
+    position: absolute; top: 330px; left: 50%;
+    width: 340px; height: 74px;
+    background: rgba(233, 196, 106, 0.85);
+    border: 3px solid #1d1e2c;
+    transform: translateX(-50%) rotate(-2deg);
+  }
+  .panel {
+    width: 880px;
+    background: #fffdf9;
+    border: 4px solid #1d1e2c;
+    box-shadow: 14px 14px 0 var(--accent, #e63946);
+    padding: 110px 70px 90px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 64px;
+    transform: rotate(-0.4deg);
+  }
+  h1 {
+    font-family: 'Songti SC', 'Noto Serif SC', serif;
+    font-size: 128px; font-weight: 900; letter-spacing: 8px;
+  }
+  .sub { font-size: 60px; font-weight: 700; }
+  .pill {
+    display: inline-block;
+    font-size: 42px; font-weight: 700;
+    border: 3px solid #1d1e2c; background: var(--accent, #e63946);
+    color: #fff; padding: 18px 44px;
+    box-shadow: 6px 6px 0 #1d1e2c;
+  }
+  .lines { display: flex; flex-direction: column; gap: 58px; align-items: center; }
+  .lines p { font-size: 56px; font-weight: 600; color: #3a3b4d; line-height: 1.5; text-align: center; }
+  .lines p.hl { color: #1d1e2c; font-weight: 800; }
+  .url {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 52px; font-weight: 700;
+    border-bottom: 5px solid var(--accent, #e63946);
+    padding-bottom: 10px;
+  }
+  /* 字幕条（透明底，叠在截图上） */
+  .cap {
+    width: 1080px; height: 220px;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent;
+  }
+  .cap span {
+    background: rgba(29, 30, 44, 0.82);
+    color: #fff; font-size: 52px; font-weight: 700;
+    padding: 30px 46px;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 8px 8px 0 rgba(29, 30, 44, 0.35);
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="title" style="--accent:#e63946">
+  <div class="tape"></div>
+  <div class="panel">
+    <h1>邻里好物</h1>
+    <p class="sub">让闲置在邻里间流转</p>
+    <span class="pill">社区闲置 · 邻里互助 · 就在附近</span>
+  </div>
+</div>
+
+<div class="card" id="bg" style="--accent:#e9c46a">
+  <div class="tape"></div>
+  <div class="panel">
+    <span class="pill" style="--accent:#e9c46a; background:#e9c46a; color:#1d1e2c">产品背景</span>
+    <div class="lines">
+      <p>小区里的闲置越来越多</p>
+      <p>扔了可惜，卖掉又麻烦</p>
+      <p class="hl">「邻里好物」是邻里互助共享平台</p>
+      <p>发布你的闲置，向邻居借你所需</p>
+      <p>免下载、免安装，打开网页就能用</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="feat" style="--accent:#7209b7">
+  <div class="tape"></div>
+  <div class="panel">
+    <span class="pill" style="background:#7209b7">功能简介</span>
+    <div class="lines">
+      <p>浏览好物：分类 / 搜索 / 距离筛选</p>
+      <p>一键发布：照片 + 定位 + 楼号或手机联系</p>
+      <p>借用归还：标记已借出，一键归还</p>
+      <p>我的管理：上架 / 下架 / 删除</p>
+      <p>手机号登录：格式校验，安全省心</p>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="ops" style="--accent:#264653">
+  <div class="tape"></div>
+  <div class="panel" style="padding-top:150px; padding-bottom:150px">
+    <span class="pill" style="background:#264653">操作说明</span>
+    <p class="sub">跟着七步，玩转邻里好物</p>
+  </div>
+</div>
+
+<div class="card" id="end" style="--accent:#e63946">
+  <div class="tape"></div>
+  <div class="panel">
+    <h1 style="font-size:104px">邻里好物</h1>
+    <p class="sub">让闲置在邻里间发光发热</p>
+    <span class="url">linli-haowu.pages.dev</span>
+    <span class="pill">浏览器直接打开 · 无需下载</span>
+  </div>
+</div>
+
+<div class="cap" id="cap01"><span>① 首页：社区好物一目了然</span></div>
+<div class="cap" id="cap02"><span>分类 / 搜索 / 距离，随心筛选</span></div>
+<div class="cap" id="cap03"><span>② 手机号登录，非法号码实时拦截</span></div>
+<div class="cap" id="cap04"><span>③ 登录后：我的发布 / 借用一目了然</span></div>
+<div class="cap" id="cap05"><span>④ 发布闲置：填信息 + 传图 + 自动定位</span></div>
+<div class="cap" id="cap06"><span>⑤ 详情：借用 / 联系 / 所在位置</span></div>
+<div class="cap" id="cap07"><span>⑥ 我的借用：用完一键归还</span></div>
+<div class="cap" id="cap08"><span>⑦ 我的发布：上架 / 下架 / 删除</span></div>
+
+</body>
+</html>

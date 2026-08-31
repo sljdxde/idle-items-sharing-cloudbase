@@ -19,8 +19,12 @@ const error = ref('')
 
 function onSubmit(): void {
   const p = phone.value.trim()
+  if (!p) {
+    error.value = '请输入手机号'
+    return
+  }
   if (!isValidPhone(p)) {
-    error.value = '请输入正确的手机号（1 开头 11 位数字）'
+    error.value = '手机号格式不正确：需为 1[3-9] 开头的 11 位数字'
     return
   }
   error.value = ''
@@ -42,8 +46,10 @@ function onSubmit(): void {
         inputmode="numeric"
         maxlength="11"
         class="memphis-input"
+        :class="{ 'login-input-error': error }"
         placeholder="请输入 11 位手机号"
         autocomplete="tel"
+        @input="error = ''"
       />
     </label>
     <p v-if="error" class="login-error" role="alert">{{ error }}</p>
@@ -85,6 +91,11 @@ function onSubmit(): void {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--retro-red);
+}
+
+.login-input-error {
+  border-color: var(--retro-red);
+  box-shadow: 3px 3px 0 rgba(230, 57, 70, 0.35);
 }
 
 .login-submit {

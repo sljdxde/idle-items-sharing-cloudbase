@@ -409,6 +409,49 @@ async function onSubmit(): Promise<void> {
   color: var(--retro-red);
 }
 
+.btn-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper-cream);
+  border: 2.5px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--salmon);
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease),
+    box-shadow 0.15s var(--ease),
+    background var(--ease-snap);
+}
+
+.btn-photo:hover:not(:disabled) {
+  background: var(--salmon);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.btn-photo:active:not(:disabled) {
+  transform: translate(2px, 2px) scale(0.98);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.btn-photo:disabled {
+  cursor: wait;
+  opacity: 0.6;
+  box-shadow: 2px 2px 0 rgba(29, 30, 44, 0.3);
+}
+
+.btn-photo svg {
+  flex: none;
+}
+
 .btn-img-remove {
   min-height: 36px;
   padding: 0 0.8rem;

@@ -83,10 +83,14 @@ describe('canReturn / returnItem（归还 → 可借）', () => {
 })
 
 describe('联系方式校验（手机号 / 楼号 二选一）', () => {
-  it('手机号：1 开头 11 位数字才有效', () => {
+  it('手机号：1[3-9] 开头 11 位数字才有效', () => {
     expect(isValidPhone('13812345678')).toBe(true)
+    expect(isValidPhone('19912345678')).toBe(true)
     expect(isValidPhone(' 13812345678 ')).toBe(true) // 容忍首尾空格
     expect(isValidPhone('23812345678')).toBe(false)
+    expect(isValidPhone('10012345678')).toBe(false) // 服务号段
+    expect(isValidPhone('11012345678')).toBe(false)
+    expect(isValidPhone('12012345678')).toBe(false)
     expect(isValidPhone('1381234567')).toBe(false)
     expect(isValidPhone('138123456789')).toBe(false)
     expect(isValidPhone('')).toBe(false)

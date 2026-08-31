@@ -18,3 +18,9 @@ design-samples.zip
 
 # 小工具打包产物
 linli-haowu-minitool.zip
+
+# 视频中间产物（可再生）
+scripts/video/frames/
+scripts/video/cards/
+scripts/video/segs/
+scripts/video/concat.txt
