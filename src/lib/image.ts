@@ -1,35 +1,52 @@
 // ================================================
 // src/lib/image.ts — 图片压缩（上传 → data URI）
-// localStorage 容量有限（~5MB），上传前用 canvas 压缩控制体积
+// 上传前把大图压进传输预算，尽量减少体积
 // ================================================
 
-/**
- * 图片文件 → 压缩后的 JPEG data URI（最长边 maxSide、质量 quality）。
- * 任何失败（非图片/解码失败/无 canvas）都会 reject，由调用方提示用户。
- */
-export function compressImage(
-  file: File,
-  maxSide = 900,
-  quality = 0.72,
-): Promise<string> {
-  return encode(file, maxSide, quality)
+export interface FitOptions {
+  /** 起始最长边（默认 720） */
+  maxSide?: number
+  /** 起始质量（默认 0.66） */
+  quality?: number
 }
 
 /**
- * 压缩到「data-URI 不超过 maxChars 字符」为止（逐步缩尺寸、降质量）。
- * 用于 Worker 通道：图片要内嵌进 GitHub Issue 正文，正文上限 64KB。
- * 压不进预算时返回空串（调用方提示换小图或跳过图片）。
+ * 压缩图片到不超过 maxBytes（按 base64 长度估算），返回 data URI。
+ * - 原图已达标且是浏览器友好的格式：原样返回，不重编码（不损画质）
+ * - 超预算：交替降质量 / 缩尺寸，7 步内压进预算；压不进返回空串（调用方提示换图）
  */
-export async function compressToFit(file: File, maxChars: number): Promise<string> {
-  let side = 720
-  let quality = 0.66
-  for (let i = 0; i < 6; i++) {
+export async function compressToFit(
+  file: File,
+  maxBytes: number,
+  opts: FitOptions = {},
+): Promise<string> {
+  if (file.size <= maxBytes && /^image\/(jpeg|png|webp)$/.test(file.type)) {
+    return readAsDataURL(file)
+  }
+  let side = opts.maxSide ?? 720
+  let quality = opts.quality ?? 0.66
+  for (let i = 0; i < 7; i++) {
     const uri = await encode(file, side, quality)
-    if (uri.length <= maxChars) return uri
-    if (i % 2 === 0) quality = Math.max(0.35, quality - 0.12)
-    else side = Math.max(240, Math.round(side * 0.72))
+    if (approxBytes(uri) <= maxBytes) return uri
+    if (i % 2 === 0) quality = Math.max(0.35, quality - 0.1)
+    else side = Math.max(240, Math.round(side * 0.75))
   }
   return ''
+}
+
+/** data URI 的近似字节数：base64 主体长度 × 3/4 */
+function approxBytes(dataUri: string): number {
+  const comma = dataUri.indexOf(',')
+  return Math.ceil((dataUri.length - comma - 1) * 0.75)
+}
+
+function readAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('read-fail'))
+    reader.onload = () => resolve(String(reader.result))
+    reader.readAsDataURL(file)
+  })
 }
 
 function encode(file: File, maxSide: number, quality: number): Promise<string> {

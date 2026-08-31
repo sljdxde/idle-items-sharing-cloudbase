@@ -12,13 +12,17 @@ import { useToast } from '@/composables/useToast'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId, ContactType } from '@/lib/types'
 import { isValidPhone } from '@/lib/validate'
-import { compressImage, compressToFit } from '@/lib/image'
+import { compressToFit } from '@/lib/image'
 import { IS_SERVER_CHANNEL } from '@/lib/api'
 import type { LocateFailReason } from '@/lib/geo'
 import LoginBox from '@/components/LoginBox.vue'
 
-/** Worker 通道图片内嵌 Issue 正文的字符预算（正文上限 64KB，留出其余字段空间） */
-const IMG_INLINE_BUDGET = 50000
+/**
+ * 图片体积预算（字节）：
+ * - 服务器通道：图片由服务端落盘，上限 100KB（保画质）
+ * - pages.dev / github.io：图片内嵌 Issue 正文（上限 64KB），36KB ≈ base64 4.9 万字符
+ */
+const IMG_BUDGET_BYTES = IS_SERVER_CHANNEL ? 100 * 1024 : 36 * 1024
 
 const store = useItemsStore()
 const auth = useAuthStore()
@@ -78,13 +82,15 @@ async function onPickImage(e: Event): Promise<void> {
   imgError.value = ''
   compressing.value = true
   try {
-    // 服务器通道：图片由服务端落盘，宽松压缩保画质；
-    // Worker 通道：图片内嵌 Issue 正文（上限 64KB），必须压进预算
-    const uri = IS_SERVER_CHANNEL
-      ? await compressImage(file)
-      : await compressToFit(file, IMG_INLINE_BUDGET)
+    // 服务器通道预算更宽（100KB），起点尺寸/质量更高以保画质；
+    // 其余通道必须压进内嵌预算，小图原样通过、大图逐步压缩
+    const uri = await compressToFit(
+      file,
+      IMG_BUDGET_BYTES,
+      IS_SERVER_CHANNEL ? { maxSide: 900, quality: 0.75 } : {},
+    )
     if (!uri) {
-      imgError.value = '这张图太大，压缩后仍超出本页面的传输限额。可换张小图，或不带图发布'
+      imgError.value = '这张图太大，压缩后仍超出体积上限。可换张小图，或不带图发布'
       imgDataUri.value = ''
       return
     }
