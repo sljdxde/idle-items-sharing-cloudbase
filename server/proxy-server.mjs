@@ -93,12 +93,63 @@ async function readIssue(num) {
   return { issue: await res.json() }
 }
 
-// ─── 限流（内存） ───
+// ─── 规模化：分页列表（>100 物品不丢数据） ───
+async function listAllIssues() {
+  const out = []
+  for (let page = 1; page <= 5; page++) {
+    const r = await gh(`?state=all&labels=item&per_page=100&sort=updated&direction=desc&page=${page}`)
+    if (!r.ok) return { error: `GitHub API 错误: ${r.status}` }
+    const arr = await r.json()
+    out.push(...arr)
+    if (arr.length < 100) break
+  }
+  return { issues: out }
+}
+
+// ─── 规模化：5s 列表缓存 + single-flight（并发读只打一次 GitHub；写后主动失效） ───
+const LIST_TTL = 5000
+let listCache = { at: 0, data: null }
+let listInflight = null
+function invalidateList() { listCache.at = 0 }
+
+async function getList() {
+  if (listCache.data && Date.now() - listCache.at < LIST_TTL) return listCache.data
+  if (!listInflight) {
+    listInflight = (async () => {
+      try {
+        const { issues, error } = await listAllIssues()
+        if (error) throw new Error(error)
+        listCache = { at: Date.now(), data: issues.map(toItem) }
+        return listCache.data
+      } finally {
+        listInflight = null
+      }
+    })()
+  }
+  return listInflight
+}
+
+// ─── 规模化：写操作遇二级限流退避重试 ───
+async function ghWrite(path, method, body) {
+  for (let i = 0; ; i++) {
+    const r = await gh(path, method, body)
+    if ((r.status === 403 || r.status === 429) && i < 2) {
+      const e = await r.text().catch(() => '')
+      if (/rate limit/i.test(e)) {
+        await new Promise((r2) => setTimeout(r2, 1000 * (i + 1)))
+        continue
+      }
+    }
+    return r
+  }
+}
+
+// ─── 限流（内存；小区 NAT 场景整栋楼共享出口 IP，阈值需宽松） ───
 const hits = new Map()
 function rateOk(ip) {
   const now = Date.now()
   const arr = (hits.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000)
-  if (arr.length >= 60) { hits.set(ip, arr); return false }
+  if (arr.length >= 600) { hits.set(ip, arr); return false }
   arr.push(now); hits.set(ip, arr)
   return true
 }
@@ -123,9 +174,11 @@ async function handleApi(req, res, pathname) {
   let m
 
   if (req.method === 'GET' && pathname === '/api/items') {
-    const r = await gh('?state=all&labels=item&per_page=100&sort=updated&direction=desc')
-    if (!r.ok) return json(res, r.status, { error: `GitHub API 错误: ${r.status}` })
-    return json(res, 200, (await r.json()).map(toItem))
+    try {
+      return json(res, 200, await getList())
+    } catch (e) {
+      return json(res, 500, { error: e.message })
+    }
   }
 
   if (req.method !== 'POST') return json(res, 405, { error: '仅支持 GET/POST' })
@@ -147,9 +200,10 @@ async function handleApi(req, res, pathname) {
       createTime: new Date().toISOString(),
     }
     const body = `${data.desc}\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->\n\n— 以下为自动生成的数据块，请勿删除 —`
-    const r = await gh('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] })
+    const r = await ghWrite('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] })
     if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, r.status, { error: e.message || '发布失败，请稍后再试' }) }
     const created = await r.json()
+    invalidateList()
     return json(res, 200, { ok: true, id: created.number })
   }
 
@@ -166,8 +220,9 @@ async function handleApi(req, res, pathname) {
     if (data.ownerPhone === phone) return json(res, 409, { error: '不能借用自己发布的物品' })
     data.borrowedBy = phone
     data.borrowedAt = new Date().toISOString()
-    await gh(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
-    await gh(`/${issue.number}/labels`, 'POST', { labels: ['lent'] })
+    await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    await ghWrite(`/${issue.number}/labels`, 'POST', { labels: ['lent'] })
+    invalidateList()
     return json(res, 200, { ok: true })
   }
 
@@ -181,8 +236,9 @@ async function handleApi(req, res, pathname) {
     if (!phone || data.borrowedBy !== phone) return json(res, 403, { error: '只有借阅人本人可以操作归还' })
     delete data.borrowedBy
     delete data.borrowedAt
-    await gh(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
-    await gh(`/${issue.number}/labels/lent`, 'DELETE')
+    await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    await ghWrite(`/${issue.number}/labels/lent`, 'DELETE')
+    invalidateList()
     return json(res, 200, { ok: true })
   }
 
@@ -195,7 +251,8 @@ async function handleApi(req, res, pathname) {
     const phone = String(b.operatorPhone || '').trim()
     const data = extractData(issue.body)
     if (!phone || data.ownerPhone !== phone) return json(res, 403, { error: '只有发布者可以管理自己的物品' })
-    await gh(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
+    await ghWrite(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
+    invalidateList()
     return json(res, 200, { ok: true })
   }
 
