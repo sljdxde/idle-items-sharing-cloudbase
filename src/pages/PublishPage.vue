@@ -12,8 +12,13 @@ import { useToast } from '@/composables/useToast'
 import { PUBLISH_CATEGORIES } from '@/lib/categories'
 import type { CategoryId, ContactType } from '@/lib/types'
 import { isValidPhone } from '@/lib/validate'
-import { compressImage } from '@/lib/image'
+import { compressImage, compressToFit } from '@/lib/image'
+import { IS_SERVER_CHANNEL } from '@/lib/api'
+import type { LocateFailReason } from '@/lib/geo'
 import LoginBox from '@/components/LoginBox.vue'
+
+/** Worker 通道图片内嵌 Issue 正文的字符预算（正文上限 64KB，留出其余字段空间） */
+const IMG_INLINE_BUDGET = 50000
 
 const store = useItemsStore()
 const auth = useAuthStore()
@@ -25,6 +30,7 @@ const desc = ref('')
 const category = ref<CategoryId>('other')
 const publishing = ref(false)
 const imgError = ref('')
+const compressing = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 /** 上传图片压缩后的 data URI（可选） */
 const imgDataUri = ref('')
@@ -33,9 +39,9 @@ const imgDataUri = ref('')
 const contactType = ref<ContactType>('building')
 const contact = ref('')
 
-// 定位状态
+// 定位状态：细分失败原因（HTTP 禁用 / 拒绝 / 超时），提示更准确
 const locating = ref(false)
-const locateState = ref<'idle' | 'ok' | 'fail'>('idle')
+const locateState = ref<'idle' | 'ok' | LocateFailReason>('idle')
 
 const contactLabel = computed(() => (contactType.value === 'phone' ? '手机号' : '楼号门牌'))
 const contactPlaceholder = computed(() =>
@@ -48,9 +54,9 @@ onMounted(() => {
 
 async function tryLocate(): Promise<void> {
   locating.value = true
-  const ok = await store.locate()
+  const r = await store.locate()
   locating.value = false
-  locateState.value = ok ? 'ok' : 'fail'
+  locateState.value = r
 }
 
 function validateContact(): boolean {
@@ -70,11 +76,24 @@ async function onPickImage(e: Event): Promise<void> {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
   imgError.value = ''
+  compressing.value = true
   try {
-    imgDataUri.value = await compressImage(file)
+    // 服务器通道：图片由服务端落盘，宽松压缩保画质；
+    // Worker 通道：图片内嵌 Issue 正文（上限 64KB），必须压进预算
+    const uri = IS_SERVER_CHANNEL
+      ? await compressImage(file)
+      : await compressToFit(file, IMG_INLINE_BUDGET)
+    if (!uri) {
+      imgError.value = '这张图太大，压缩后仍超出本页面的传输限额。可换张小图，或不带图发布'
+      imgDataUri.value = ''
+      return
+    }
+    imgDataUri.value = uri
   } catch {
     imgError.value = '图片处理失败，请换一张图片试试'
     imgDataUri.value = ''
+  } finally {
+    compressing.value = false
   }
 }
 
@@ -152,7 +171,7 @@ async function onSubmit(): Promise<void> {
 
           <label class="field">
             <span class="field-label">详细描述 <i class="req">*</i></span>
-            <textarea v-model="desc" rows="3" class="memphis-textarea"
+            <textarea v-model="desc" rows="3" class="memphis-textarea" maxlength="300"
               placeholder="描述物品的新旧程度、可借 / 可送等" required></textarea>
           </label>
 
@@ -172,14 +191,14 @@ async function onSubmit(): Promise<void> {
               <span>小主没有上传图片哦</span>
             </div>
             <p v-if="imgError" class="img-error" role="alert">{{ imgError }}</p>
-            <button type="button" class="btn-photo" @click="fileInput?.click()">
+            <button type="button" class="btn-photo" :disabled="compressing" @click="fileInput?.click()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="17 8 12 3 7 8"></polyline>
                 <line x1="12" y1="3" x2="12" y2="15"></line>
               </svg>
-              {{ imgDataUri ? '重新选择图片' : '上传图片' }}
+              {{ compressing ? '压缩中…' : imgDataUri ? '重新选择图片' : '上传图片' }}
             </button>
             <input ref="fileInput" type="file" accept="image/*" class="visually-hidden"
               @change="onPickImage" />
@@ -192,7 +211,7 @@ async function onSubmit(): Promise<void> {
 
           <!-- 自动定位 -->
           <div class="field">
-            <span class="field-label">我的位置 <small>（自动获取，用于附近邻居按距离发现）</small></span>
+            <span class="field-label">我的位置 <small>（选填，自动获取，用于附近邻居按距离发现）</small></span>
             <div class="loc-box" role="status">
               <template v-if="locating">
                 <span class="loc-dot" aria-hidden="true"></span>
@@ -202,11 +221,20 @@ async function onSubmit(): Promise<void> {
                 <span class="loc-ok" aria-hidden="true">✓</span>
                 已获取定位（发布时将自动带上）
               </template>
+              <template v-else-if="locateState === 'insecure'">
+                <span class="loc-fail" aria-hidden="true">!</span>
+                当前为 HTTP 访问，浏览器禁用了定位——可跳过，不影响发布
+              </template>
+              <template v-else-if="locateState === 'denied'">
+                <span class="loc-fail" aria-hidden="true">!</span>
+                定位权限被拒绝——请在浏览器设置中允许，或跳过
+              </template>
               <template v-else>
                 <span class="loc-fail" aria-hidden="true">!</span>
                 未获取到定位（可重试，或跳过——不影响发布）
               </template>
-              <button type="button" class="btn-loc-retry" :disabled="locating" @click="tryLocate">
+              <button v-if="locateState !== 'insecure'" type="button" class="btn-loc-retry" :disabled="locating"
+                @click="tryLocate">
                 {{ locateState === 'ok' ? '重新定位' : '重试定位' }}
               </button>
             </div>

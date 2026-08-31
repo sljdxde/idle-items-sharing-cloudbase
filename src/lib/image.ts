@@ -12,6 +12,27 @@ export function compressImage(
   maxSide = 900,
   quality = 0.72,
 ): Promise<string> {
+  return encode(file, maxSide, quality)
+}
+
+/**
+ * 压缩到「data-URI 不超过 maxChars 字符」为止（逐步缩尺寸、降质量）。
+ * 用于 Worker 通道：图片要内嵌进 GitHub Issue 正文，正文上限 64KB。
+ * 压不进预算时返回空串（调用方提示换小图或跳过图片）。
+ */
+export async function compressToFit(file: File, maxChars: number): Promise<string> {
+  let side = 720
+  let quality = 0.66
+  for (let i = 0; i < 6; i++) {
+    const uri = await encode(file, side, quality)
+    if (uri.length <= maxChars) return uri
+    if (i % 2 === 0) quality = Math.max(0.35, quality - 0.12)
+    else side = Math.max(240, Math.round(side * 0.72))
+  }
+  return ''
+}
+
+function encode(file: File, maxSide: number, quality: number): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith('image/')) {
       reject(new Error('not-image'))

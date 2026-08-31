@@ -4,7 +4,7 @@
 // 按登录手机号区分角色：物主（管理/上下架）· 借阅人（归还）· 其他人（我想借）
 // ================================================
 
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Item } from '@/lib/types'
 import { formatDateShort } from '@/lib/filters'
@@ -26,6 +26,12 @@ defineEmits<{
 
 const auth = useAuthStore()
 const store = useItemsStore()
+
+/** 图片加载失败（如跨部署通道路径不可达）时降级为占位图 */
+const imgBroken = ref(false)
+function onImgError(): void {
+  imgBroken.value = true
+}
 
 const ownerIsMe = computed(() => isOwner(props.item, auth.phone))
 const canReturnMine = computed(() => canReturn(props.item, auth.phone))
@@ -77,7 +83,8 @@ function onToggleArchive(): void {
     <div class="memphis-card-tape" aria-hidden="true"></div>
 
     <RouterLink :to="`/items/${item.id}`" class="card-photo" :aria-label="`查看 ${item.name} 详情`">
-      <img v-if="item.imgUrl" class="card-photo-img" :src="item.imgUrl" :alt="item.name" loading="lazy" />
+      <img v-if="item.imgUrl && !imgBroken" class="card-photo-img" :src="item.imgUrl" :alt="item.name" loading="lazy"
+        @error="onImgError" />
       <template v-else>
         <div class="card-photo-dots" aria-hidden="true"></div>
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
@@ -87,7 +94,7 @@ function onToggleArchive(): void {
         </svg>
         <span>小主没有上传图片哦</span>
       </template>
-      <span v-if="item.imgUrl" class="photo-veil" aria-hidden="true"></span>
+      <span v-if="item.imgUrl && !imgBroken" class="photo-veil" aria-hidden="true"></span>
     </RouterLink>
 
     <div class="card-inner">

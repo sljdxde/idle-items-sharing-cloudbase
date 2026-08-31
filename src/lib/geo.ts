@@ -57,21 +57,37 @@ export function itemLatLng(item: Item): LatLng | null {
   return null
 }
 
+export type LocateFailReason = 'insecure' | 'unsupported' | 'denied' | 'timeout'
+
+export interface LocateResult {
+  pos: LatLng | null
+  reason?: LocateFailReason
+}
+
 /**
- * 获取浏览器定位；任何失败（不支持 / 拒绝 / 超时）都 resolve(null)，绝不 reject。
- * 组件侧拿到 null 时降级为「距离筛选未生效」，不阻塞浏览。
+ * 获取浏览器定位；任何失败都 resolve（绝不 reject），并附失败原因：
+ * - insecure：HTTP 非安全上下文，浏览器禁用定位 API（自建服务器 IP 直连场景）
+ * - unsupported：环境无定位 API（如 SSR/旧内核）
+ * - denied：用户拒绝授权或系统定位服务被关
+ * - timeout：定位超时（室内信号弱常见）
  */
-export function getBrowserLocation(timeoutMs = 8000): Promise<LatLng | null> {
+export function getBrowserLocation(timeoutMs = 8000): Promise<LocateResult> {
   return new Promise((resolve) => {
-    const geo =
-      typeof navigator !== 'undefined' && navigator.geolocation ? navigator.geolocation : null
-    if (!geo) {
-      resolve(null)
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      const insecure = typeof window !== 'undefined' && window.isSecureContext === false
+      resolve({ pos: null, reason: insecure ? 'insecure' : 'unsupported' })
       return
     }
-    geo.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => resolve(null),
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({ pos: { lat: pos.coords.latitude, lng: pos.coords.longitude } }),
+      (err) => {
+        // HTTP 下部分内核仍暴露 geolocation 对象、但调用必然失败——根因是协议，优先报 insecure
+        const insecure = typeof window !== 'undefined' && window.isSecureContext === false
+        resolve({
+          pos: null,
+          reason: insecure ? 'insecure' : err.code === 1 ? 'denied' : 'timeout',
+        })
+      },
       { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 300000 },
     )
   })

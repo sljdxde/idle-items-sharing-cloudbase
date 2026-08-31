@@ -17,6 +17,9 @@ const WORKER_URL = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.
 export const API_PROXY =
   typeof location !== 'undefined' && location.hostname.endsWith('github.io') ? WORKER_URL : ''
 
+/** 自建服务器通道：图片由服务端落盘存储，不受 Issue 正文 64KB 限制 */
+export const IS_SERVER_CHANNEL = API_PROXY === ''
+
 /** 与 worker 约定的站点 key（仅挡普通爬虫，非秘密） */
 export const SITE_KEY = 'neighborhood-share-2026'
 

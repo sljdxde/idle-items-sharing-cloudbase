@@ -127,8 +127,9 @@ export default {
 
       // ─── 发布 ───
       if (p === '/api/items') {
-        const b = await request.json();
-        if (!b || !String(b.name || '').trim()) return json(400, { error: '缺少物品名称' });
+        const b = await request.json().catch(() => null);
+        if (!b) return json(400, { error: '请求内容无法解析，请重试' });
+        if (!String(b.name || '').trim()) return json(400, { error: '缺少物品名称' });
         if (!String(b.ownerPhone || '').trim()) return json(400, { error: '缺少发布者手机号' });
         const data = {
           name: String(b.name).trim(),
@@ -142,9 +143,13 @@ export default {
           lng: Number.isFinite(b.lng) ? b.lng : null,
           createTime: new Date().toISOString(),
         };
+        // GitHub Issue 正文上限 64KB：图片等大字段会在此被挡，提前给出可读错误
+        if (data.imgUrl.length > 56000 || data.desc.length > 1200) {
+          return json(413, { error: '图片或描述过大，请压缩图片、精简描述后重试' });
+        }
         const body = `${data.desc}\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->\n\n— 以下为自动生成的数据块，请勿删除 —`;
         const res = await gh('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] });
-        if (!res.ok) { const e = await res.json().catch(() => ({})); return json(res.status, { error: e.message || '发布失败，请稍后再试' }); }
+        if (!res.ok) { const e = await res.json().catch(() => ({})); return json(res.status, { error: res.status === 422 ? '内容过长，请压缩图片、精简描述后重试' : (e.message || '发布失败，请稍后再试') }); }
         const created = await res.json();
         return json(200, { ok: true, id: created.number });
       }

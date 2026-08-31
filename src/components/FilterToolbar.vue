@@ -15,12 +15,18 @@ const toast = useToast()
 defineEmits<{ refresh: [] }>()
 
 async function onLocate(): Promise<void> {
-  const ok = await store.locate()
-  if (ok) {
+  const r = await store.locate()
+  if (r === 'ok') {
     toast.success('定位成功', '列表已按离你最近的距离排序')
-  } else {
-    toast.warning('定位失败', '请允许浏览器获取位置，或选择「全部距离」浏览')
+    return
   }
+  const tip =
+    r === 'insecure'
+      ? '当前为 HTTP 访问，浏览器禁用了定位。可选「全部距离」浏览，或改用 HTTPS 地址访问'
+      : r === 'denied'
+        ? '请在浏览器设置中允许本站获取位置，或选择「全部距离」浏览'
+        : '定位超时，可到窗边重试，或选择「全部距离」浏览'
+  toast.warning('定位失败', tip)
 }
 </script>
 

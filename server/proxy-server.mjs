@@ -6,12 +6,14 @@
 // ================================================
 
 import { createServer } from 'node:http'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, stat } from 'node:fs/promises'
+import { randomBytes } from 'node:crypto'
 import { join, normalize, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const DIST = join(ROOT, 'dist')
+const UPLOADS = join(ROOT, 'uploads')
 const PORT = Number(process.env.PORT || 8087)
 const HOST = '127.0.0.1'
 const SITE_KEY = process.env.SITE_KEY || 'neighborhood-share-2026'
@@ -163,9 +165,23 @@ function json(res, status, obj) {
 async function readBody(req) {
   return new Promise((resolve) => {
     let s = ''
-    req.on('data', (c) => { s += c; if (s.length > 2_000_000) req.destroy() })
+    req.on('data', (c) => { s += c; if (s.length > 7_000_000) req.destroy() })
     req.on('end', () => { try { resolve(s ? JSON.parse(s) : {}) } catch { resolve({}) } })
   })
+}
+
+// ─── 图片落盘：data-URI → uploads/xxx.jpg，Issue 正文只存路径（规避正文 64KB 上限） ───
+const DATA_IMG_RE = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/
+async function saveUploadedImage(dataUri) {
+  const m = DATA_IMG_RE.exec(dataUri)
+  if (!m) return null
+  const ext = m[1].replace('jpeg', 'jpg')
+  const buf = Buffer.from(m[2], 'base64')
+  if (!buf.length || buf.length > 5 * 1024 * 1024) return null
+  const name = `${Date.now()}-${randomBytes(5).toString('hex')}.${ext}`
+  await mkdir(UPLOADS, { recursive: true })
+  await writeFile(join(UPLOADS, name), buf)
+  return `/uploads/${name}`
 }
 
 // ─── API 路由（与 worker 同契约） ───
@@ -187,12 +203,18 @@ async function handleApi(req, res, pathname) {
     const b = await readBody(req)
     if (!String(b.name || '').trim()) return json(res, 400, { error: '缺少物品名称' })
     if (!String(b.ownerPhone || '').trim()) return json(res, 400, { error: '缺少发布者手机号' })
+    let imgUrl = String(b.imgUrl || '')
+    if (imgUrl.startsWith('data:image/')) {
+      const saved = await saveUploadedImage(imgUrl)
+      if (!saved) return json(res, 400, { error: '图片过大或格式不支持，请换一张更小的图片' })
+      imgUrl = saved
+    }
     const data = {
       name: String(b.name).trim(),
       desc: String(b.desc || ''),
       contactType: b.contactType === 'building' ? 'building' : 'phone',
       contact: String(b.contact || ''),
-      imgUrl: String(b.imgUrl || ''),
+      imgUrl,
       category: String(b.category || 'other'),
       ownerPhone: String(b.ownerPhone).trim(),
       lat: Number.isFinite(b.lat) ? b.lat : null,
@@ -201,7 +223,7 @@ async function handleApi(req, res, pathname) {
     }
     const body = `${data.desc}\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->\n\n— 以下为自动生成的数据块，请勿删除 —`
     const r = await ghWrite('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] })
-    if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, r.status, { error: e.message || '发布失败，请稍后再试' }) }
+    if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, r.status, { error: r.status === 422 ? '内容过长或含不支持的字符，请精简后重试' : (e.message || '发布失败，请稍后再试') }) }
     const created = await r.json()
     invalidateList()
     return json(res, 200, { ok: true, id: created.number })
@@ -300,6 +322,18 @@ async function serveStatic(res, pathname) {
   }
 }
 
+// ─── 上传的图片（仅白名单扩展名；路径穿越防护） ───
+async function serveUpload(res, pathname) {
+  const name = pathname.slice('/uploads/'.length)
+  if (!/^[\w.-]+\.(jpg|jpeg|png|webp)$/i.test(name)) { res.writeHead(404); return res.end() }
+  try {
+    const buf = await readFile(join(UPLOADS, name))
+    const ext = '.' + name.split('.').pop().toLowerCase()
+    res.writeHead(200, { 'Content-Type': MIME[ext] || 'image/jpeg', 'Cache-Control': 'public, max-age=604800' })
+    res.end(buf)
+  } catch { res.writeHead(404); res.end('not found') }
+}
+
 createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://x').pathname
   try {
@@ -307,6 +341,7 @@ createServer(async (req, res) => {
       if (req.headers['x-site-key'] !== SITE_KEY) return json(res, 403, { error: '站点密钥错误' })
       return await handleApi(req, res, pathname)
     }
+    if (pathname.startsWith('/uploads/')) return await serveUpload(res, pathname)
     return await serveStatic(res, pathname)
   } catch (e) {
     return json(res, 500, { error: '服务暂时不可用，请稍后再试' })

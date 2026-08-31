@@ -20,6 +20,7 @@ import {
   getBrowserLocation,
   itemLatLng,
   type LatLng,
+  type LocateFailReason,
 } from '@/lib/geo'
 
 const POS_KEY = 'linli_haowu_pos_v1'
@@ -80,10 +81,10 @@ export const useItemsStore = defineStore('items', () => {
     await load(true)
   }
 
-  /** 重新获取定位（发布页/工具栏的「定位」按钮） */
-  async function locate(): Promise<boolean> {
+  /** 重新获取定位（发布页/工具栏的「定位」按钮）；成功 'ok'，失败返回具体原因 */
+  async function locate(): Promise<'ok' | LocateFailReason> {
     locating.value = true
-    const pos = await getBrowserLocation()
+    const { pos, reason } = await getBrowserLocation()
     locating.value = false
     if (pos) {
       userPosition.value = pos
@@ -92,9 +93,9 @@ export const useItemsStore = defineStore('items', () => {
       } catch {
         /* ignore */
       }
-      return true
+      return 'ok'
     }
-    return false
+    return reason ?? 'timeout'
   }
 
   /** 物品到当前用户的距离（km）；无法计算返回 null */

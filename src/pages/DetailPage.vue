@@ -3,7 +3,7 @@
 // DetailPage — 物品详情（/items/:id）：大图 + 全量信息 + 按角色的借/还/管操作
 // ================================================
 
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
@@ -55,6 +55,15 @@ const statusText = computed(() => {
 
 /** 联系方式行：楼牌号在前、手机号在后 */
 const contactRowsList = computed(() => (item.value ? contactRows(item.value) : []))
+
+/** 图片加载失败（如跨部署通道路径不可达）时降级为占位图 */
+const imgBroken = ref(false)
+function onImgError(): void {
+  imgBroken.value = true
+}
+watch(() => route.params.id, () => {
+  imgBroken.value = false
+})
 </script>
 
 <template>
@@ -78,7 +87,8 @@ const contactRowsList = computed(() => (item.value ? contactRows(item.value) : [
       <span class="hero-tape" aria-hidden="true"></span>
 
       <div class="photo-side">
-        <img v-if="item.imgUrl" :src="item.imgUrl" :alt="item.name" class="detail-photo" />
+        <img v-if="item.imgUrl && !imgBroken" :src="item.imgUrl" :alt="item.name" class="detail-photo"
+          @error="onImgError" />
         <div v-else class="detail-photo placeholder">
           <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
             aria-hidden="true">
