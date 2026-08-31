@@ -92,18 +92,11 @@ function onRefresh(): void {
       <div class="empty-geom" aria-hidden="true">
         <span class="e-sq"></span><span class="e-ci"></span><span class="e-tr"></span>
       </div>
-      <template v-if="store.onlyBorrowed">
-        <h2 class="empty-title">你还没有借用的物品</h2>
-        <p class="empty-desc">去列表里逛逛，看到心仪的好物点「我想借」吧。</p>
-        <button type="button" class="btn-memphis-secondary" @click="store.toggleBorrowed()">
-          去逛逛
-        </button>
-      </template>
-      <template v-else-if="store.search || store.category !== 'all' || store.showLent || store.onlyMine">
+      <template v-if="store.search || store.category !== 'all' || store.showLent">
         <h2 class="empty-title">没找到匹配的好物</h2>
         <p class="empty-desc">换个关键词，或清除筛选条件试试。</p>
         <button type="button" class="btn-memphis-secondary"
-          @click="store.search = ''; store.setCategory('all'); store.showLent = false; store.onlyMine = false; store.onlyBorrowed = false">
+          @click="store.search = ''; store.setCategory('all'); store.showLent = false">
           清除筛选
         </button>
       </template>

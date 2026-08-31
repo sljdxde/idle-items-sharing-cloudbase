@@ -77,4 +77,7 @@ export const api = {
   unarchive(id: number, operatorPhone: string): Promise<{ ok: boolean }> {
     return request(`/api/items/${id}/unarchive`, { method: 'POST', body: { operatorPhone } })
   },
+  remove(id: number, operatorPhone: string): Promise<{ ok: boolean }> {
+    return request(`/api/items/${id}/delete`, { method: 'POST', body: { operatorPhone } })
+  },
 }

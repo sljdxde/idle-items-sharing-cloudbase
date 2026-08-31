@@ -5,7 +5,7 @@
 // ================================================
 
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import type { CategoryId, Item } from '@/lib/types'
 import { listItems } from '@/lib/github'
 import { api } from '@/lib/api'
@@ -53,26 +53,12 @@ export const useItemsStore = defineStore('items', () => {
   const radiusKm = ref<number | 'all'>(DEFAULT_RADIUS_KM)
   /** 默认隐藏已借出物品；打开后在列表中展示并标记状态 */
   const showLent = ref(false)
-  /** 我的发布 / 我的借用：互斥（点击其一自动取消另一个） */
-  const onlyMine = ref(false)
-  const onlyBorrowed = ref(false)
   /** 当前用户定位 */
   const userPosition = ref<LatLng | null>(null)
   const locating = ref(false)
   const loading = ref(false)
-  /** 任一写操作进行中（发布/借用/归还/上下架），用于按钮防重复点击 */
+  /** 任一写操作进行中（发布/借用/归还/上下架/删除），用于按钮防重复点击 */
   const writing = ref(false)
-
-  // 登出后重置「我的」筛选，避免残留状态影响下次登录
-  watch(
-    () => auth.phone,
-    (phone) => {
-      if (!phone) {
-        onlyMine.value = false
-        onlyBorrowed.value = false
-      }
-    },
-  )
 
   // ---------- 加载（共享数据） ----------
   async function load(force = false): Promise<void> {
@@ -126,32 +112,15 @@ export const useItemsStore = defineStore('items', () => {
     return d === null ? null : formatDistance(d)
   }
 
-  // ---------- 派生：可见列表 ----------
+  // ---------- 派生：首页可见列表 ----------
   const visibleItems = computed(() =>
     items.value
-      // ① 角色视图优先：「我的发布」看自己全部（含已下架）；「我的借用」看借给我的（即便已下架）
-      .filter((it) => {
-        if (onlyMine.value && !!auth.phone && it.ownerPhone === auth.phone) return true
-        if (onlyBorrowed.value && !!auth.phone && it.borrowedBy === auth.phone) return true
-        return !it.archived
-      })
-      .filter((it) =>
-        onlyMine.value && auth.phone ? it.ownerPhone === auth.phone : true,
-      )
-      .filter((it) =>
-        onlyBorrowed.value && auth.phone ? it.borrowedBy === auth.phone : true,
-      )
+      .filter((it) => !it.archived)
       .filter((it) => matchesCategory(it, category.value))
       .filter((it) => matchesSearch(it, search.value))
-      // ② 默认隐藏已借出；但「我的发布/我的借用」里自己的物品始终显示
-      .filter((it) => {
-        if (showLent.value) return true
-        if (onlyMine.value && auth.phone && it.ownerPhone === auth.phone) return true
-        if (onlyBorrowed.value && auth.phone && it.borrowedBy === auth.phone) return true
-        return it.status === 'available'
-      })
+      .filter((it) => (showLent.value ? true : it.status === 'available'))
       .filter((it) => matchesRadius(it, userPosition.value, radiusKm.value))
-      // ③ 用户已定位时按距离升序（无定位物品排最后），否则最新优先
+      // 用户已定位时按距离升序（无定位物品排最后），否则最新优先
       .sort((a, b) => {
         if (userPosition.value) {
           const da = distanceOf(a)
@@ -165,6 +134,20 @@ export const useItemsStore = defineStore('items', () => {
           b.id - a.id
         )
       }),
+  )
+
+  /** 「我的发布」页：我发布的全部物品（含已下架），最新在前 */
+  const myItems = computed(() =>
+    items.value
+      .filter((it) => !!auth.phone && it.ownerPhone === auth.phone)
+      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
+  )
+
+  /** 「我的借用」页：我借用的物品（含已下架，便于归还），最新在前 */
+  const borrowedItems = computed(() =>
+    items.value
+      .filter((it) => !!auth.phone && it.borrowedBy === auth.phone)
+      .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
   )
 
   function itemById(id: number): Item | undefined {
@@ -299,16 +282,28 @@ export const useItemsStore = defineStore('items', () => {
     radiusKm.value = r
   }
 
-  /** 切换「我的发布」；开启时自动取消「我的借用」 */
-  function toggleMine(): void {
-    onlyMine.value = !onlyMine.value
-    if (onlyMine.value) onlyBorrowed.value = false
-  }
-
-  /** 切换「我的借用」；开启时自动取消「我的发布」 */
-  function toggleBorrowed(): void {
-    onlyBorrowed.value = !onlyBorrowed.value
-    if (onlyBorrowed.value) onlyMine.value = false
+  /** 删除物品（仅物主；从社区列表彻底移除，不可恢复） */
+  async function remove(id: number): Promise<boolean> {
+    const it = itemById(id)
+    if (!it) return false
+    const phone = auth.phone
+    if (!phone || !isOwner(it, phone)) {
+      toast.error('无权操作', '只有发布者可以删除自己的物品')
+      return false
+    }
+    if (writing.value) return false
+    writing.value = true
+    try {
+      await api.remove(id, phone)
+      toast.success('已删除', '物品已从社区列表彻底移除')
+      await refresh()
+      return true
+    } catch (e) {
+      toast.error('删除失败', errMsg(e))
+      return false
+    } finally {
+      writing.value = false
+    }
   }
 
   return {
@@ -317,8 +312,6 @@ export const useItemsStore = defineStore('items', () => {
     category,
     radiusKm,
     showLent,
-    onlyMine,
-    onlyBorrowed,
     userPosition,
     locating,
     loading,
@@ -329,15 +322,16 @@ export const useItemsStore = defineStore('items', () => {
     distanceOf,
     distanceLabel,
     visibleItems,
+    myItems,
+    borrowedItems,
     itemById,
     publish,
     borrow,
     returnBack,
     setArchived,
+    remove,
     setCategory,
     setSearch,
     setRadius,
-    toggleMine,
-    toggleBorrowed,
   }
 })

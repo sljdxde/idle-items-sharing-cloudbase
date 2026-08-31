@@ -95,24 +95,27 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     expect(appHtml).toContain('我想借')
   })
 
-  it('⑦ 「我的发布 / 我的借用」互斥切换（点击其一取消另一个）', async () => {
+  it('⑦ 「我的发布 / 我的借用」为独立页面（首页双卡跳转）', async () => {
     // 回到首页
     const back = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/"]')][0]!
     back.click()
     await flush(120)
-    const btns = [...document.querySelectorAll<HTMLButtonElement>('button')]
-    const mine = btns.find((b) => b.textContent?.includes('我的发布'))!
-    const borrowed = btns.find((b) => b.textContent?.includes('我的借用'))!
-    expect(mine).toBeTruthy()
-    expect(borrowed).toBeTruthy()
-    // 点「我的发布」→ 高亮
-    mine.click()
-    await flush(60)
-    expect(mine.classList.contains('active')).toBe(true)
-    // 点「我的借用」→ 借用高亮、发布取消
-    borrowed.click()
-    await flush(60)
-    expect(borrowed.classList.contains('active')).toBe(true)
-    expect(mine.classList.contains('active')).toBe(false)
+    // 首页双大卡是跳转链接
+    const mineLink = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/mine"]')][0]
+    const borrowLink = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/borrows"]')][0]
+    expect(mineLink).toBeTruthy()
+    expect(borrowLink).toBeTruthy()
+    // 我的发布页
+    mineLink!.click()
+    await flush(120)
+    let html = document.querySelector('#app')!.innerHTML
+    expect(html).toContain('我的发布')
+    expect(html).toContain('你还没有发布过物品')
+    // 我的借用页
+    borrowLink!.click()
+    await flush(120)
+    html = document.querySelector('#app')!.innerHTML
+    expect(html).toContain('我的借用')
+    expect(html).toContain('你还没有借用的物品')
   })
 })

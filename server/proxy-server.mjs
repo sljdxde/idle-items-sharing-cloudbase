@@ -256,6 +256,21 @@ async function handleApi(req, res, pathname) {
     return json(res, 200, { ok: true })
   }
 
+  if ((m = pathname.match(/^\/api\/items\/(\d+)\/delete$/))) {
+    const { issue, missing, error } = await readIssue(+m[1])
+    if (missing) return json(res, 404, { error: '物品不存在' })
+    if (error) return json(res, 500, { error })
+    const b = await readBody(req)
+    const phone = String(b.operatorPhone || '').trim()
+    const data = extractData(issue.body)
+    if (!phone || data.ownerPhone !== phone) return json(res, 403, { error: '只有发布者可以删除自己的物品' })
+    // GitHub Issue 无法物理删除：移除 item 标签 + 关闭，即从全站彻底消失
+    await ghWrite(`/${issue.number}/labels/item`, 'DELETE')
+    await ghWrite(`/${issue.number}`, 'PATCH', { state: 'closed' })
+    invalidateList()
+    return json(res, 200, { ok: true })
+  }
+
   return json(res, 404, { error: '未找到接口' })
 }
 

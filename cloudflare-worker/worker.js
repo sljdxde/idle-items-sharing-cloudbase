@@ -198,6 +198,20 @@ export default {
         return json(200, { ok: true });
       }
 
+      // ─── 删除（移除 item 标签 + 关闭，从全站彻底消失） ───
+      if ((m = p.match(/^\/api\/items\/(\d+)\/delete$/))) {
+        const { issue, missing, error } = await readIssue(+m[1]);
+        if (missing) return json(404, { error: '物品不存在' });
+        if (error) return json(500, { error });
+        const b = await request.json().catch(() => ({}));
+        const phone = String(b.operatorPhone || '').trim();
+        const data = extractData(issue.body);
+        if (!phone || data.ownerPhone !== phone) return json(403, { error: '只有发布者可以删除自己的物品' });
+        await gh(`/${issue.number}/labels/item`, 'DELETE');
+        await gh(`/${issue.number}`, 'PATCH', { state: 'closed' });
+        return json(200, { ok: true });
+      }
+
       return json(404, { error: '未找到接口' });
     } catch (e) {
       return json(500, { error: '服务暂时不可用，请稍后再试' });

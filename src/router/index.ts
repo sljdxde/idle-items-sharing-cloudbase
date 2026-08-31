@@ -7,6 +7,8 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomePage from '@/pages/HomePage.vue'
 import PublishPage from '@/pages/PublishPage.vue'
 import DetailPage from '@/pages/DetailPage.vue'
+import MinePage from '@/pages/MinePage.vue'
+import BorrowsPage from '@/pages/BorrowsPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -22,6 +24,18 @@ const router = createRouter({
       name: 'publish',
       component: PublishPage,
       meta: { title: '发布闲置 — 邻里好物' },
+    },
+    {
+      path: '/mine',
+      name: 'mine',
+      component: MinePage,
+      meta: { title: '我的发布 — 邻里好物' },
+    },
+    {
+      path: '/borrows',
+      name: 'borrows',
+      component: BorrowsPage,
+      meta: { title: '我的借用 — 邻里好物' },
     },
     {
       path: '/items/:id(\\d+)',

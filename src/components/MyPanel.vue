@@ -1,54 +1,39 @@
 <script setup lang="ts">
 // ================================================
-// MyPanel — 「我的发布 / 我的借用」互斥视图切换（登录后显示）
-// 双大卡 + 数量角标，置于 Hero 上方；点击其一自动取消另一个的高亮
+// MyPanel — 「我的发布 / 我的借用」双大卡入口（登录后显示，置于首屏）
+// 点击跳转独立页面：/mine（上架/下架/删除）、/borrows（快速归还）
 // ================================================
 
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 
 const store = useItemsStore()
 const auth = useAuthStore()
 
-/** 数量口径与视图一致：我的发布含已下架；我的借用含已下架（便于归还） */
-const mineCount = computed(() =>
-  store.items.filter((it) => it.ownerPhone === auth.phone).length,
-)
-const borrowedCount = computed(() =>
-  store.items.filter((it) => it.borrowedBy === auth.phone).length,
-)
+/** 数量口径与页面一致：我的发布含已下架；我的借用含已下架（便于归还） */
+const mineCount = computed(() => store.myItems.length)
+const borrowedCount = computed(() => store.borrowedItems.length)
 </script>
 
 <template>
-  <section v-if="auth.isLoggedIn" class="memphis-mypanel" aria-label="我的视图切换">
-    <button
-      type="button"
-      class="mycard mine"
-      :class="{ active: store.onlyMine }"
-      :aria-pressed="store.onlyMine"
-      @click="store.toggleMine()"
-    >
+  <section v-if="auth.isLoggedIn" class="memphis-mypanel" aria-label="我的">
+    <RouterLink to="/mine" class="mycard mine">
       <span class="mycard-head">
         <span class="mycard-title">我的发布</span>
         <span class="mycard-count" aria-label="共 {{ mineCount }} 件">{{ mineCount }}</span>
       </span>
-      <span class="mycard-desc">含已下架，可重新上架</span>
-    </button>
+      <span class="mycard-desc">上架 / 下架 / 删除</span>
+    </RouterLink>
 
-    <button
-      type="button"
-      class="mycard borrowed"
-      :class="{ active: store.onlyBorrowed }"
-      :aria-pressed="store.onlyBorrowed"
-      @click="store.toggleBorrowed()"
-    >
+    <RouterLink to="/borrows" class="mycard borrowed">
       <span class="mycard-head">
         <span class="mycard-title">我的借用</span>
         <span class="mycard-count" aria-label="共 {{ borrowedCount }} 件">{{ borrowedCount }}</span>
       </span>
-      <span class="mycard-desc">借来的好物，用完归还</span>
-    </button>
+      <span class="mycard-desc">借来的好物，快速归还</span>
+    </RouterLink>
   </section>
 </template>
 
@@ -68,11 +53,7 @@ const borrowedCount = computed(() =>
   background: var(--paper-cream);
   border: 3px solid var(--ink);
   padding: 0.75rem 0.85rem;
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap),
-    color var(--ease-snap);
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
 }
 
 .mycard.mine {
@@ -126,31 +107,6 @@ const borrowedCount = computed(() =>
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* 选中态：撞色反白 + 阴影收回 */
-.mycard.mine.active {
-  background: var(--olive);
-  color: var(--paper-cream);
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-
-.mycard.borrowed.active {
-  background: var(--retro-red);
-  color: #fff;
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-
-.mycard.active .mycard-count {
-  background: var(--paper-cream);
-  color: var(--ink);
-}
-
-.mycard.active .mycard-desc {
-  color: inherit;
-  opacity: 0.75;
 }
 
 @media (max-width: 360px) {
