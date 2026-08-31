@@ -100,8 +100,7 @@ async function readIssue(num) {
 }
 
 // ─── 路由 ───
-export default {
-  async fetch(request, env) {
+async function handle(request, env) {
     GH_TOKEN = env.GITHUB_TOKEN || '';
     const expectedSiteKey = env.SITE_KEY || SITE_KEY_DEFAULT;
 
@@ -221,5 +220,7 @@ export default {
     } catch (e) {
       return json(500, { error: '服务暂时不可用，请稍后再试' });
     }
-  },
-};
+}
+
+export { handle };
+export default { fetch: handle };

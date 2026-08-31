@@ -9,16 +9,21 @@ import type { CategoryId, ContactType, Item } from './types'
 /** Cloudflare Worker 地址（github.io 部署时使用；公开信息，非秘密） */
 const WORKER_URL = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.workers.dev'
 
+const HOST = typeof location !== 'undefined' ? location.hostname : ''
+
 /**
  * 代理基址：
  * - GitHub Pages（*.github.io）→ Worker（workers.dev 在部分网络被墙，作为 Pages 部署的写通道）
+ * - Cloudflare Pages（*.pages.dev）→ 同源 /api（Pages Function，国内可达 + 自带 HTTPS）
  * - 自建服务器部署 → 同源 /api（nginx 80 → Node 代理，国内直连最快）
  */
-export const API_PROXY =
-  typeof location !== 'undefined' && location.hostname.endsWith('github.io') ? WORKER_URL : ''
+export const API_PROXY = HOST.endsWith('github.io') ? WORKER_URL : ''
 
-/** 自建服务器通道：图片由服务端落盘存储，不受 Issue 正文 64KB 限制 */
-export const IS_SERVER_CHANNEL = API_PROXY === ''
+/**
+ * 是否服务端可落盘图片（仅自建服务器通道为 true）。
+ * github.io / pages.dev 都是 serverless、无磁盘，图片需内嵌压缩进 Issue 正文（64KB 上限）。
+ */
+export const IS_SERVER_CHANNEL = !HOST.endsWith('github.io') && !HOST.endsWith('pages.dev')
 
 /** 与 worker 约定的站点 key（仅挡普通爬虫，非秘密） */
 export const SITE_KEY = 'neighborhood-share-2026'
