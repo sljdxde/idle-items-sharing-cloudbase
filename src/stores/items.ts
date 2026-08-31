@@ -81,6 +81,19 @@ export const useItemsStore = defineStore('items', () => {
     await load(true)
   }
 
+  /**
+   * 写后刷新并校验：GitHub 写入有秒级读延迟，写后立即 GET 可能拿到旧列表
+   * （现象：发布完「我的发布」里没有新物品，过几秒再刷才出现）。
+   * 校验未通过则间隔重试，最多 3 次。
+   */
+  async function refreshUntil(ok: () => boolean): Promise<void> {
+    for (let i = 0; i < 3; i++) {
+      await refresh()
+      if (ok()) return
+      if (i < 2) await new Promise((r) => setTimeout(r, 1200))
+    }
+  }
+
   /** 重新获取定位（发布页/工具栏的「定位」按钮）；成功 'ok'，失败返回具体原因 */
   async function locate(): Promise<'ok' | LocateFailReason> {
     locating.value = true
@@ -173,7 +186,7 @@ export const useItemsStore = defineStore('items', () => {
     writing.value = true
     const phone = auth.phone
     try {
-      await api.publish({
+      const { id } = await api.publish({
         name: draft.name,
         desc: draft.desc,
         contactType: draft.contactType,
@@ -184,8 +197,9 @@ export const useItemsStore = defineStore('items', () => {
         lat: draft.position?.lat ?? null,
         lng: draft.position?.lng ?? null,
       })
+      // 先把列表刷到新物品可见，再报成功——避免用户回首页看到的还是旧数量
+      await refreshUntil(() => !!itemById(id))
       toast.success('发布成功', '你的好物已对所有邻居可见')
-      await refresh()
       return true
     } catch (e) {
       toast.error('发布失败', errMsg(e))
@@ -213,7 +227,7 @@ export const useItemsStore = defineStore('items', () => {
     try {
       await api.borrow(id, phone)
       toast.success('借用成功', '物品已标记为「已借出」，请按联系方式与物主交接')
-      await refresh()
+      await refreshUntil(() => itemById(id)?.status === 'lent')
       return true
     } catch (e) {
       toast.error('借用失败', errMsg(e))
@@ -236,7 +250,7 @@ export const useItemsStore = defineStore('items', () => {
     try {
       await api.returnBack(id, phone)
       toast.success('归还成功', '物品已恢复「可借」，感谢分享')
-      await refresh()
+      await refreshUntil(() => itemById(id)?.status === 'available')
       return true
     } catch (e) {
       toast.error('归还失败', errMsg(e))
@@ -260,7 +274,7 @@ export const useItemsStore = defineStore('items', () => {
       if (archived) await api.archive(id, phone)
       else await api.unarchive(id, phone)
       toast.success(archived ? '已下架' : '已上架', archived ? '物品已从公开列表隐藏' : '物品已重新对邻居可见')
-      await refresh()
+      await refreshUntil(() => itemById(id)?.archived === archived)
       return true
     } catch (e) {
       toast.error(archived ? '下架失败' : '上架失败', errMsg(e))
@@ -297,7 +311,7 @@ export const useItemsStore = defineStore('items', () => {
     try {
       await api.remove(id, phone)
       toast.success('已删除', '物品已从社区列表彻底移除')
-      await refresh()
+      await refreshUntil(() => !itemById(id))
       return true
     } catch (e) {
       toast.error('删除失败', errMsg(e))

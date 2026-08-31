@@ -11,6 +11,8 @@ import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
 import { canReturn, isOwner } from '@/lib/itemOps'
 import { contactRows } from '@/lib/contact'
+import { reverseGeocode } from '@/lib/geocode'
+import { itemLatLng } from '@/lib/geo'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
 import ManageModal from '@/components/ManageModal.vue'
@@ -64,6 +66,26 @@ function onImgError(): void {
 watch(() => route.params.id, () => {
   imgBroken.value = false
 })
+
+/** 所在位置：物品有定位时反解成「小区 · 区县」短文案（失败静默不展示） */
+const addrState = ref<'none' | 'loading' | 'ok'>('none')
+const addrLabel = ref('')
+watch(item, async (it) => {
+  addrState.value = 'none'
+  addrLabel.value = ''
+  if (!it) return
+  const p = itemLatLng(it)
+  if (!p) return
+  addrState.value = 'loading'
+  const label = await reverseGeocode(p)
+  if (item.value?.id !== it.id) return // 期间已切到别的物品
+  if (!label) {
+    addrState.value = 'none'
+    return
+  }
+  addrLabel.value = label
+  addrState.value = 'ok'
+}, { immediate: true })
 </script>
 
 <template>
@@ -120,6 +142,10 @@ watch(() => route.params.id, () => {
           <div v-if="contactRowsList.length === 0" class="detail-row">
             <dt>联系方式</dt>
             <dd>未填写</dd>
+          </div>
+          <div v-if="addrState !== 'none'" class="detail-row">
+            <dt>所在位置</dt>
+            <dd>{{ addrState === 'loading' ? '正在解析位置…' : addrLabel }}</dd>
           </div>
           <div v-if="ownerIsMe && item.borrowedBy" class="detail-row">
             <dt>借阅人手机号</dt>

@@ -8,6 +8,7 @@ import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { contactRows } from '@/lib/contact'
+import { formatCount } from '@/lib/filters'
 import type { Item } from '@/lib/types'
 import LoginBox from '@/components/LoginBox.vue'
 
@@ -38,7 +39,7 @@ const ownerContact = (it: Item) => {
       <span class="hero-tape" aria-hidden="true"></span>
       <div class="page-head">
         <h1 class="page-title">我的借用</h1>
-        <span class="count-chip">共 {{ store.borrowedItems.length }} 件</span>
+        <span class="count-chip">共 {{ formatCount(store.borrowedItems.length) }} 件</span>
       </div>
       <p class="page-sub">用完记得归还，让好物继续流转。</p>
 

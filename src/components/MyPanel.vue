@@ -8,6 +8,7 @@ import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
+import { formatCount } from '@/lib/filters'
 
 const store = useItemsStore()
 const auth = useAuthStore()
@@ -15,6 +16,8 @@ const auth = useAuthStore()
 /** 数量口径与页面一致：我的发布含已下架；我的借用含已下架（便于归还） */
 const mineCount = computed(() => store.myItems.length)
 const borrowedCount = computed(() => store.borrowedItems.length)
+const mineCountText = computed(() => formatCount(mineCount.value))
+const borrowedCountText = computed(() => formatCount(borrowedCount.value))
 </script>
 
 <template>
@@ -22,7 +25,7 @@ const borrowedCount = computed(() => store.borrowedItems.length)
     <RouterLink to="/mine" class="mycard mine">
       <span class="mycard-head">
         <span class="mycard-title">我的发布</span>
-        <span class="mycard-count" aria-label="共 {{ mineCount }} 件">{{ mineCount }}</span>
+        <span class="mycard-count" :aria-label="`共 ${mineCount} 件`">{{ mineCountText }}</span>
       </span>
       <span class="mycard-desc">上架 / 下架 / 删除</span>
     </RouterLink>
@@ -30,7 +33,7 @@ const borrowedCount = computed(() => store.borrowedItems.length)
     <RouterLink to="/borrows" class="mycard borrowed">
       <span class="mycard-head">
         <span class="mycard-title">我的借用</span>
-        <span class="mycard-count" aria-label="共 {{ borrowedCount }} 件">{{ borrowedCount }}</span>
+        <span class="mycard-count" :aria-label="`共 ${borrowedCount} 件`">{{ borrowedCountText }}</span>
       </span>
       <span class="mycard-desc">借来的好物，快速归还</span>
     </RouterLink>

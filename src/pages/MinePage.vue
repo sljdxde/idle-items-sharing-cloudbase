@@ -7,7 +7,7 @@ import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
-import { formatDateShort } from '@/lib/filters'
+import { formatDateShort, formatCount } from '@/lib/filters'
 import type { Item } from '@/lib/types'
 import LoginBox from '@/components/LoginBox.vue'
 
@@ -52,7 +52,7 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
       <span class="hero-tape" aria-hidden="true"></span>
       <div class="page-head">
         <h1 class="page-title">我的发布</h1>
-        <span class="count-chip">共 {{ store.myItems.length }} 件</span>
+        <span class="count-chip">共 {{ formatCount(store.myItems.length) }} 件</span>
       </div>
       <p class="page-sub">上架 / 下架控制邻居可见性；删除会把物品从社区列表彻底移除，不可恢复。</p>
 

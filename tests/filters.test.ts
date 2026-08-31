@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   filterItems,
+  formatCount,
   formatDateShort,
   matchesCategory,
   matchesSearch,
@@ -119,5 +120,21 @@ describe('formatDateShort', () => {
   it('非法输入回退「刚刚」', () => {
     expect(formatDateShort('')).toBe('刚刚')
     expect(formatDateShort('not-a-date')).toBe('刚刚')
+  })
+})
+
+describe('formatCount', () => {
+  it('≤99 原样输出', () => {
+    expect(formatCount(0)).toBe('0')
+    expect(formatCount(1)).toBe('1')
+    expect(formatCount(99)).toBe('99')
+  })
+  it('超过 99 显示 99+', () => {
+    expect(formatCount(100)).toBe('99+')
+    expect(formatCount(1234)).toBe('99+')
+  })
+  it('非法输入回退 0', () => {
+    expect(formatCount(Number.NaN)).toBe('0')
+    expect(formatCount(-3)).toBe('0')
   })
 })

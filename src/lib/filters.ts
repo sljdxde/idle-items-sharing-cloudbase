@@ -15,6 +15,12 @@ export function formatDateShort(iso: string): string {
   return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
+/** 数量展示：≤99 原样；超过 99 统一显示「99+」，避免徽标过宽 */
+export function formatCount(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return '0'
+  return n > 99 ? '99+' : String(n)
+}
+
 export function matchesCategory(item: Item, category: CategoryId | 'all'): boolean {
   if (category === 'all') return true
   return normalizeCategory(item.category ?? '') === category

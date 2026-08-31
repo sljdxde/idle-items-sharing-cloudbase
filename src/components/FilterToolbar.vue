@@ -7,6 +7,7 @@
 import { useItemsStore } from '@/stores/items'
 import { CATEGORIES } from '@/lib/categories'
 import { RADIUS_OPTIONS } from '@/lib/geo'
+import { formatCount } from '@/lib/filters'
 import { useToast } from '@/composables/useToast'
 
 const store = useItemsStore()
@@ -44,7 +45,7 @@ async function onLocate(): Promise<void> {
           aria-label="搜索闲置物品" />
       </div>
 
-      <div class="count-chip">共 {{ store.visibleItems.length }} 件</div>
+      <div class="count-chip">共 {{ formatCount(store.visibleItems.length) }} 件</div>
 
       <button type="button" class="btn-tool-refresh" aria-label="刷新好物列表" @click="$emit('refresh')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
