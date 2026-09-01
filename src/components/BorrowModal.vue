@@ -7,7 +7,6 @@ import LoginBox from './LoginBox.vue'
 import type { Item } from '@/lib/types'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
-import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
 import { contactRows } from '@/lib/contact'
 
 const props = defineProps<{
@@ -21,12 +20,12 @@ const store = useItemsStore()
 const auth = useAuthStore()
 
 const needLogin = computed(() => !auth.isLoggedIn)
-const ownerIsMe = computed(() => (props.item ? isOwner(props.item, auth.phone) : false))
+const ownerIsMe = computed(() => (props.item ? store.owns(props.item) : false))
 const borrowable = computed(() =>
-  props.item ? canBorrow(props.item, auth.phone) : false,
+  props.item ? store.borrowable(props.item) : false,
 )
 const mineLent = computed(() =>
-  props.item ? canReturn(props.item, auth.phone) : false,
+  props.item ? store.holds(props.item) : false,
 )
 
 /** 联系方式行：楼牌号在前、手机号在后 */

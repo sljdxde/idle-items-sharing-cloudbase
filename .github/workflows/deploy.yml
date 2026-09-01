@@ -1,8 +1,8 @@
 # ================================================
 # Deploy to GitHub Pages + Issues 共享数据层
-# 触发：push 到 master / Issues 变更 / 评论命令（借还·上下架）/ 手动
-# 流程：处理评论命令（借/还/下架/上架）→ 生成 items.json 快照 → vite build → 部署 Pages
-# 零服务器：站点读取共享快照；写操作走 Issue + 评论命令（Actions 自动处理）
+# 触发：push 到 master / Issues 变更 / 评论（仅记日志）/ 手动
+# 流程：忽略评论写命令 → 生成脱敏 items.json 快照 → vite build → 部署 Pages
+# 写操作走 Cloudflare Worker / 自建代理（管理口令 + 借阅凭证，ADR-0004）
 # 前置：Pages Source=GitHub Actions（build_type: workflow）；Actions 权限=write；issues: write
 # ================================================
 
@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Handle comment commands (借/还/下架/上架)
+      - name: Ignore comment write commands (ADR-0004)
         if: github.event_name == 'issue_comment'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -52,12 +52,6 @@ jobs:
           COMMENT_USER: ${{ github.event.comment.user.login }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
         run: node scripts/handle-comment.mjs
-
-      # handle-comment 修改 Issue 后，GitHub API 存在最终一致性延迟；
-      # 立即拉取可能读到旧状态（如 closed 仍显示 open），等待片刻再生成快照
-      - name: Wait for GitHub API consistency
-        if: github.event_name == 'issue_comment'
-        run: sleep 6
 
       - name: Generate items.json from GitHub Issues
         run: node scripts/gen-items.mjs

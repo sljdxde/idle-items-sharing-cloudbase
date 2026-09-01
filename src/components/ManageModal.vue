@@ -4,8 +4,6 @@ import { computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import type { Item } from '@/lib/types'
 import { useItemsStore } from '@/stores/items'
-import { useAuthStore } from '@/stores/auth'
-import { isOwner } from '@/lib/itemOps'
 
 const props = defineProps<{
   open: boolean
@@ -15,20 +13,14 @@ const props = defineProps<{
 const emit = defineEmits<{ close: [] }>()
 
 const store = useItemsStore()
-const auth = useAuthStore()
 
-const ownerIsMe = computed(() => (props.item ? isOwner(props.item, auth.phone) : false))
+const ownerIsMe = computed(() => (props.item ? store.owns(props.item) : false))
 
 const statusText = computed(() => {
   const it = props.item
   if (!it) return ''
   if (it.archived) return '已下架'
   return it.status === 'lent' ? '已借出' : '可借'
-})
-
-const borrowerMasked = computed(() => {
-  const p = props.item?.borrowedBy
-  return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : ''
 })
 
 /** 借出时间（ISO → 「M月D日 HH:mm」）；无则空 */
@@ -74,13 +66,9 @@ async function onToggleArchive(): Promise<void> {
             <span class="k">当前状态</span>
             <b class="v">{{ statusText }}</b>
           </div>
-          <div v-if="item.borrowedBy" class="info-row">
-            <span class="k">借阅人手机号</span>
-            <b class="v selectable">{{ borrowerMasked }}</b>
-          </div>
-          <div v-if="item.borrowedBy" class="info-row">
+          <div v-if="item.status === 'lent'" class="info-row">
             <span class="k">借出时间</span>
-            <b class="v">{{ borrowedAtText || '—' }}</b>
+            <b class="v">{{ borrowedAtText || '进行中' }}</b>
           </div>
           <div class="info-row">
             <span class="k">联系方式</span>
@@ -92,6 +80,7 @@ async function onToggleArchive(): Promise<void> {
           <li>下架 / 上架在本站一键完成，操作后全站即时可见</li>
           <li>下架后物品从公开列表隐藏（不影响已发生的借用）</li>
           <li>物品被借用时状态自动变为「已借出」，借阅人归还后自动恢复「可借」</li>
+          <li>已借出也可下架（从公开列表隐藏）；删除需先收回</li>
         </ul>
 
         <button type="button" class="btn-memphis-primary btn-block" :disabled="store.writing" @click="onToggleArchive">

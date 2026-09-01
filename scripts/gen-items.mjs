@@ -44,22 +44,35 @@ function cleanTitle(title) {
   return String(title ?? '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品'
 }
 
+function safeImgUrl(url) {
+  const u = String(url || '').trim()
+  if (!u) return ''
+  if (/^\/uploads\/[A-Za-z0-9._-]+\.(jpg|jpeg|png|webp)$/i.test(u)) return u
+  if (/^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/]+=*$/i.test(u)) return u
+  return ''
+}
+
+function roundCoord(n) {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null
+  return Math.round(n * 1000) / 1000
+}
+
 function parseIssue(issue) {
   const data = extractData(issue.body) ?? {}
   const isLent = (issue.labels ?? []).some((l) => l.name === 'lent')
   return {
     id: issue.number,
     name: typeof data.name === 'string' && data.name.trim() ? data.name : cleanTitle(issue.title),
-    desc: typeof data.desc === 'string' ? data.desc : '',
+    desc: typeof data.desc === 'string' ? String(data.desc).slice(0, 300) : '',
     contactType: data.contactType === 'building' ? 'building' : 'phone',
-    contact: typeof data.contact === 'string' ? data.contact : '',
-    imgUrl: typeof data.imgUrl === 'string' ? data.imgUrl : '',
+    contact: typeof data.contact === 'string' ? String(data.contact).slice(0, 40) : '',
+    imgUrl: typeof data.imgUrl === 'string' ? safeImgUrl(data.imgUrl) : '',
     status: isLent ? 'lent' : 'available',
+    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : undefined,
     borrowedBy: typeof data.borrowedBy === 'string' ? data.borrowedBy : undefined,
     borrowedAt: typeof data.borrowedAt === 'string' ? data.borrowedAt : undefined,
-    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : '',
-    lat: typeof data.lat === 'number' && Number.isFinite(data.lat) ? data.lat : null,
-    lng: typeof data.lng === 'number' && Number.isFinite(data.lng) ? data.lng : null,
+    lat: roundCoord(data.lat),
+    lng: roundCoord(data.lng),
     category: typeof data.category === 'string' ? data.category : 'other',
     createTime:
       typeof data.createTime === 'string'

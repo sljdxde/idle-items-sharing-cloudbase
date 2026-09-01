@@ -16,6 +16,10 @@ dist/
 design-samples.zip
 *.tsbuildinfo
 
+# 自建代理密钥与上传
+server/.token
+server/uploads/
+
 # 小工具打包产物
 linli-haowu-minitool.zip
 

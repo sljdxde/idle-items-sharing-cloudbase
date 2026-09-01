@@ -10,7 +10,7 @@ import type { CategoryId, Item } from '@/lib/types'
 import { listItems } from '@/lib/github'
 import { api } from '@/lib/api'
 import { matchesCategory, matchesRadius, matchesSearch } from '@/lib/filters'
-import { canBorrow, canReturn, isOwner } from '@/lib/itemOps'
+import { canArchive, canBorrow, canDelete, canReturn, isOwner } from '@/lib/itemOps'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import {
@@ -150,19 +150,31 @@ export const useItemsStore = defineStore('items', () => {
       }),
   )
 
-  /** 「我的发布」页：我发布的全部物品（含已下架），最新在前 */
+  /** 「我的发布」页：登录手机号与发布者一致的物品（含已下架），最新在前 */
   const myItems = computed(() =>
     items.value
-      .filter((it) => !!auth.phone && it.ownerPhone === auth.phone)
+      .filter((it) => isOwner(it, auth.phone))
       .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
   )
 
-  /** 「我的借用」页：我借用的物品（含已下架，便于归还），最新在前 */
+  /** 「我的借用」页：登录手机号与借阅人一致的物品，最新在前 */
   const borrowedItems = computed(() =>
     items.value
-      .filter((it) => !!auth.phone && it.borrowedBy === auth.phone)
+      .filter((it) => canReturn(it, auth.phone))
       .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
   )
+
+  function owns(item: Item): boolean {
+    return isOwner(item, auth.phone)
+  }
+
+  function holds(item: Item): boolean {
+    return canReturn(item, auth.phone)
+  }
+
+  function borrowable(item: Item): boolean {
+    return canBorrow(item, auth.phone)
+  }
 
   function itemById(id: number): Item | undefined {
     return items.value.find((it) => it.id === id)
@@ -197,9 +209,8 @@ export const useItemsStore = defineStore('items', () => {
         lat: draft.position?.lat ?? null,
         lng: draft.position?.lng ?? null,
       })
-      // 先把列表刷到新物品可见，再报成功——避免用户回首页看到的还是旧数量
       await refreshUntil(() => !!itemById(id))
-      toast.success('发布成功', '你的好物已对所有邻居可见')
+      toast.success('发布成功', '邻居已经可以看到这件闲置了')
       return true
     } catch (e) {
       toast.error('发布失败', errMsg(e))
@@ -226,7 +237,7 @@ export const useItemsStore = defineStore('items', () => {
     writing.value = true
     try {
       await api.borrow(id, phone)
-      toast.success('借用成功', '物品已标记为「已借出」，请按联系方式与物主交接')
+      toast.success('借用成功', '用完记得归还，让好物继续流转')
       await refreshUntil(() => itemById(id)?.status === 'lent')
       return true
     } catch (e) {
@@ -240,15 +251,14 @@ export const useItemsStore = defineStore('items', () => {
   async function returnBack(id: number): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
-    const phone = auth.phone
-    if (!phone || !canReturn(it, phone)) {
-      toast.error('无法归还', '只有借阅人本人可以操作归还')
+    if (!canReturn(it, auth.phone)) {
+      toast.error('无法归还', '只有借阅人可以归还这件物品')
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      await api.returnBack(id, phone)
+      await api.returnBack(id, auth.phone!)
       toast.success('归还成功', '物品已恢复「可借」，感谢分享')
       await refreshUntil(() => itemById(id)?.status === 'available')
       return true
@@ -263,16 +273,15 @@ export const useItemsStore = defineStore('items', () => {
   async function setArchived(id: number, archived: boolean): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
-    const phone = auth.phone
-    if (!phone || !isOwner(it, phone)) {
-      toast.error('无权操作', '只有发布者可以管理自己的物品')
+    if (!canArchive(it, auth.phone)) {
+      toast.error('无权操作', '只有发布者可以上下架这件物品')
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      if (archived) await api.archive(id, phone)
-      else await api.unarchive(id, phone)
+      if (archived) await api.archive(id, auth.phone!)
+      else await api.unarchive(id, auth.phone!)
       toast.success(archived ? '已下架' : '已上架', archived ? '物品已从公开列表隐藏' : '物品已重新对邻居可见')
       await refreshUntil(() => itemById(id)?.archived === archived)
       return true
@@ -301,15 +310,17 @@ export const useItemsStore = defineStore('items', () => {
   async function remove(id: number): Promise<boolean> {
     const it = itemById(id)
     if (!it) return false
-    const phone = auth.phone
-    if (!phone || !isOwner(it, phone)) {
-      toast.error('无权操作', '只有发布者可以删除自己的物品')
+    if (!canDelete(it, auth.phone)) {
+      toast.error(
+        it.status === 'lent' ? '无法删除' : '无权操作',
+        it.status === 'lent' ? '物品借出中，请先收回再删除' : '只有发布者可以删除这件物品',
+      )
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      await api.remove(id, phone)
+      await api.remove(id, auth.phone!)
       toast.success('已删除', '物品已从社区列表彻底移除')
       await refreshUntil(() => !itemById(id))
       return true
@@ -340,6 +351,9 @@ export const useItemsStore = defineStore('items', () => {
     myItems,
     borrowedItems,
     itemById,
+    owns,
+    holds,
+    borrowable,
     publish,
     borrow,
     returnBack,

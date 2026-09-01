@@ -41,7 +41,7 @@ const ownerContact = (it: Item) => {
         <h1 class="page-title">我的借用</h1>
         <span class="count-chip">共 {{ formatCount(store.borrowedItems.length) }} 件</span>
       </div>
-      <p class="page-sub">用完记得归还，让好物继续流转。</p>
+      <p class="page-sub">用完记得归还，让好物继续流转。换设备登录同一手机号即可看到自己的借用。</p>
 
       <LoginBox v-if="!auth.isLoggedIn" />
 

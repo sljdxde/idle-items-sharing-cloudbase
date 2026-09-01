@@ -269,7 +269,7 @@ async function onSubmit(): Promise<void> {
         <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing || store.writing">
           {{ publishing ? '发布中，请稍等…' : '发布闲置' }}
         </button>
-        <p class="submit-hint">{{ publishing ? '正在同步到社区列表，通常只需几秒，请稍候…' : '提交后物品即对所有邻居可见。' }}</p>
+        <p class="submit-hint">{{ publishing ? '正在同步到社区列表，通常只需几秒，请稍候…' : '提交后邻居即可看到。换设备用同一手机号登录即可管理。' }}</p>
       </form>
     </div>
   </main>

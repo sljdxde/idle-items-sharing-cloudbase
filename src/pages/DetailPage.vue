@@ -6,11 +6,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
-import { useAuthStore } from '@/stores/auth'
 import { formatDateShort } from '@/lib/filters'
 import { CATEGORIES } from '@/lib/categories'
-import { canReturn, isOwner } from '@/lib/itemOps'
 import { contactRows } from '@/lib/contact'
+import { safeImgUrl } from '@/lib/safeImage'
 import { reverseGeocode } from '@/lib/geocode'
 import { itemLatLng } from '@/lib/geo'
 import type { Item } from '@/lib/types'
@@ -19,7 +18,6 @@ import ManageModal from '@/components/ManageModal.vue'
 
 const route = useRoute()
 const store = useItemsStore()
-const auth = useAuthStore()
 
 const borrowOpen = ref(false)
 const manageOpen = ref(false)
@@ -38,15 +36,10 @@ const categoryLabel = computed(() => {
   return c ? c.label : '其他'
 })
 
-const ownerIsMe = computed(() => (item.value ? isOwner(item.value, auth.phone) : false))
-const mineLent = computed(() => (item.value ? canReturn(item.value, auth.phone) : false))
-
+const ownerIsMe = computed(() => (item.value ? store.owns(item.value) : false))
+const mineLent = computed(() => (item.value ? store.holds(item.value) : false))
+const photoUrl = computed(() => (item.value ? safeImgUrl(item.value.imgUrl) : ''))
 const distLabel = computed(() => (item.value ? store.distanceLabel(item.value) : null))
-
-const borrowerMasked = computed(() => {
-  const p = item.value?.borrowedBy
-  return p ? p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2') : ''
-})
 
 const statusText = computed(() => {
   const it = item.value
@@ -109,7 +102,7 @@ watch(item, async (it) => {
       <span class="hero-tape" aria-hidden="true"></span>
 
       <div class="photo-side">
-        <img v-if="item.imgUrl && !imgBroken" :src="item.imgUrl" :alt="item.name" class="detail-photo"
+        <img v-if="photoUrl && !imgBroken" :src="photoUrl" :alt="item.name" class="detail-photo"
           @error="onImgError" />
         <div v-else class="detail-photo placeholder">
           <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
@@ -146,10 +139,6 @@ watch(item, async (it) => {
           <div v-if="addrState !== 'none'" class="detail-row">
             <dt>所在位置</dt>
             <dd>{{ addrState === 'loading' ? '正在解析位置…' : addrLabel }}</dd>
-          </div>
-          <div v-if="ownerIsMe && item.borrowedBy" class="detail-row">
-            <dt>借阅人手机号</dt>
-            <dd class="selectable">{{ borrowerMasked }}</dd>
           </div>
           <div v-if="item.archived" class="detail-row">
             <dt>状态</dt>

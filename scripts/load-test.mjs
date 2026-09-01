@@ -88,20 +88,21 @@ async function phaseCreate() {
         },
       })
       record(stats.create, started, { ok: true, id: r.id })
-      return r.id
+      return { id: r.id, owner: phones[i] }
     } catch (e) {
       record(stats.create, started, { ok: false, error: e.message })
       return null
     }
   })
-  const ids = (await pool(tasks, CONCURRENCY)).filter(Boolean)
-  writeFileSync(IDS_FILE, JSON.stringify(ids))
-  console.log(`创建成功 ${ids.length}/${N_CREATE}，ID 已存 ${IDS_FILE}`)
-  return ids
+  const created = (await pool(tasks, CONCURRENCY)).filter(Boolean)
+  writeFileSync(IDS_FILE, JSON.stringify(created))
+  console.log(`创建成功 ${created.length}/${N_CREATE}，ID 已存 ${IDS_FILE}`)
+  return created
 }
 
-async function phaseBorrow(ids) {
+async function phaseBorrow(created) {
   console.log(`\n=== 阶段B：${N_BORROW} 用户并发借用（借用者∈phones[20..59]，与创建者重叠 30 人）===`)
+  const ids = created.map((c) => c.id)
   // GitHub 高频写后列表有秒级延迟，重试直到目标足够
   let testItems = []
   for (let attempt = 0; attempt < 4 && testItems.length < N_BORROW; attempt++) {
@@ -110,10 +111,10 @@ async function phaseBorrow(ids) {
     testItems = items.filter((it) => ids.includes(it.id) && it.status === 'available')
   }
   console.log(`可见可借目标 ${testItems.length} 件`)
+  const ownerOf = new Map(created.map((c) => [c.id, c.owner]))
   const tasks = Array.from({ length: N_BORROW }, (_, k) => async () => {
     const borrower = phones[20 + k] // 20-59
-    // 选一件非本人发布的可借物品
-    const target = testItems.find((it) => it.ownerPhone !== borrower && it.status === 'available')
+    const target = testItems.find((it) => ownerOf.get(it.id) !== borrower && it.status === 'available')
     if (!target) return record(stats.borrow, Date.now(), { ok: false, error: '无可用目标' })
     target.status = 'lent' // 本地标记避免重复借同一件
     const started = Date.now()
@@ -143,13 +144,20 @@ async function phaseReadStorm() {
 
 async function cleanup() {
   console.log('=== 清理：归档压测物品 ===')
-  const ids = existsSync(IDS_FILE) ? JSON.parse(readFileSync(IDS_FILE, 'utf8')) : []
+  const created = existsSync(IDS_FILE) ? JSON.parse(readFileSync(IDS_FILE, 'utf8')) : []
+  const ids = created.map((c) => (typeof c === 'number' ? c : c.id))
+  const ownerOf = new Map(created.map((c) => [typeof c === 'number' ? c : c.id, c.owner]))
   const items = await api('/items')
   const targets = items.filter((it) => ids.includes(it.id))
   let done = 0
   for (const it of targets) {
+    const phone = ownerOf.get(it.id) || it.ownerPhone
+    if (!phone) {
+      console.log(`  归档 ${it.id} 失败: 没有发布者手机号`)
+      continue
+    }
     try {
-      await api(`/items/${it.id}/archive`, { method: 'POST', body: { operatorPhone: it.ownerPhone } })
+      await api(`/items/${it.id}/archive`, { method: 'POST', body: { operatorPhone: phone } })
       done++
     } catch (e) {
       console.log(`  归档 ${it.id} 失败: ${e.message}`)

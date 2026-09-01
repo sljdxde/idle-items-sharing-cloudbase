@@ -8,6 +8,7 @@ import type { Item } from './types'
 import { normalizeCategory } from './categories'
 import { SEED_ITEMS } from './seed'
 import { api } from './api'
+import { safeImgUrl } from './safeImage'
 
 /** Issue 体数据块标记（与 scripts/gen-items.mjs / cloudflare-worker 保持一致） */
 export const DATA_START = '<!--DATA_START'
@@ -58,6 +59,11 @@ function cleanTitle(title: string): string {
   return title.replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品'
 }
 
+function roundCoord(n: unknown): number | null {
+  if (typeof n !== 'number' || !Number.isFinite(n)) return null
+  return Math.round(n * 1000) / 1000
+}
+
 /** Issue → Item（lent 标签→已借出；closed→已下架） */
 export function parseIssue(issue: IssueLike): Item {
   const data = extractDataBlock(issue.body ?? '') ?? {}
@@ -68,13 +74,13 @@ export function parseIssue(issue: IssueLike): Item {
     desc: typeof data.desc === 'string' ? data.desc : '',
     contactType: data.contactType === 'building' ? 'building' : 'phone',
     contact: typeof data.contact === 'string' ? data.contact : '',
-    imgUrl: typeof data.imgUrl === 'string' ? data.imgUrl : '',
+    imgUrl: typeof data.imgUrl === 'string' ? safeImgUrl(data.imgUrl) : '',
     status: isLent ? 'lent' : 'available',
+    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : undefined,
     borrowedBy: typeof data.borrowedBy === 'string' ? data.borrowedBy : undefined,
     borrowedAt: typeof data.borrowedAt === 'string' ? data.borrowedAt : undefined,
-    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : '',
-    lat: typeof data.lat === 'number' && Number.isFinite(data.lat) ? data.lat : null,
-    lng: typeof data.lng === 'number' && Number.isFinite(data.lng) ? data.lng : null,
+    lat: roundCoord(data.lat),
+    lng: roundCoord(data.lng),
     category: normalizeCategory(typeof data.category === 'string' ? data.category : ''),
     createTime:
       typeof data.createTime === 'string' ? data.createTime : issue.created_at ?? new Date().toISOString(),
@@ -95,7 +101,12 @@ async function fetchSnapshot(force: boolean): Promise<Item[] | null> {
     if (!Array.isArray(arr)) return null
     return arr
       .filter((x): x is Item => !!x && typeof x === 'object' && typeof (x as Item).id === 'number')
-      .map((x) => ({ ...x }))
+      .map((x) => ({
+        ...x,
+        imgUrl: safeImgUrl(x.imgUrl),
+        lat: roundCoord(x.lat),
+        lng: roundCoord(x.lng),
+      }))
   } catch {
     return null
   }

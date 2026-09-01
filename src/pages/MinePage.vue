@@ -54,7 +54,7 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
         <h1 class="page-title">我的发布</h1>
         <span class="count-chip">共 {{ formatCount(store.myItems.length) }} 件</span>
       </div>
-      <p class="page-sub">上架 / 下架控制邻居可见性；删除会把物品从社区列表彻底移除，不可恢复。</p>
+      <p class="page-sub">上架 / 下架控制邻居可见性；删除会把物品从社区列表彻底移除，不可恢复。已借出的物品请先收回再删除。</p>
 
       <LoginBox v-if="!auth.isLoggedIn" />
 
@@ -78,8 +78,8 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
                 {{ it.archived ? '上架' : '下架' }}
               </button>
               <button type="button" class="btn-act danger" :class="{ arming: confirmId === it.id }"
-                :disabled="store.writing" @click="onDelete(it)">
-                {{ confirmId === it.id ? '确认删除？' : '删除' }}
+                :disabled="store.writing || it.status === 'lent'" @click="onDelete(it)">
+                {{ it.status === 'lent' ? '借出中不可删' : confirmId === it.id ? '确认删除？' : '删除' }}
               </button>
               <RouterLink :to="`/items/${it.id}`" class="btn-act ghost">详情</RouterLink>
             </div>

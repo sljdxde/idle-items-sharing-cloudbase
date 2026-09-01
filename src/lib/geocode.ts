@@ -100,7 +100,10 @@ export async function reverseGeocode(p: LatLng): Promise<string> {
       '&zoom=18&addressdetails=1&accept-language=zh-CN'
     const res = await fetch(url, {
       signal: ctrl.signal,
-      headers: { Accept: 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'linli-haowu/1.0 (neighborhood sharing; reverse-geocode)',
+      },
     })
     clearTimeout(timer)
     if (!res.ok) return ''

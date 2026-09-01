@@ -99,32 +99,26 @@ await sleep(500)
 await shot(page, '06-detail-address')
 
 // ── 07 借用一件邻居好物（73 是自己的不行，借 65）→ 我的借用页 ──
-await page.evaluate(
-  async (u) => {
-    await fetch('/api/items/65/borrow', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-site-key': 'neighborhood-share-2026' },
-      body: JSON.stringify({ operatorPhone: u }),
-    })
-  },
-  USER,
-)
+await page.evaluate(async (u) => {
+  await fetch('/api/items/65/borrow', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-site-key': 'neighborhood-share-2026' },
+    body: JSON.stringify({ operatorPhone: u }),
+  })
+}, USER)
 await goto(page, '#/borrows')
 await page.waitForSelector('.borrow-main', { timeout: 10000 })
 await sleep(800)
 await shot(page, '07-borrows')
 
 // ── 08 归还，恢复数据 ──
-await page.evaluate(
-  async (u) => {
-    await fetch('/api/items/65/return', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-site-key': 'neighborhood-share-2026' },
-      body: JSON.stringify({ operatorPhone: u }),
-    })
-  },
-  USER,
-)
+await page.evaluate(async (u) => {
+  await fetch('/api/items/65/return', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-site-key': 'neighborhood-share-2026' },
+    body: JSON.stringify({ operatorPhone: u }),
+  })
+}, USER)
 
 // ── 09 我的发布：上架 / 下架 / 删除 ──
 await goto(page, '#/mine')

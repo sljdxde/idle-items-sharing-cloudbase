@@ -1,7 +1,7 @@
 // ================================================
 // server/proxy-server.mjs — 自建服务器版代理（与 cloudflare-worker/worker.js 同契约）
 // Node 原生 http 实现：/api/* 走 GitHub 代理；其余路径服务 ./dist 静态站。
-// 监听 127.0.0.1:8080，由 nginx 80 端口转发（无需 root 跑本进程）。
+// 监听 127.0.0.1:8087，由 nginx 80 端口转发（无需 root 跑本进程）。
 // Token 从环境变量 GITHUB_TOKEN 或同目录 .token 文件读取（chmod 600）。
 // ================================================
 
@@ -10,6 +10,21 @@ import { readFile, writeFile, mkdir, stat } from 'node:fs/promises'
 import { randomBytes } from 'node:crypto'
 import { join, normalize, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  BODY_MAX,
+  CONTACT_MAX,
+  DESC_MAX,
+  IMG_DATA_MAX,
+  NAME_MAX,
+  clampLatLng,
+  hasItemLabel,
+  isValidPhone,
+  normalizeCategory,
+  requirePhone,
+  safeImgUrl,
+  sanitizeText,
+  toPublicItem,
+} from '../cloudflare-worker/security.js'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const DIST = join(ROOT, 'dist')
@@ -41,13 +56,20 @@ const MIME = {
   '.woff2': 'font/woff2',
 }
 
-// ─── GitHub 封装（与 worker 一致） ───
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy':
+    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+}
+
 async function gh(path, method = 'GET', body) {
   return fetch(`${API}${path}`, {
     method,
     headers: {
-      'Authorization': `Bearer ${GH_TOKEN}`,
-      'Accept': 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${GH_TOKEN}`,
+      Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
       'User-Agent': 'neighborhood-proxy',
     },
@@ -58,7 +80,12 @@ async function gh(path, method = 'GET', body) {
 function extractData(body) {
   const m = body ? body.match(DATA_RE) : null
   if (!m || !m[1]) return {}
-  try { return JSON.parse(m[1].trim()) } catch { return {} }
+  try {
+    const parsed = JSON.parse(m[1].trim())
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
 }
 
 function toItem(issue) {
@@ -66,15 +93,18 @@ function toItem(issue) {
   const isLent = (issue.labels || []).some((l) => l.name === 'lent')
   return {
     id: issue.number,
-    name: typeof d.name === 'string' && d.name.trim() ? d.name : String(issue.title || '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品',
+    name:
+      typeof d.name === 'string' && d.name.trim()
+        ? d.name
+        : String(issue.title || '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品',
     desc: typeof d.desc === 'string' ? d.desc : '',
     contactType: d.contactType === 'building' ? 'building' : 'phone',
     contact: typeof d.contact === 'string' ? d.contact : '',
     imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
     status: isLent ? 'lent' : 'available',
-    borrowedBy: typeof d.borrowedBy === 'string' ? d.borrowedBy : undefined,
+    ownerPhone: requirePhone(d.ownerPhone),
+    borrowedBy: requirePhone(d.borrowedBy),
     borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
-    ownerPhone: typeof d.ownerPhone === 'string' ? d.ownerPhone : '',
     lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
     lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
     category: typeof d.category === 'string' ? d.category : 'other',
@@ -83,24 +113,27 @@ function toItem(issue) {
   }
 }
 
-function withDataBlock(oldBody, data) {
+function withDataBlock(_oldBody, data) {
+  const publicDesc = sanitizeText(data.desc, DESC_MAX)
   const block = `<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`
-  return DATA_RE.test(oldBody || '') ? (oldBody || '').replace(DATA_RE, () => block) : `${oldBody || ''}\n\n${block}`
+  return `${publicDesc}\n\n${block}\n\n— 以下为自动生成的数据块，请勿删除 —`
 }
 
 async function readIssue(num) {
+  if (!Number.isInteger(num) || num < 1 || num > 1_000_000) return { missing: true }
   const res = await gh(`/${num}`)
   if (res.status === 404) return { missing: true }
-  if (!res.ok) return { error: `GitHub API 错误: ${res.status}` }
-  return { issue: await res.json() }
+  if (!res.ok) return { error: true }
+  const issue = await res.json()
+  if (!hasItemLabel(issue)) return { missing: true }
+  return { issue }
 }
 
-// ─── 规模化：分页列表（>100 物品不丢数据） ───
 async function listAllIssues() {
   const out = []
   for (let page = 1; page <= 5; page++) {
     const r = await gh(`?state=all&labels=item&per_page=100&sort=updated&direction=desc&page=${page}`)
-    if (!r.ok) return { error: `GitHub API 错误: ${r.status}` }
+    if (!r.ok) return { error: true }
     const arr = await r.json()
     out.push(...arr)
     if (arr.length < 100) break
@@ -108,7 +141,6 @@ async function listAllIssues() {
   return { issues: out }
 }
 
-// ─── 规模化：5s 列表缓存 + single-flight（并发读只打一次 GitHub；写后主动失效） ───
 const LIST_TTL = 5000
 let listCache = { at: 0, data: null }
 let listInflight = null
@@ -120,8 +152,8 @@ async function getList() {
     listInflight = (async () => {
       try {
         const { issues, error } = await listAllIssues()
-        if (error) throw new Error(error)
-        listCache = { at: Date.now(), data: issues.map(toItem) }
+        if (error) throw new Error('list-fail')
+        listCache = { at: Date.now(), data: issues.map((issue) => toPublicItem(toItem(issue))) }
         return listCache.data
       } finally {
         listInflight = null
@@ -131,7 +163,6 @@ async function getList() {
   return listInflight
 }
 
-// ─── 规模化：写操作遇二级限流退避重试 ───
 async function ghWrite(path, method, body) {
   for (let i = 0; ; i++) {
     const r = await gh(path, method, body)
@@ -146,31 +177,53 @@ async function ghWrite(path, method, body) {
   }
 }
 
-// ─── 限流（内存；小区 NAT 场景整栋楼共享出口 IP，阈值需宽松） ───
 const hits = new Map()
-function rateOk(ip) {
+function rateOk(ip, limit, windowMs) {
+  const key = `${ip}|${limit}|${windowMs}`
   const now = Date.now()
-  const arr = (hits.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000)
-  if (arr.length >= 600) { hits.set(ip, arr); return false }
-  arr.push(now); hits.set(ip, arr)
+  const arr = (hits.get(key) || []).filter((t) => now - t < windowMs)
+  if (arr.length >= limit) { hits.set(key, arr); return false }
+  arr.push(now); hits.set(key, arr)
   return true
 }
 
 function json(res, status, obj) {
   const body = JSON.stringify(obj)
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...SECURITY_HEADERS,
+  })
   res.end(body)
 }
 
 async function readBody(req) {
   return new Promise((resolve) => {
-    let s = ''
-    req.on('data', (c) => { s += c; if (s.length > 7_000_000) req.destroy() })
-    req.on('end', () => { try { resolve(s ? JSON.parse(s) : {}) } catch { resolve({}) } })
+    const chunks = []
+    let n = 0
+    req.on('data', (c) => {
+      n += c.length
+      if (n > BODY_MAX) {
+        req.destroy()
+        resolve({ tooLarge: true })
+        return
+      }
+      chunks.push(c)
+    })
+    req.on('end', () => {
+      const s = Buffer.concat(chunks).toString('utf8')
+      if (!s) return resolve({ body: {} })
+      try {
+        const body = JSON.parse(s)
+        resolve(body && typeof body === 'object' ? { body } : { bad: true })
+      } catch {
+        resolve({ bad: true })
+      }
+    })
+    req.on('error', () => resolve({ bad: true }))
   })
 }
 
-// ─── 图片落盘：data-URI → uploads/xxx.jpg，Issue 正文只存路径（规避正文 64KB 上限） ───
 const DATA_IMG_RE = /^data:image\/(png|jpe?g|webp);base64,([A-Za-z0-9+/=]+)$/
 async function saveUploadedImage(dataUri) {
   const m = DATA_IMG_RE.exec(dataUri)
@@ -184,46 +237,83 @@ async function saveUploadedImage(dataUri) {
   return `/uploads/${name}`
 }
 
-// ─── API 路由（与 worker 同契约） ───
+function isOwner(data, phone) {
+  return !!phone && requirePhone(data.ownerPhone) === phone
+}
+
+function isBorrower(data, phone) {
+  return !!phone && requirePhone(data.borrowedBy) === phone
+}
+
+function isLentIssue(issue, data) {
+  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowedBy
+}
+
 async function handleApi(req, res, pathname) {
-  if (!rateOk(req.socket.remoteAddress || 'anon')) return json(res, 429, { error: '请求过于频繁，请稍后再试' })
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'anon'
+  const isWrite = req.method === 'POST'
+  if (!rateOk(ip, isWrite ? 40 : 120, 10 * 60 * 1000)) return json(res, 429, { error: '请求过于频繁，请稍后再试' })
   let m
 
   if (req.method === 'GET' && pathname === '/api/items') {
     try {
       return json(res, 200, await getList())
-    } catch (e) {
-      return json(res, 500, { error: e.message })
+    } catch {
+      return json(res, 502, { error: '读取失败，请稍后再试' })
     }
   }
 
   if (req.method !== 'POST') return json(res, 405, { error: '仅支持 GET/POST' })
 
   if (pathname === '/api/items') {
-    const b = await readBody(req)
-    if (!String(b.name || '').trim()) return json(res, 400, { error: '缺少物品名称' })
-    if (!String(b.ownerPhone || '').trim()) return json(res, 400, { error: '缺少发布者手机号' })
+    if (!rateOk(ip, 12, 60 * 60 * 1000)) return json(res, 429, { error: '发布过于频繁，请一小时后再试' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge) return json(res, 413, { error: '内容过大，请压缩图片后重试' })
+    if (parsed.bad || !parsed.body) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const b = parsed.body
+    const name = sanitizeText(b.name, NAME_MAX)
+    const desc = sanitizeText(b.desc, DESC_MAX)
+    const ownerPhone = String(b.ownerPhone || '').trim()
+    if (!name) return json(res, 400, { error: '缺少物品名称' })
+    if (!desc) return json(res, 400, { error: '缺少物品描述' })
+    if (!isValidPhone(ownerPhone)) return json(res, 400, { error: '发布者手机号格式不正确' })
+    const contactType = b.contactType === 'building' ? 'building' : 'phone'
+    const contact = sanitizeText(b.contact, CONTACT_MAX)
+    if (!contact) return json(res, 400, { error: '缺少联系方式' })
+    if (contactType === 'phone' && !isValidPhone(contact)) {
+      return json(res, 400, { error: '联系手机号格式不正确' })
+    }
     let imgUrl = String(b.imgUrl || '')
     if (imgUrl.startsWith('data:image/')) {
       const saved = await saveUploadedImage(imgUrl)
       if (!saved) return json(res, 400, { error: '图片过大或格式不支持，请换一张更小的图片' })
       imgUrl = saved
+    } else {
+      imgUrl = safeImgUrl(imgUrl)
+      if (String(b.imgUrl || '').trim() && !imgUrl) {
+        return json(res, 400, { error: '图片格式不支持，请换一张 jpeg/png/webp' })
+      }
     }
+    const { lat, lng } = clampLatLng(b.lat, b.lng)
     const data = {
-      name: String(b.name).trim(),
-      desc: String(b.desc || ''),
-      contactType: b.contactType === 'building' ? 'building' : 'phone',
-      contact: String(b.contact || ''),
+      name,
+      desc,
+      contactType,
+      contact,
       imgUrl,
-      category: String(b.category || 'other'),
-      ownerPhone: String(b.ownerPhone).trim(),
-      lat: Number.isFinite(b.lat) ? b.lat : null,
-      lng: Number.isFinite(b.lng) ? b.lng : null,
+      category: normalizeCategory(b.category),
+      ownerPhone,
+      lat,
+      lng,
       createTime: new Date().toISOString(),
     }
-    const body = `${data.desc}\n\n<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->\n\n— 以下为自动生成的数据块，请勿删除 —`
+    const body = withDataBlock('', data)
     const r = await ghWrite('', 'POST', { title: `[闲置物品] ${data.name}`, body, labels: ['item'] })
-    if (!r.ok) { const e = await r.json().catch(() => ({})); return json(res, r.status, { error: r.status === 422 ? '内容过长或含不支持的字符，请精简后重试' : (e.message || '发布失败，请稍后再试') }) }
+    if (!r.ok) {
+      return json(res, r.status === 422 ? 413 : 502, {
+        error: r.status === 422 ? '内容过长或含不支持的字符，请精简后重试' : '发布失败，请稍后再试',
+      })
+    }
     const created = await r.json()
     invalidateList()
     return json(res, 200, { ok: true, id: created.number })
@@ -232,17 +322,21 @@ async function handleApi(req, res, pathname) {
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/borrow$/))) {
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
-    if (error) return json(res, 500, { error })
-    const b = await readBody(req)
-    const phone = String(b.operatorPhone || '').trim()
-    if (!phone) return json(res, 400, { error: '请先登录' })
+    if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = requirePhone(parsed.body?.operatorPhone)
+    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     if (issue.state !== 'open') return json(res, 409, { error: '该物品已下架' })
     const data = extractData(issue.body)
-    if ((issue.labels || []).some((l) => l.name === 'lent')) return json(res, 409, { error: '该物品当前不可借用' })
-    if (data.ownerPhone === phone) return json(res, 409, { error: '不能借用自己发布的物品' })
+    if (isLentIssue(issue, data)) return json(res, 409, { error: '该物品当前不可借用' })
+    if (isOwner(data, phone)) return json(res, 409, { error: '不能借用自己发布的物品' })
     data.borrowedBy = phone
     data.borrowedAt = new Date().toISOString()
-    await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    delete data.receiptHmac
+    delete data.pinHmac
+    const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    if (!patch.ok) return json(res, 502, { error: '借用失败，请稍后再试' })
     await ghWrite(`/${issue.number}/labels`, 'POST', { labels: ['lent'] })
     invalidateList()
     return json(res, 200, { ok: true })
@@ -251,14 +345,19 @@ async function handleApi(req, res, pathname) {
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/return$/))) {
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
-    if (error) return json(res, 500, { error })
-    const b = await readBody(req)
-    const phone = String(b.operatorPhone || '').trim()
+    if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = requirePhone(parsed.body?.operatorPhone)
+    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
-    if (!phone || data.borrowedBy !== phone) return json(res, 403, { error: '只有借阅人本人可以操作归还' })
+    if (!isLentIssue(issue, data)) return json(res, 409, { error: '该物品当前未借出' })
+    if (!isBorrower(data, phone)) return json(res, 403, { error: '只有借阅人可以归还' })
     delete data.borrowedBy
     delete data.borrowedAt
-    await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    delete data.receiptHmac
+    const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    if (!patch.ok) return json(res, 502, { error: '归还失败，请稍后再试' })
     await ghWrite(`/${issue.number}/labels/lent`, 'DELETE')
     invalidateList()
     return json(res, 200, { ok: true })
@@ -268,12 +367,15 @@ async function handleApi(req, res, pathname) {
     const wantClosed = m[2] === 'archive'
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
-    if (error) return json(res, 500, { error })
-    const b = await readBody(req)
-    const phone = String(b.operatorPhone || '').trim()
+    if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = requirePhone(parsed.body?.operatorPhone)
+    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
-    if (!phone || data.ownerPhone !== phone) return json(res, 403, { error: '只有发布者可以管理自己的物品' })
-    await ghWrite(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
+    if (!isOwner(data, phone)) return json(res, 403, { error: '只有发布者可以管理这件物品' })
+    const patch = await ghWrite(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
+    if (!patch.ok) return json(res, 502, { error: '操作失败，请稍后再试' })
     invalidateList()
     return json(res, 200, { ok: true })
   }
@@ -281,12 +383,14 @@ async function handleApi(req, res, pathname) {
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/delete$/))) {
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
-    if (error) return json(res, 500, { error })
-    const b = await readBody(req)
-    const phone = String(b.operatorPhone || '').trim()
+    if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = requirePhone(parsed.body?.operatorPhone)
+    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
-    if (!phone || data.ownerPhone !== phone) return json(res, 403, { error: '只有发布者可以删除自己的物品' })
-    // GitHub Issue 无法物理删除：移除 item 标签 + 关闭，即从全站彻底消失
+    if (!isOwner(data, phone)) return json(res, 403, { error: '只有发布者可以删除这件物品' })
+    if (isLentIssue(issue, data)) return json(res, 409, { error: '物品借出中，请先收回再删除' })
     await ghWrite(`/${issue.number}/labels/item`, 'DELETE')
     await ghWrite(`/${issue.number}`, 'PATCH', { state: 'closed' })
     invalidateList()
@@ -296,12 +400,11 @@ async function handleApi(req, res, pathname) {
   return json(res, 404, { error: '未找到接口' })
 }
 
-// ─── 静态站 ───
 async function serveStatic(res, pathname) {
   let rel = decodeURIComponent(pathname)
   if (rel === '/' || rel === '') rel = '/index.html'
   const file = normalize(join(DIST, rel))
-  if (!file.startsWith(DIST)) { res.writeHead(403); return res.end() }
+  if (!file.startsWith(DIST)) { res.writeHead(403, SECURITY_HEADERS); return res.end() }
   try {
     const st = await stat(file)
     const target = st.isDirectory() ? join(file, 'index.html') : file
@@ -310,28 +413,31 @@ async function serveStatic(res, pathname) {
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=86400',
+      ...SECURITY_HEADERS,
     })
     res.end(buf)
   } catch {
-    // hash 路由 SPA：找不到文件回 index.html
     try {
       const buf = await readFile(join(DIST, 'index.html'))
-      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' })
+      res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache', ...SECURITY_HEADERS })
       res.end(buf)
-    } catch { res.writeHead(404); res.end('not found') }
+    } catch { res.writeHead(404, SECURITY_HEADERS); res.end('not found') }
   }
 }
 
-// ─── 上传的图片（仅白名单扩展名；路径穿越防护） ───
 async function serveUpload(res, pathname) {
   const name = pathname.slice('/uploads/'.length)
-  if (!/^[\w.-]+\.(jpg|jpeg|png|webp)$/i.test(name)) { res.writeHead(404); return res.end() }
+  if (!/^[\w.-]+\.(jpg|jpeg|png|webp)$/i.test(name)) { res.writeHead(404, SECURITY_HEADERS); return res.end() }
   try {
     const buf = await readFile(join(UPLOADS, name))
     const ext = '.' + name.split('.').pop().toLowerCase()
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'image/jpeg', 'Cache-Control': 'public, max-age=604800' })
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'image/jpeg',
+      'Cache-Control': 'public, max-age=604800',
+      'X-Content-Type-Options': 'nosniff',
+    })
     res.end(buf)
-  } catch { res.writeHead(404); res.end('not found') }
+  } catch { res.writeHead(404, SECURITY_HEADERS); res.end('not found') }
 }
 
 createServer(async (req, res) => {
@@ -343,7 +449,7 @@ createServer(async (req, res) => {
     }
     if (pathname.startsWith('/uploads/')) return await serveUpload(res, pathname)
     return await serveStatic(res, pathname)
-  } catch (e) {
+  } catch {
     return json(res, 500, { error: '服务暂时不可用，请稍后再试' })
   }
 }).listen(PORT, HOST, () => {

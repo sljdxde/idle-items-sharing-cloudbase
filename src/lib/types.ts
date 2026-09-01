@@ -32,12 +32,12 @@ export interface Item {
   imgUrl: string
   /** 借阅状态：available=可借，lent=已借出 */
   status: ItemStatus
-  /** 借阅者手机号（status=lent 时记录归还责任人） */
+  /** 借阅者手机号：登录后用来匹配「我的借用」 */
   borrowedBy?: string
   /** 借出时间（ISO）；status=lent 时有值 */
   borrowedAt?: string
-  /** 发布者（物主）手机号；用户体系以登录手机号区分发布者与借阅者 */
-  ownerPhone: string
+  /** 发布者手机号：登录后用来匹配「我的发布」与写操作鉴权 */
+  ownerPhone?: string
   /** 发布时自动获取的定位（纬度）；获取失败为 null */
   lat: number | null
   /** 发布时自动获取的定位（经度）；获取失败为 null */

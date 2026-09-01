@@ -4,7 +4,7 @@ compatibility_date = "2024-09-23"
 
 # 部署步骤：
 #   1. wrangler deploy
-#   2. wrangler secret put GITHUB_TOKEN   # 本仓 repo 权限的 PAT
+#   2. wrangler secret put GITHUB_TOKEN   # 仅本仓 issues 写权限的 PAT（不要 admin/repo 全局）
 #   3. wrangler secret put SITE_KEY       # 可选；不设则用 worker 内默认值，需与 src/lib/api.ts 的 SITE_KEY 一致
 # 部署后得到地址（如 https://neighborhood-share-proxy.<你的子域>.workers.dev），
 # 填入 src/lib/api.ts 顶部的 API_PROXY 常量。

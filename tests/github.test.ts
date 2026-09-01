@@ -50,9 +50,11 @@ describe('parseIssue（Issue → Item）', () => {
     expect(item.name).toBe('戴森V8吸尘器')
     expect(item.contactType).toBe('building')
     expect(item.contact).toBe('3栋1801')
-    expect(item.lat).toBe(30.2745)
+    expect(item.lat).toBe(30.275)
+    expect(item.lng).toBe(120.14)
     expect(item.category).toBe('electronics')
     expect(item.ownerPhone).toBe('13800000001')
+    expect(item.borrowedBy).toBeUndefined()
     expect(item.status).toBe('available')
     expect(item.archived).toBe(false)
   })
@@ -76,5 +78,18 @@ describe('parseIssue（Issue → Item）', () => {
 
   it('非 item 前缀标题原样保留', () => {
     expect(parseIssue(makeIssue({ title: '普通标题' })).name).toBe('普通标题')
+  })
+
+  it('拒绝 javascript: / 远程图片 URL', () => {
+    const evil = `${DATA_START}\n${JSON.stringify({
+      name: '陷阱',
+      imgUrl: 'javascript:alert(1)',
+    })}\n${DATA_END}`
+    expect(parseIssue(makeIssue({ body: evil })).imgUrl).toBe('')
+    const remote = `${DATA_START}\n${JSON.stringify({
+      name: '外链',
+      imgUrl: 'https://evil.example/x.png',
+    })}\n${DATA_END}`
+    expect(parseIssue(makeIssue({ body: remote })).imgUrl).toBe('')
   })
 })
