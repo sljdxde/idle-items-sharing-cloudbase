@@ -55,9 +55,10 @@ wrangler secret put GITHUB_TOKEN   # 仅本仓 issues 写权限 PAT
 wrangler secret put SITE_KEY       # 可选；需与 src/lib/api.ts 的 SITE_KEY 一致
 ```
 
-前端 `API_PROXY` 为运行时自动判定：`*.github.io` 走 Worker；其他域名/IP（自建服务器）走同源 `/api`，一份构建两处可用。
+前端 `API_PROXY` 为运行时自动判定：`*.github.io` 走 Worker；`*.pages.dev` / 自建服务器走同源 `/api`，一份构建两处可用。
 
-线上地址：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
+线上地址（主站）：<https://linli-haowu.pages.dev/>  
+GitHub Pages 镜像：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
 
 ### 自建服务器（可选，国内加速）
 
