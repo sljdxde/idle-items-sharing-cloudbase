@@ -14,6 +14,21 @@ function flush(ms = 60): Promise<void> {
   return new Promise((r) => setTimeout(r, ms))
 }
 
+/**
+ * 等路由过渡真正完成后再取 DOM。
+ * 页面切换是 mode="out-in"：新页要等旧页 leave 结束才挂载，
+ * 而 happy-dom 的过渡时长不稳定 —— 固定 sleep 会读到「正在离开」的旧页面。
+ */
+async function untilContains(text: string, budgetMs = 3000): Promise<string> {
+  const deadline = Date.now() + budgetMs
+  let html = ''
+  do {
+    await flush(30)
+    html = document.querySelector('#app')!.innerHTML
+  } while (!html.includes(text) && Date.now() < deadline)
+  return html
+}
+
 describe('dist 产物冒烟（模拟浏览器）', () => {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8')
   const js = readFileSync(join(DIST, 'assets', 'app.js'), 'utf8')
@@ -71,8 +86,7 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
   it('⑤ 点击「发布闲置」路由到发布页（已登录 → 表单 + 自动定位区）', async () => {
     const link = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/publish"]')][0]!
     link.click()
-    await flush(120)
-    const appHtml = document.querySelector('#app')!.innerHTML
+    const appHtml = await untilContains('发布闲置物品')
     expect(appHtml).toContain('发布闲置物品')
     // 已登录：直接展示表单（分类下拉存在）
     expect(document.querySelector('select')!).toBeTruthy()
@@ -81,15 +95,13 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     // 返回首页
     const back = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/"]')][0]!
     back.click()
-    await flush(120)
-    expect(document.querySelector('#app')!.innerHTML).toContain('让好物在')
+    expect(await untilContains('让好物在')).toContain('让好物在')
   })
 
   it('⑥ 点击卡片进入详情页 + 数据读取', async () => {
     const card = document.querySelector<HTMLAnchorElement>('a[href="#/items/1"]')!
     card.click()
-    await flush(120)
-    const appHtml = document.querySelector('#app')!.innerHTML
+    const appHtml = await untilContains('戴森V8吸尘器')
     expect(appHtml).toContain('戴森V8吸尘器')
     // 非物主视角：展示「我想借」
     expect(appHtml).toContain('我想借')
@@ -99,7 +111,7 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     // 回到首页
     const back = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/"]')][0]!
     back.click()
-    await flush(120)
+    await untilContains('让好物在')
     // 首页双大卡是跳转链接
     const mineLink = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/mine"]')][0]
     const borrowLink = [...document.querySelectorAll<HTMLAnchorElement>('a[href="#/borrows"]')][0]
@@ -107,14 +119,12 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     expect(borrowLink).toBeTruthy()
     // 我的发布页
     mineLink!.click()
-    await flush(120)
-    let html = document.querySelector('#app')!.innerHTML
+    let html = await untilContains('你还没有发布过物品')
     expect(html).toContain('我的发布')
     expect(html).toContain('你还没有发布过物品')
     // 我的借用页
     borrowLink!.click()
-    await flush(120)
-    html = document.querySelector('#app')!.innerHTML
+    html = await untilContains('你还没有借用的物品')
     expect(html).toContain('我的借用')
     expect(html).toContain('你还没有借用的物品')
   })
