@@ -45,8 +45,9 @@ const router = createRouter({
     },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
-  scrollBehavior() {
-    return { top: 0 }
+  scrollBehavior(_to, _from, saved) {
+    // 首页是无限滚动：从详情返回时保留原位置，否则会掉回第一页
+    return saved ?? { top: 0 }
   },
 })
 

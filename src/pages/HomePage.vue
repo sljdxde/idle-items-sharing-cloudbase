@@ -4,9 +4,10 @@
 // 数据为本地持久层（同步加载）；挂载时静默尝试定位以启用距离排序
 // ================================================
 
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, type ComponentPublicInstance } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
+import { usePagedList } from '@/composables/usePagedList'
 import { useToast } from '@/composables/useToast'
 import type { Item } from '@/lib/types'
 import FilterToolbar from '@/components/FilterToolbar.vue'
@@ -20,6 +21,23 @@ const toast = useToast()
 
 const borrowItem = ref<Item | null>(null)
 const manageItem = ref<Item | null>(null)
+
+// 全量数据留在 store 里（搜索、距离排序都要它），首页只逐页渲染卡片
+const {
+  visible: pagedItems,
+  hasMore,
+  pageSize,
+  sentinel: loadSentinel,
+  loadMore,
+} = usePagedList(() => store.visibleItems, {
+  resetOn: () =>
+    `${store.search}|${store.category}|${store.radiusKm}|${store.showLent ? 1 : 0}`,
+})
+
+/** 哨兵元素交给 composable 观察（函数式 ref，字符串 ref 不被模板类型检查计为使用） */
+function bindLoadSentinel(el: Element | ComponentPublicInstance | null): void {
+  loadSentinel.value = (el as HTMLElement | null) ?? null
+}
 
 onMounted(() => {
   store.load()
@@ -114,13 +132,23 @@ function onRefresh(): void {
       </template>
     </div>
 
-    <!-- 网格 -->
+    <!-- 网格：逐页渲染，滚到底自动补下一页 -->
     <section v-else id="item-grid" class="memphis-grid" aria-label="闲置物品列表">
       <TransitionGroup name="grid">
-        <div v-for="(item, i) in store.visibleItems" :key="item.id" class="grid-cell">
+        <div v-for="(item, i) in pagedItems" :key="item.id" class="grid-cell">
           <ItemCard :item="item" :index="i" @borrow="borrowItem = $event" @manage="manageItem = $event" />
         </div>
       </TransitionGroup>
+
+      <div :ref="bindLoadSentinel" class="grid-sentinel" aria-hidden="true"></div>
+      <div v-if="hasMore" class="grid-more">
+        <button type="button" class="btn-memphis-secondary" @click="loadMore">
+          加载更多 · {{ pagedItems.length }}/{{ store.visibleItems.length }}
+        </button>
+      </div>
+      <p v-else-if="store.visibleItems.length > pageSize" class="grid-end">
+        已显示全部 {{ store.visibleItems.length }} 件
+      </p>
     </section>
 
     <!-- 共享说明：数据在云端，全员可见 -->
@@ -301,6 +329,30 @@ function onRefresh(): void {
 
 .grid-cell > * {
   width: 100%;
+}
+
+/* 网格容器里尾部元素必须横跨整行，否则会掉进某一列 */
+.grid-sentinel,
+.grid-more,
+.grid-end {
+  grid-column: 1 / -1;
+}
+
+.grid-sentinel {
+  height: 1px;
+}
+
+.grid-more {
+  display: flex;
+  justify-content: center;
+}
+
+.grid-end {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: #555;
+  text-align: center;
 }
 
 /* ── 空状态 ── */
