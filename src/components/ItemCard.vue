@@ -332,7 +332,7 @@ function onToggleArchive(): void {
   color: var(--ink);
 }
 
-.btn-item-manage:hover {
+.btn-item-manage:hover:not(:disabled) {
   background: var(--mustard);
 }
 

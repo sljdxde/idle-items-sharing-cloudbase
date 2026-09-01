@@ -101,3 +101,11 @@ export const SEED_ITEMS: Item[] = [
     createTime: daysAgo(1),
   },
 ]
+
+/**
+ * 本次读取是否落到了种子兜底（实时与快照都没拿到）。
+ * 调用方用它拒绝「一次失败读取把真实社区列表换成演示数据」。
+ */
+export function isSeedFallback(list: Item[]): boolean {
+  return list === SEED_ITEMS
+}
