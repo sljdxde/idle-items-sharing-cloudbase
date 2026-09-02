@@ -57,6 +57,16 @@ wrangler secret put SITE_KEY       # 可选；需与 src/lib/api.ts 的 SITE_KEY
 
 前端 `API_PROXY` 为运行时自动判定：`*.github.io` 走 Worker；`*.pages.dev` / 自建服务器走同源 `/api`，一份构建两处可用。
 
+### 主站发布（Cloudflare Pages）
+
+主站是 Direct Upload 项目（未接 git 集成，push 不会自动构建），仓库 CI 只发镜像：
+
+```bash
+CLOUDFLARE_API_TOKEN=<token> npm run deploy:pages
+```
+
+脚本做三件事：`npm run build` → 把 `cloudflare-pages/functions` 复制到 `dist/functions`（wrangler v3 只认这个位置）→ `wrangler pages deploy dist --project-name linli-haowu`。Token 需 `Cloudflare Pages: Edit` + `Zone: Read`（权限在 <https://dash.cloudflare.com/profile/api-tokens> 创建）；项目名以 `npx wrangler pages project list` 为准。
+
 线上地址（主站）：<https://linli-haowu.pages.dev/>  
 GitHub Pages 镜像：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
 

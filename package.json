@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "vue-tsc -b",
-    "package": "bash scripts/package.sh"
+    "package": "bash scripts/package.sh",
+    "deploy:pages": "rm -rf dist/functions && npm run build && cp -R cloudflare-pages/functions dist/functions && npx --yes wrangler@3 pages deploy dist --project-name linli-haowu"
   },
   "dependencies": {
     "pinia": "^3.0.3",
