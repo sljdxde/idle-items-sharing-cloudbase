@@ -1,6 +1,11 @@
 <script setup lang="ts">
 // 页脚：品牌口号 + 链接 + 版权行（纯离线，无外链）
 import { RouterLink } from 'vue-router'
+
+// 构建时注入的版本信息（vite define）：每次部署重新构建后，构建时间会变化，
+// 刷新页面即可确认线上是否已更新到最新版本。
+const appVersion = __APP_VERSION__
+const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: false })
 </script>
 
 <template>
@@ -13,6 +18,10 @@ import { RouterLink } from 'vue-router'
       </ul>
     </div>
     <div class="footer-bot-row">数据保存在本机 · 离线可用 · © 2026 邻里好物</div>
+    <div class="footer-version-row" title="构建时自动注入，用于确认线上版本">
+      v{{ appVersion }} · 构建于 {{ buildTime }}
+    </div>
+    <div class="footer-copyright-row">© 2026 邻里好物 · 保留所有权利</div>
   </footer>
 </template>
 
@@ -95,5 +104,22 @@ import { RouterLink } from 'vue-router'
   font-family: var(--font-mono);
   font-size: 0.82rem;
   color: #ccc;
+}
+
+.footer-version-row {
+  max-width: var(--container-max);
+  margin: 0.35rem auto 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  user-select: text;
+}
+
+.footer-copyright-row {
+  max-width: var(--container-max);
+  margin: 0.15rem auto 0;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
 }
 </style>

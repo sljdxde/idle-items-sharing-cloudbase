@@ -1,6 +1,26 @@
 import { fileURLToPath, URL } from 'node:url'
+import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+
+// ── 构建时版本信息（vite define 注入，部署后页脚可见，用于确认部署是否生效）──
+function buildMeta() {
+  let commit = 'unknown'
+  try {
+    commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+  } catch {
+    /* 非 git 环境 */
+  }
+  let version = '0.0.0'
+  try {
+    version = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
+  } catch {
+    /* 缺 package.json */
+  }
+  return { version, commit, time: new Date().toISOString() }
+}
+const meta = buildMeta()
 
 // base './' + IIFE 单文件经典脚本：
 // 离线 zip 容器 CSP 禁止 type="module"/内联脚本/外部资源，
@@ -8,6 +28,11 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: './',
+  define: {
+    __APP_VERSION__: JSON.stringify(meta.version),
+    __COMMIT_HASH__: JSON.stringify(meta.commit),
+    __BUILD_TIME__: JSON.stringify(meta.time),
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

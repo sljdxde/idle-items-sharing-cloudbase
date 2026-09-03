@@ -1,0 +1,17 @@
+{
+  "name": "linli-haowu-nsfwjs-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "邻里好物 本地 NSFWJS 图片审核服务（独立于前端/worker 构建）",
+  "type": "module",
+  "scripts": {
+    "start": "node nsfwjs-server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "nsfwjs": "^4.2.0"
+  }
+}

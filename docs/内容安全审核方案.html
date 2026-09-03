@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内容安全审核方案 — 邻里好物</title>
+<style>
+  :root{
+    --ink:#1A1B1C; --sub:#5B6470; --line:#E4E3DD; --bg:#F7F6F2;
+    --card:#FFFFFF; --accent:#3E6FBE; --accent-soft:rgba(62,111,190,.10);
+    --ok:#2E7D32; --ok-soft:rgba(46,125,50,.10);
+    --warn:#B26A00; --warn-soft:rgba(178,106,0,.12);
+    --bad:#C62828; --bad-soft:rgba(198,40,40,.08);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'PingFang SC','Microsoft YaHei','Segoe UI',Arial,sans-serif;line-height:1.7;}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 20px 64px;}
+  h1{font-size:26px;margin:0 0 6px;letter-spacing:.5px;}
+  .meta{color:var(--sub);font-size:13px;margin-bottom:28px;}
+  h2{font-size:20px;margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);}
+  h3{font-size:16px;margin:22px 0 8px;}
+  p,li{font-size:14px;color:#2A2E33;}
+  ul,ol{padding-left:22px;margin:8px 0;}
+  li{margin:4px 0;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:14px 0;}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;margin-right:6px;vertical-align:1px;}
+  .pill-ok{background:var(--ok-soft);color:var(--ok);}
+  .pill-warn{background:var(--warn-soft);color:var(--warn);}
+  .pill-accent{background:var(--accent-soft);color:var(--accent);}
+  code{background:#EEF1F5;border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-size:13px;font-family:'SF Mono',Consolas,Menlo,monospace;}
+  pre{background:#23272E;color:#E6EDF3;border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:12.5px;line-height:1.6;}
+  pre code{background:none;border:none;color:inherit;padding:0;font-size:12.5px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;background:var(--card);}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:#EEF1F5;font-weight:700;}
+  tr:nth-child(even) td{background:#FAFAF8;}
+  .flow{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;font-size:13px;}
+  .flow .step{margin:4px 0;}
+  .tag{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:12px;border-radius:6px;padding:0 8px;margin-left:6px;}
+  .ok-note{background:var(--ok-soft);border-left:4px solid var(--ok);border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;font-size:13px;}
+  .warn-note{background:var(--warn-soft);border-left:4px solid var(--warn);border-radius:0 8px 8px 0;padding:10px 14px;margin:12px 0;font-size:13px;}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 20px;font-size:13.5px;}
+  .toc ol{margin:4px 0 0;}
+  @media(max-width:640px){.wrap{padding:22px 14px 48px;} h1{font-size:22px;} table{font-size:12px;} th,td{padding:6px 8px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>内容安全审核方案（接口化 + NSFWJS 自托管）</h1>
+<div class="meta">邻里好物 · 主站（Cloudflare Pages Worker）& 自建服务器 · v2.0 · 2026-09-03</div>
+
+<div class="toc">
+  <b>目录</b>
+  <ol>
+    <li>目标与架构决策</li>
+    <li>审核链路（发布时序）</li>
+    <li>图片审核 Provider 接口（可插拔）</li>
+    <li>NSFWJS 自托管服务</li>
+    <li>性能与开销</li>
+    <li>测试与 Mock 策略</li>
+    <li>部署与切换</li>
+  </ol>
+</div>
+
+<h2>1. 目标与架构决策</h2>
+<div class="card">
+  <ul>
+    <li><span class="pill pill-ok">已上线</span><b>文字</b>：本地敏感词过滤（免费、无限、不可绕过），覆盖黄赌毒/暴力违禁文案；</li>
+    <li><span class="pill pill-ok">已上线</span><b>图片格式</b>：本地魔数校验（jpeg/png/webp），拒绝伪造图片；</li>
+    <li><span class="pill pill-accent">本次</span><b>图片画面</b>：<b>可插拔 Provider 接口</b> + <b>本地 NSFWJS 自托管</b>（免费、无限、数据不出站）；</li>
+    <li><span class="pill pill-warn">已放弃</span>百度 AI 内容审核（5000 次/30 天、需续期）与额度台账机制 —— 改为本地无限方案后不再需要额度管理。</li>
+  </ul>
+  <div class="ok-note"><b>设计原则：</b>图片检测做成接口（Provider），当前用 NSFWJS，将来可随时替换为 NudeNet / ShieldGemma 等更好的开源库，业务代码零改动。</div>
+</div>
+
+<h2>2. 审核链路（发布时序）</h2>
+<div class="flow">
+  <b>发布请求 <code>POST /api/items</code></b>
+  <div class="step">① 基础校验 <span class="tag">已有</span> — 长度 / 手机号 / 分类 / 联系方式</div>
+  <div class="step">② 文本敏感词 <span class="tag">已有</span> <code>moderation.js</code>（本地）→ 命中直接 400</div>
+  <div class="step">③ 图片格式魔数校验 <span class="tag">已有</span>（本地）→ 非法 400</div>
+  <div class="step">④ 若带图：图片画面审核 <span class="tag">本次</span> <code>auditor.audit(imgUrl)</code>（Provider：nsfwjs）→ 违规 400；服务不可用 502（安全失败，不误放行）</div>
+  <div class="step">⑤ 落库 GitHub Issues <span class="tag">已有</span></div>
+</div>
+
+<h2>3. 图片审核 Provider 接口（可插拔）</h2>
+<div class="card">
+  <p><code>cloudflare-worker/imageAudit.js</code> 定义统一契约：</p>
+  <pre><code>// 每个 Provider 实现：
+{ name: string, audit(imageDataUrl) → Promise&lt;Result&gt; }
+
+// Result:
+{ pass: true }                      // 通过
+{ pass: false, reason }             // 违规，拒绝
+{ error }                           // 失败/未配置 → 安全失败（拒绝该次、不误放行）
+
+// 选择 Provider：
+createAuditor(mode, deps)
+  'mock'   → 测试/CI 专用
+  'nsfwjs' → 本地 NSFWJS 服务（默认）</code></pre>
+  <p><b>新增更好的开源库</b>：写一个 <code>createXxxAuditor(deps)</code> 实现上述契约，在 <code>createAuditor</code> 的 switch 加一行即可，<b>业务代码零改动</b>。</p>
+</div>
+
+<h2>4. NSFWJS 自托管服务</h2>
+<div class="card">
+  <ul>
+    <li>独立服务 <code>server/nsfwjs-server.mjs</code>（Node + <code>@tensorflow/tfjs-node</code> + <code>nsfwjs</code>），监听 <code>127.0.0.1:8090</code>；</li>
+    <li>判定：<code>Porn + Hentai + Sexy</code> 概率和 &gt; 阈值（默认 0.4）→ <code>unsafe</code>；</li>
+    <li>接口协议：<code>POST /audit-image { image: base64 } → { ok, unsafe, score }</code>；<code>GET /health</code>；</li>
+    <li>模型：首次自动从 nsfwjs 托管地址下载（约 20MB），之后常驻内存；</li>
+    <li>Worker 通过环境变量 <code>NSFWJS_URL</code> 指向该服务的公网地址（nginx 反代或 Cloudflare Tunnel 暴露）。</li>
+  </ul>
+  <div class="warn-note"><b>部署依赖：</b>服务需运行在可公网访问的常驻机器上，详见 <code>docs/NSFWJS服务部署.md</code>。</div>
+</div>
+
+<h2>5. 性能与开销</h2>
+<table>
+  <tr><th>环节</th><th>位置</th><th>延迟</th><th>成本</th><th>说明</th></tr>
+  <tr><td>文本敏感词</td><td>Worker 本地</td><td>微秒级</td><td>0</td><td>可忽略</td></tr>
+  <tr><td>图片魔数</td><td>Worker 本地</td><td>1–3 ms</td><td>0</td><td>可忽略</td></tr>
+  <tr><td>画面审核（NSFWJS）</td><td>本地服务器</td><td>100–500 ms + 网络</td><td>0（无限）</td><td>模型常驻；发布低频，可接受</td></tr>
+  <tr><td>落库 GitHub</td><td>Worker → GitHub</td><td>500 ms – 2 s</td><td>GitHub API</td><td>原逻辑</td></tr>
+</table>
+<div class="card">
+  <p><b>要点：</b>无图发布不受影响（不调审核）；带图发布新增约 0.3–1s（一次本地审核+网络）；审核服务不可达时安全失败（拒绝该次），不影响浏览/列表性能；不依赖任何第三方额度，<b>无配额耗尽问题</b>。</p>
+</div>
+
+<h2>6. 测试与 Mock 策略</h2>
+<div class="card">
+  <p><b>原则：自动化测试永不触发真实审核。</b></p>
+  <ul>
+    <li>审核客户端接口化：测试注入 <code>mock</code> Provider 或 stub fetch，断言“未向审核服务发请求”；</li>
+    <li><code>imageAudit.test.ts</code>：mock/nsfwjs 各分支（通过/违规/未配置/网络错误/超时/请求体）；</li>
+    <li>NSFWJS 服务本体：部署后一次性手工冒烟（<code>/health</code> + 正常图 <code>unsafe=false</code>），本机已验证通过；</li>
+    <li>测试套件 203/203 通过，全程 0 外部调用。</li>
+  </ul>
+</div>
+
+<h2>7. 部署与切换</h2>
+<table>
+  <tr><th>步骤</th><th>内容</th><th>状态</th></tr>
+  <tr><td>1</td><td>代码：接口化 + Worker 接入 NSFWJS + 本地服务</td><td>✔ 完成（测试通过、本机验证 OK）</td></tr>
+  <tr><td>2</td><td>服务器：部署 NSFWJS 服务并暴露公网 URL（见 <code>docs/NSFWJS服务部署.md</code>）</td><td>待用户操作</td></tr>
+  <tr><td>3</td><td>Worker：配置 <code>NSFWJS_URL</code>、<code>AUDIT_MODE=nsfwjs</code>，清理百度 secret，部署</td><td>待 URL</td></tr>
+  <tr><td>4</td><td>线上冒烟：带图发布 → NSFWJS 审核 → 落库</td><td>待部署</td></tr>
+</table>
+
+</div>
+</body>
+</html>

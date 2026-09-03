@@ -65,7 +65,7 @@ wrangler secret put SITE_KEY       # 可选；需与 src/lib/api.ts 的 SITE_KEY
 CLOUDFLARE_API_TOKEN=<token> npm run deploy:pages
 ```
 
-脚本做三件事：`npm run build` → 把 `cloudflare-pages/functions` 复制到 `dist/functions`（wrangler v3 只认这个位置）→ `wrangler pages deploy dist --project-name linli-haowu`。Token 需 `Cloudflare Pages: Edit` + `Zone: Read`（权限在 <https://dash.cloudflare.com/profile/api-tokens> 创建）；项目名以 `npx wrangler pages project list` 为准。
+脚本做四件事：`npm run build` → 写入 `dist/_routes.json`（仅 `/api/*` 走 Worker）→ `wrangler pages functions build` 把 `cloudflare-pages/functions` 编译为 `dist/_worker.js`（wrangler 检测的是 `cwd/functions` 而非 `dist/functions`，故显式编译）→ `wrangler pages deploy dist --project-name linli-haowu --branch main`（`--branch main` 必须：项目 production_branch=main、git 分支是 master，不加会被当作 preview，主站不更新）。Token 需 `Cloudflare Pages: Edit` + `Zone: Read`（权限在 <https://dash.cloudflare.com/profile/api-tokens> 创建）；项目名以 `npx wrangler pages project list` 为准。
 
 线上地址（主站）：<https://linli-haowu.pages.dev/>  
 GitHub Pages 镜像：<https://sljdxde.github.io/idle-items-sharing-cloudbase/>
