@@ -8,6 +8,7 @@ import type { Item } from '@/lib/types'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { contactRows } from '@/lib/contact'
+import { rentBorrowHint } from '@/lib/rent'
 
 const props = defineProps<{
   open: boolean
@@ -30,6 +31,9 @@ const mineLent = computed(() =>
 
 /** 联系方式行：楼牌号在前、手机号在后 */
 const contactRowsList = computed(() => (props.item ? contactRows(props.item) : []))
+
+/** 租金借用说明（收费时明示计费规则，避免误会）；免费返回 null */
+const rentHint = computed(() => (props.item ? rentBorrowHint(props.item) : null))
 
 async function onConfirmBorrow(): Promise<void> {
   if (props.item && (await store.borrow(props.item.id))) emit('close')
@@ -74,6 +78,9 @@ async function onReturn(): Promise<void> {
 
       <!-- ④ 可借：展示联系方式 + 评论命令借阅 -->
       <template v-else>
+        <p v-if="rentHint" class="rent-hint" role="note">
+          <b>租金</b>：{{ rentHint }}
+        </p>
         <div class="contact-card">
           <div v-for="row in contactRowsList" :key="row.label" class="contact-row">
             <span class="k">{{ row.label }}</span>
@@ -188,5 +195,16 @@ async function onReturn(): Promise<void> {
   color: #999;
   text-align: center;
   margin: 0;
+}
+
+.rent-hint {
+  font-size: 0.82rem;
+  color: #5a4a9e;
+  background: rgba(197, 167, 232, 0.18);
+  border: 1.5px solid var(--ink);
+  border-radius: 8px;
+  padding: 0.6rem 0.7rem;
+  margin: 0 0 0.7rem;
+  line-height: 1.5;
 }
 </style>

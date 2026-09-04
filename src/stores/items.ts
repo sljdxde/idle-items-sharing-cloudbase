@@ -245,6 +245,8 @@ export const useItemsStore = defineStore('items', () => {
     imgUrl: string
     category: CategoryId
     position: LatLng | null
+    rentType: 'free' | 'daily' | 'perUse'
+    rentFee: number
   }): Promise<boolean> {
     if (!auth.phone) {
       toast.error('请先登录', '发布闲置需要先登录')
@@ -264,6 +266,8 @@ export const useItemsStore = defineStore('items', () => {
         ownerPhone: phone,
         lat: draft.position?.lat ?? null,
         lng: draft.position?.lng ?? null,
+        rentType: draft.rentType,
+        rentFee: draft.rentFee,
       })
       // 乐观补上：新物品立即可见，服务端读延迟交给后台对账收敛
       applyWrite(
@@ -282,6 +286,8 @@ export const useItemsStore = defineStore('items', () => {
           category: draft.category,
           createTime: new Date().toISOString(),
           archived: false,
+          rentType: draft.rentType,
+          rentFee: draft.rentFee,
         },
         () => true,
       )

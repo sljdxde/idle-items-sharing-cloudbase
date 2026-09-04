@@ -4,6 +4,7 @@
 // ================================================
 
 import type { Item } from './types'
+import { settleRent } from './rent'
 
 /** 是否物主：登录手机号与发布者一致 */
 export function isOwner(item: Item, phone: string | null | undefined): boolean {
@@ -25,9 +26,18 @@ export function canReturn(item: Item, phone: string | null | undefined): boolean
   return item.status === 'lent' && !!phone && !!item.borrowedBy && item.borrowedBy === phone
 }
 
-/** 归还：状态 → 可借，清空借阅人与借出时间；返回新对象（入参不变） */
-export function returnItem(item: Item): Item {
-  return { ...item, status: 'available', borrowedBy: undefined, borrowedAt: undefined }
+/** 归还：状态 → 可借，清空借阅人与借出时间，并追加一次租金结算记录；返回新对象（入参不变） */
+export function returnItem(item: Item, now = new Date().toISOString()): Item {
+  const next: Item = {
+    ...item,
+    status: 'available',
+    borrowedBy: undefined,
+    borrowedAt: undefined,
+  }
+  if (item.borrowedAt && item.rentType !== 'free') {
+    next.rentRecords = [...(item.rentRecords ?? []), settleRent(item, item.borrowedAt, item.borrowedBy, now)]
+  }
+  return next
 }
 
 /** 物主可下架/上架；已借出也可下架（从公开列表隐藏，不影响进行中的借用） */

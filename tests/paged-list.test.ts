@@ -224,6 +224,8 @@ function makeItem(id: number): Item {
     lat: null,
     lng: null,
     category: 'tools',
+    rentType: 'free',
+    rentFee: 0,
     createTime: new Date(2026, 0, 1 + (30 - id)).toISOString(),
     archived: false,
   }

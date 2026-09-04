@@ -11,6 +11,7 @@ import { formatDateShort } from '@/lib/filters'
 import { cardPlaceText } from '@/lib/contact'
 import { useItemsStore } from '@/stores/items'
 import { safeImgUrl } from '@/lib/safeImage'
+import { rentLabel } from '@/lib/rent'
 
 const props = defineProps<{
   item: Item
@@ -116,6 +117,7 @@ function onToggleArchive(): void {
 
       <div class="card-info-strip">
         <span>{{ placeText }}</span>
+        <span v-if="item.rentType !== 'free'" class="rent-tag">{{ rentLabel(item) }}</span>
         <span>{{ formatDateShort(item.createTime) }}</span>
       </div>
     </div>
@@ -283,6 +285,11 @@ function onToggleArchive(): void {
   font-size: 0.8rem;
   font-weight: 700;
   color: #555;
+}
+
+.rent-tag {
+  color: var(--retro-purple);
+  font-weight: 700;
 }
 
 .card-btn-box {

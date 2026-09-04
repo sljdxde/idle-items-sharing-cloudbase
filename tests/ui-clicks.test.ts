@@ -55,6 +55,8 @@ function makeItem(partial: Partial<Item> = {}): Item {
     lat: null,
     lng: null,
     category: 'electronics',
+    rentType: 'free',
+    rentFee: 0,
     createTime: '2026-08-20T00:00:00.000Z',
     archived: false,
     ...partial,

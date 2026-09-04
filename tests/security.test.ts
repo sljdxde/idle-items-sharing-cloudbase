@@ -42,6 +42,8 @@ describe('toPublicItem / clampLatLng', () => {
       lat: 30.27451,
       lng: 120.14019,
       category: 'tools',
+      rentType: 'free',
+      rentFee: 0,
       createTime: '2026-08-20T00:00:00.000Z',
       archived: false,
     })

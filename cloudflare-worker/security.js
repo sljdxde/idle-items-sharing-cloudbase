@@ -112,5 +112,8 @@ export function toPublicItem(item) {
     category: normalizeCategory(item.category),
     createTime: item.createTime,
     archived: !!item.archived,
+    rentType: item.rentType === 'daily' || item.rentType === 'perUse' ? item.rentType : 'free',
+    rentFee: typeof item.rentFee === 'number' && Number.isFinite(item.rentFee) && item.rentFee >= 0 ? item.rentFee : 0,
+    rentRecords: Array.isArray(item.rentRecords) ? item.rentRecords : undefined,
   }
 }

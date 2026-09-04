@@ -29,6 +29,8 @@ function makeItem(partial: Partial<Item> = {}): Item {
     lat: 30,
     lng: 120,
     category: 'tools',
+    rentType: 'free',
+    rentFee: 0,
     createTime: '2026-06-01T00:00:00Z',
     ...partial,
   }

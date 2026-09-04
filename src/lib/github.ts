@@ -38,6 +38,9 @@ interface DataBlock {
   lat?: unknown
   lng?: unknown
   createTime?: unknown
+  rentType?: unknown
+  rentFee?: unknown
+  rentRecords?: unknown
 }
 
 /** 从 Issue body 提取 DATA 块 JSON；缺失/损坏返回 null */
@@ -85,6 +88,9 @@ export function parseIssue(issue: IssueLike): Item {
     createTime:
       typeof data.createTime === 'string' ? data.createTime : issue.created_at ?? new Date().toISOString(),
     archived: issue.state === 'closed',
+    rentType: data.rentType === 'daily' || data.rentType === 'perUse' ? data.rentType : 'free',
+    rentFee: typeof data.rentFee === 'number' && Number.isFinite(data.rentFee) && data.rentFee >= 0 ? data.rentFee : 0,
+    rentRecords: Array.isArray(data.rentRecords) ? data.rentRecords : undefined,
   }
 }
 

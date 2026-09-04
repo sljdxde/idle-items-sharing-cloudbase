@@ -22,6 +22,8 @@ function makeItem(lat: number | null, lng: number | null): Item {
     lat,
     lng,
     category: 'other',
+    rentType: 'free',
+    rentFee: 0,
     createTime: '2026-06-01T00:00:00Z',
   }
 }

@@ -19,6 +19,23 @@ export type CategoryId =
   | 'clothing'
   | 'other'
 
+/** 租金计费方式：免费 / 按天 / 按次 */
+export type RentType = 'free' | 'daily' | 'perUse'
+
+/** 一次借用完成的租金结算记录（归还时写入 item.rentRecords，用于累计统计） */
+export interface RentRecord {
+  /** 借出时间（ISO） */
+  borrowedAt: string
+  /** 归还时间（ISO） */
+  returnedAt: string
+  /** 借期天数（按天向上取整）；仅 daily 有值 */
+  days?: number
+  /** 本次结算金额（元） */
+  fee: number
+  /** 借阅人手机号 */
+  borrower?: string
+}
+
 export interface Item {
   /** 本地自增编号 */
   id: number
@@ -46,4 +63,10 @@ export interface Item {
   createTime: string
   /** 下架标记：true = 不出现在公共列表（「我的发布」内可见，可重新上架） */
   archived?: boolean
+  /** 租金计费方式；默认 free=免费 */
+  rentType: RentType
+  /** 租金金额（元）；daily=每日单价，perUse=每次单价；free 时为 0 */
+  rentFee: number
+  /** 历史借用租金结算记录（归还时由服务端写入；用于累计统计） */
+  rentRecords?: RentRecord[]
 }

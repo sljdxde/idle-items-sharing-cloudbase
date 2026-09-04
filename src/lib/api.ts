@@ -64,6 +64,8 @@ export interface PublishPayload {
   ownerPhone: string
   lat: number | null
   lng: number | null
+  rentType: 'free' | 'daily' | 'perUse'
+  rentFee: number
 }
 
 export const api = {

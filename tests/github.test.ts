@@ -28,6 +28,8 @@ const BLOCK = `${DATA_START}\n${JSON.stringify({
   borrowedBy: undefined,
   lat: 30.2745,
   lng: 120.14,
+  rentType: 'free',
+  rentFee: 0,
   createTime: '2026-08-20T00:00:00.000Z',
 })}\n${DATA_END}`
 

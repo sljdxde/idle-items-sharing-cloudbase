@@ -42,6 +42,8 @@ const imgDataUri = ref('')
 // 联系方式：楼号门牌 / 手机号 二选一（楼号优先）
 const contactType = ref<ContactType>('building')
 const contact = ref('')
+const rentType = ref<'free' | 'daily' | 'perUse'>('free')
+const rentFee = ref('')
 
 // 定位状态：细分失败原因（HTTP 禁用 / 拒绝 / 超时），提示更准确
 const locating = ref(false)
@@ -116,6 +118,20 @@ async function onSubmit(): Promise<void> {
   }
   if (!validateContact()) return
 
+  const rentTypeVal = rentType.value
+  const rentFeeNum = Number(rentFee.value)
+  if (rentTypeVal !== 'free') {
+    if (
+      !rentFee.value.trim() ||
+      !Number.isFinite(rentFeeNum) ||
+      rentFeeNum <= 0 ||
+      rentFeeNum > 100000
+    ) {
+      toast.warning('请填写正确的租金', '按天/按次计费时，请填写大于 0 且不超过 100000 的金额')
+      return
+    }
+  }
+
   publishing.value = true
   try {
     const ok = await store.publish({
@@ -126,11 +142,15 @@ async function onSubmit(): Promise<void> {
       imgUrl: imgDataUri.value,
       category: category.value,
       position: store.userPosition,
+      rentType: rentTypeVal,
+      rentFee: rentTypeVal === 'free' ? 0 : rentFeeNum,
     })
     if (ok) {
       name.value = ''
       desc.value = ''
       contact.value = ''
+      rentType.value = 'free'
+      rentFee.value = ''
       imgDataUri.value = ''
       if (fileInput.value) fileInput.value.value = ''
       router.push('/')
@@ -266,6 +286,33 @@ async function onSubmit(): Promise<void> {
           </div>
         </fieldset>
 
+        <fieldset class="form-section sec-purple">
+          <legend class="sec-label">租金</legend>
+          <div class="rent-group" role="radiogroup" aria-label="租金计费方式">
+            <label class="rent-option" :class="{ active: rentType === 'free' }">
+              <input v-model="rentType" type="radio" value="free" name="rentType" />
+              免费
+            </label>
+            <label class="rent-option" :class="{ active: rentType === 'daily' }">
+              <input v-model="rentType" type="radio" value="daily" name="rentType" />
+              元/天
+            </label>
+            <label class="rent-option" :class="{ active: rentType === 'perUse' }">
+              <input v-model="rentType" type="radio" value="perUse" name="rentType" />
+              元/次
+            </label>
+          </div>
+          <div v-if="rentType !== 'free'" class="rent-fee-row">
+            <span class="rent-fee-prefix">¥</span>
+            <input v-model="rentFee" type="number" min="0" step="0.01" class="memphis-input rent-fee-input"
+              :inputmode="'decimal'" :placeholder="rentType === 'daily' ? '如：2' : '如：5'" />
+            <span class="rent-fee-suffix">{{ rentType === 'daily' ? '元 / 天' : '元 / 次' }}</span>
+          </div>
+          <p class="rent-hint">
+            {{ rentType === 'free' ? '免费出借，最受邻居欢迎。' : rentType === 'daily' ? '按天计费：借期按天向上取整，不足 1 天按 1 天计算，归还时结算。' : '按次计费：每次借用固定费用，归还时结算。' }}
+          </p>
+        </fieldset>
+
         <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing || store.writing">
           {{ publishing ? '发布中，请稍等…' : '发布闲置' }}
         </button>
@@ -344,6 +391,76 @@ async function onSubmit(): Promise<void> {
 
 .sec-blue legend {
   background: var(--mustard);
+}
+
+.sec-purple legend {
+  background: var(--retro-purple);
+}
+
+.rent-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.rent-option {
+  flex: 1 1 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  border: 2px solid var(--ink);
+  background: var(--paper-cream);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background var(--ease-snap),
+    color var(--ease-snap),
+    box-shadow 0.15s var(--ease),
+    transform 0.15s var(--ease);
+}
+
+.rent-option:hover {
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
+.rent-option.active {
+  background: var(--retro-purple);
+  color: #fff;
+  box-shadow: 3px 3px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+
+.rent-fee-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rent-fee-prefix {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.rent-fee-input {
+  width: 6.5rem;
+}
+
+.rent-fee-suffix {
+  font-size: 0.85rem;
+  color: #555;
+  font-family: var(--font-mono);
+}
+
+.rent-hint {
+  font-size: 0.8rem;
+  color: #777;
+  margin: 0;
 }
 
 .field {

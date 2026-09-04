@@ -3,16 +3,30 @@
 // MinePage — 我的发布（/mine）：上架 / 下架 / 删除（删除为两次点击确认）
 // ================================================
 
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useItemsStore } from '@/stores/items'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateShort, formatCount } from '@/lib/filters'
+import { rentLabel, totalRent } from '@/lib/rent'
 import type { Item } from '@/lib/types'
 import LoginBox from '@/components/LoginBox.vue'
 
 const store = useItemsStore()
 const auth = useAuthStore()
+
+/** 单件物品的累计租金收入 */
+function rentIncome(it: Item): number {
+  return totalRent(it.rentRecords)
+}
+
+/** 租金统计：总件数 / 收费件数 / 累计租金收入 */
+const rentStats = computed(() => {
+  const my = store.myItems
+  const charged = my.filter((it) => it.rentType !== 'free')
+  const total = charged.reduce((sum, it) => sum + rentIncome(it), 0)
+  return { chargedCount: charged.length, total }
+})
 
 /** 两次点击确认删除：第一次进入待确认，3s 无操作自动还原 */
 const confirmId = ref<number | null>(null)
@@ -65,13 +79,23 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
           <RouterLink to="/publish" class="btn-memphis-primary">发布第一件</RouterLink>
         </div>
 
+        <div v-if="rentStats.chargedCount > 0" class="rent-stats">
+          <span class="rent-stats-label">租金收入</span>
+          <b class="rent-stats-total">¥{{ rentStats.total }}</b>
+          <span class="rent-stats-sub">来自 {{ rentStats.chargedCount }} 件收费物品的归还结算（按天/按次）</span>
+        </div>
+
         <ul v-else class="row-list">
           <li v-for="it in store.myItems" :key="it.id" class="row-card">
             <div class="row-head">
               <RouterLink :to="`/items/${it.id}`" class="row-name">{{ it.name }}</RouterLink>
               <span class="badge-status" :class="statusClass(it)">{{ statusText(it) }}</span>
             </div>
-            <div class="row-meta">{{ formatDateShort(it.createTime) }} · {{ it.desc || '（无描述）' }}</div>
+            <div class="row-meta">
+              <span class="rent-inline">{{ rentLabel(it) }}</span>
+              <template v-if="rentIncome(it) > 0"> · 累计收入 <b class="rent-income">¥{{ rentIncome(it) }}</b></template>
+              · {{ formatDateShort(it.createTime) }} · {{ it.desc || '（无描述）' }}
+            </div>
             <div class="row-actions">
               <button type="button" class="btn-act" :disabled="store.writing"
                 @click="store.setArchived(it.id, !it.archived)">
@@ -225,6 +249,44 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.rent-inline {
+  color: var(--retro-purple);
+  font-weight: 700;
+}
+
+.rent-income {
+  color: var(--retro-purple);
+}
+
+.rent-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0 0 1.2rem;
+  padding: 0.9rem 1rem;
+  border: 2.5px solid var(--ink);
+  background: rgba(197, 167, 232, 0.22);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.rent-stats-label {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.rent-stats-total {
+  font-family: var(--font-mono);
+  font-size: 1.6rem;
+  color: var(--retro-purple);
+}
+
+.rent-stats-sub {
+  font-size: 0.8rem;
+  color: #666;
 }
 
 .row-actions {

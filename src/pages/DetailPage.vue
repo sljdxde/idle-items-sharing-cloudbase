@@ -12,6 +12,7 @@ import { contactRows } from '@/lib/contact'
 import { safeImgUrl } from '@/lib/safeImage'
 import { reverseGeocode } from '@/lib/geocode'
 import { itemLatLng } from '@/lib/geo'
+import { rentLabel } from '@/lib/rent'
 import type { Item } from '@/lib/types'
 import BorrowModal from '@/components/BorrowModal.vue'
 import ManageModal from '@/components/ManageModal.vue'
@@ -128,6 +129,10 @@ watch(item, async (it) => {
         <p class="desc-text">{{ item.desc || '（无描述）' }}</p>
 
         <dl class="detail-rows">
+          <div class="detail-row">
+            <dt>租金</dt>
+            <dd>{{ rentLabel(item) }}</dd>
+          </div>
           <div v-for="row in contactRowsList" :key="row.label" class="detail-row">
             <dt>{{ row.label }}</dt>
             <dd class="selectable">{{ row.value }}</dd>

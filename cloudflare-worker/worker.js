@@ -120,6 +120,9 @@ function toItem(issue) {
     category: typeof d.category === 'string' ? d.category : 'other',
     createTime: typeof d.createTime === 'string' ? d.createTime : issue.created_at || new Date().toISOString(),
     archived: issue.state === 'closed',
+    rentType: d.rentType === 'daily' || d.rentType === 'perUse' ? d.rentType : 'free',
+    rentFee: typeof d.rentFee === 'number' && Number.isFinite(d.rentFee) && d.rentFee >= 0 ? d.rentFee : 0,
+    rentRecords: Array.isArray(d.rentRecords) ? d.rentRecords : undefined,
   }
 }
 
@@ -301,6 +304,12 @@ async function handle(request, env) {
           return json(400, { error: audit.reason || '图片内容违规，禁止发布' }, origin)
         }
       }
+      // ─── 租金字段（免费 / 按天 / 按次）───
+      const rentType = b.rentType === 'daily' || b.rentType === 'perUse' ? b.rentType : 'free'
+      const rentFee = rentType === 'free' ? 0 : Number(b.rentFee)
+      if (rentType !== 'free' && (!Number.isFinite(rentFee) || rentFee <= 0 || rentFee > 100000)) {
+        return json(400, { error: '请填写正确的租金金额（大于 0）' }, origin)
+      }
       const { lat, lng } = clampLatLng(b.lat, b.lng)
       const data = {
         name,
@@ -312,6 +321,8 @@ async function handle(request, env) {
         ownerPhone,
         lat,
         lng,
+        rentType,
+        rentFee,
         createTime: new Date().toISOString(),
       }
       const body = withDataBlock('', data)
@@ -362,6 +373,33 @@ async function handle(request, env) {
       const data = extractData(issue.body)
       if (!isLentIssue(issue, data)) return json(409, { error: '该物品当前未借出' }, origin)
       if (!isBorrower(data, phone)) return json(403, { error: '只有借阅人可以归还' }, origin)
+      // ─── 租金结算：记录归还时间，按天/按次写入历史结算记录（免费不计）───
+      if (data.borrowedAt) {
+        const returnedAt = new Date().toISOString()
+        const rentType = data.rentType === 'daily' || data.rentType === 'perUse' ? data.rentType : 'free'
+        if (rentType !== 'free') {
+          const start = Date.parse(data.borrowedAt)
+          const end = Date.parse(returnedAt)
+          const fee = Number(data.rentFee)
+          let amount = 0
+          let days
+          if (rentType === 'daily' && Number.isFinite(start) && Number.isFinite(end)) {
+            days = Math.max(1, Math.ceil(Math.max(end - start, 0) / 86400000))
+            amount = (Number.isFinite(fee) ? fee : 0) * days
+          } else if (rentType === 'perUse') {
+            amount = Number.isFinite(fee) ? fee : 0
+          }
+          const records = Array.isArray(data.rentRecords) ? data.rentRecords : []
+          records.push({
+            borrowedAt: data.borrowedAt,
+            returnedAt,
+            days,
+            fee: amount,
+            borrower: data.borrowedBy,
+          })
+          data.rentRecords = records
+        }
+      }
       delete data.borrowedBy
       delete data.borrowedAt
       delete data.receiptHmac

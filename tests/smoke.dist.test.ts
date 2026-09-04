@@ -59,9 +59,11 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     expect(app.innerHTML).toContain('发布我的闲置')
   })
 
-  it('② 首屏渲染物品卡片（本地种子数据）', async () => {
+  it('② 首屏渲染：正式运营无种子数据，显示空列表状态（不白屏）', async () => {
     await flush(120)
-    expect(document.querySelectorAll('.memphis-card').length).toBeGreaterThanOrEqual(1)
+    const appHtml = document.querySelector('#app')!.innerHTML
+    expect(appHtml).toContain('附近暂无闲置物品')
+    expect(document.querySelectorAll('.memphis-card').length).toBe(0)
   })
 
   it('③ 默认隐藏已借出物品（开关关闭时列表无「已借出」卡片）', async () => {
@@ -98,13 +100,12 @@ describe('dist 产物冒烟（模拟浏览器）', () => {
     expect(await untilContains('让好物在')).toContain('让好物在')
   })
 
-  it('⑥ 点击卡片进入详情页 + 数据读取', async () => {
-    const card = document.querySelector<HTMLAnchorElement>('a[href="#/items/1"]')!
-    card.click()
-    const appHtml = await untilContains('戴森V8吸尘器')
-    expect(appHtml).toContain('戴森V8吸尘器')
-    // 非物主视角：展示「我想借」
-    expect(appHtml).toContain('我想借')
+  it('⑥ 正式运营空列表：首页无物品卡片链接（无幽灵数据/种子残留）', async () => {
+    await flush(120)
+    const cardLinks = [...document.querySelectorAll<HTMLAnchorElement>('a[href^="#/items/"]')]
+    expect(cardLinks).toHaveLength(0)
+    // 首页仍保持稳定渲染（空态 + 页脚），不白屏
+    expect(document.querySelector('#app')!.innerHTML).toContain('邻里好物')
   })
 
   it('⑦ 「我的发布 / 我的借用」为独立页面（首页双卡跳转）', async () => {
