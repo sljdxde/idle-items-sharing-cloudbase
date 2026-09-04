@@ -50,4 +50,6 @@ jobs:
       - name: Run ngrok URL sync
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # 显式指定 Cloudflare 账号，避免 wrangler 调 /memberships 因 token 权限不足（403/10000）而失败
+          CF_ACCOUNT_ID: 38a0b74fc665c4e44a25b2fbeae0d33b
         run: bash scripts/sync-ngrok-url.sh
