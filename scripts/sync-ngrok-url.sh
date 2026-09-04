@@ -31,7 +31,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 printf '%s\n' "$AUDIT_URL" | CLOUDFLARE_API_TOKEN="$CF_TOKEN" npx --yes wrangler@3 pages secret put NSFWJS_URL --project-name linli-haowu 2>&1 \
-  | grep -viE "EPERM|wrangler-.*log|Proxy env|After install" | tail -3
+  | grep -viE "EPERM|wrangler-.*log|Proxy env|After install" | tail -30
 
 CLOUDFLARE_API_TOKEN="$CF_TOKEN" bash scripts/deploy-pages.sh 2>&1 \
   | grep -viE "EPERM|wrangler-.*log|Proxy env|After install" | tail -3
