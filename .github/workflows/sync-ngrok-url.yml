@@ -1,0 +1,53 @@
+# ================================================
+# 云端定时任务：同步 ngrok 审核域名到 Cloudflare（替代原本地 cron）
+# 触发：每天 04:00（北京时间 = UTC 20:00）+ 手动触发
+# 流程：checkout → npm ci → 写入 SSH 私钥 → 运行 scripts/sync-ngrok-url.sh
+#        （SSH 读服务器 ngrok URL → 更新 CF Pages 密文 NSFWJS_URL → 重新部署主站）
+# 前置：仓库 Secrets 需配置 LINLI_SSH_KEY（服务器 SSH 私钥）与
+#       CLOUDFLARE_API_TOKEN（Cloudflare API Token）
+# 说明：全程在 GitHub 托管 Runner（云端）执行，与本地电脑无关
+# ================================================
+
+name: Sync ngrok audit URL to Cloudflare
+
+on:
+  schedule:
+    - cron: '0 20 * * *'   # 每天 04:00 北京时间（UTC 20:00）
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ngrok-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write SSH key
+        env:
+          LINLI_SSH_KEY: ${{ secrets.LINLI_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$LINLI_SSH_KEY" > ~/.ssh/linli_srv_4785
+          chmod 600 ~/.ssh/linli_srv_4785
+
+      - name: Run ngrok URL sync
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: bash scripts/sync-ngrok-url.sh

@@ -16,7 +16,9 @@ if [ -z "$CF_TOKEN" ]; then
   exit 1
 fi
 
-SRV_URL=$(ssh -o BatchMode=yes -o ConnectTimeout=10 -o IdentitiesOnly=yes -i "$SSH_KEY" "$SRV" \
+SRV_URL=$(ssh -o BatchMode=yes -o ConnectTimeout=10 -o IdentitiesOnly=yes \
+  -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/dev/null \
+  -i "$SSH_KEY" "$SRV" \
   'cat ~/linli-ngrok/current-url.txt 2>/dev/null || echo ""' 2>/dev/null | tr -d ' \r\n')
 if [ -z "$SRV_URL" ]; then
   echo "❌ 未获取到服务器 ngrok URL（确认 ngrok 已启动）"
