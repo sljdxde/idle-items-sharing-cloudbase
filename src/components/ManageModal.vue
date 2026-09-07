@@ -83,7 +83,7 @@ async function onToggleArchive(): Promise<void> {
           <li>已借出也可下架（从公开列表隐藏）；删除需先收回</li>
         </ul>
 
-        <button type="button" class="btn-memphis-primary btn-block" :disabled="store.writing" @click="onToggleArchive">
+        <button type="button" class="btn-primary btn-block" :disabled="store.writing" @click="onToggleArchive">
           {{ item.archived ? '重新上架' : '下架' }}
         </button>
       </template>
@@ -111,32 +111,33 @@ async function onToggleArchive(): Promise<void> {
   height: 44px;
   align-items: center;
   justify-content: center;
-  background: var(--salmon);
-  border: 2.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: var(--border-thin);
 }
 
 .head-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.3rem;
+  color: var(--ink);
 }
 
 .head-sub {
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  color: #555;
+  color: var(--text-3);
 }
 
 .deny-tip {
   margin: 0;
   font-size: 0.9rem;
-  color: #777;
+  color: var(--text-3);
 }
 
 .info-card {
-  border: 2px solid var(--ink);
-  background: var(--bg-cream);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -147,17 +148,19 @@ async function onToggleArchive(): Promise<void> {
   align-items: baseline;
   gap: 1rem;
   padding: 0.7rem 0.9rem;
+  border-bottom: var(--border-thin);
+  font-size: 0.9rem;
 }
 
-.info-row + .info-row {
-  border-top: 1.5px dashed rgba(29, 30, 44, 0.25);
+.info-row:last-child {
+  border-bottom: none;
 }
 
 .info-row .k {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #777;
+  color: var(--text-3);
 }
 
 .info-row .v {
@@ -182,8 +185,8 @@ async function onToggleArchive(): Promise<void> {
 .guide-list li {
   font-size: 0.88rem;
   line-height: 1.6;
-  color: #333;
-  border-left: 3px solid var(--mustard);
+  color: var(--text-2);
+  border-left: 3px solid var(--accent-3);
   padding-left: 0.6rem;
 }
 

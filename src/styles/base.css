@@ -1,7 +1,7 @@
 /* ============================================================
-   邻里好物 v2 · 全局基础样式与共享 Memphis 组件类
-   （卡片/按钮/徽标/筛选 chip 的完整样式在各 SFC scoped 内；
-    这里只放跨页面复用的原语，避免重复声明。）
+   邻里好物 v3 · 全局基础样式与共享组件类（语义化）
+   设计唯一来源：ui-preview/index.html
+   颜色/边框/阴影/圆角全部走 CSS 变量，三主题自动切换
    ============================================================ */
 
 *,
@@ -14,21 +14,17 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  /* 触摸端：双击缩放交给容器，点击即点 */
   touch-action: manipulation;
 }
 
 body {
-  background-color: var(--bg-cream);
-  /* 孟菲斯双色网点底纹 */
-  background-image:
-    radial-gradient(var(--salmon) 1.5px, transparent 1.5px),
-    radial-gradient(var(--royal-blue) 1.5px, transparent 1.5px);
-  background-size: 36px 36px, 72px 72px;
-  background-position: 0 0, 18px 18px;
+  background-color: var(--bg);
+  background-image: var(--bg-decor);
+  background-size: var(--bg-size, auto);
+  background-position: var(--bg-pos, 0 0);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: var(--font-size, 16px);
   line-height: 1.7;
   line-break: strict;
   overflow-wrap: break-word;
@@ -37,12 +33,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
   min-height: 100vh;
-  /* 硬阴影/错位旋转装饰不应产生横向滚动条 */
   overflow-x: clip;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 a {
-  color: var(--ink);
+  color: var(--link);
   text-decoration: none;
 }
 
@@ -65,11 +61,25 @@ img {
 }
 
 :focus-visible {
-  outline: 3px solid var(--royal-blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 /* ── 容器 ── */
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 1.25rem 1rem;
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 1.75rem 1.5rem;
+  }
+}
+
+/* 旧类名别名（过渡期兼容） */
 .memphis-container {
   max-width: var(--container-max);
   margin: 0 auto;
@@ -84,6 +94,8 @@ img {
 }
 
 /* ── 共享按钮原语 ── */
+.btn-primary,
+.btn-secondary,
 .btn-memphis-primary,
 .btn-memphis-secondary {
   display: inline-flex;
@@ -95,7 +107,8 @@ img {
   font-family: var(--font-mono);
   font-size: 0.95rem;
   font-weight: 700;
-  border: 2.5px solid var(--ink);
+  border: var(--border-thin);
+  border-color: var(--ink);
   transition:
     transform 0.2s var(--ease),
     box-shadow 0.2s var(--ease),
@@ -103,37 +116,44 @@ img {
     color var(--ease-snap);
 }
 
+.btn-primary,
 .btn-memphis-primary {
-  background: var(--retro-purple);
-  color: #fff;
-  box-shadow: 4px 4px 0 var(--retro-red);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  box-shadow: 4px 4px 0 var(--accent-2);
 }
 
+.btn-primary:hover:not(:disabled),
 .btn-memphis-primary:hover:not(:disabled) {
-  background: var(--retro-red);
+  background: var(--accent-2);
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--ink);
 }
 
+.btn-secondary,
 .btn-memphis-secondary {
-  background: var(--paper-cream);
-  color: var(--ink);
-  box-shadow: 4px 4px 0 var(--royal-blue);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  box-shadow: 4px 4px 0 var(--accent-4);
 }
 
+.btn-secondary:hover:not(:disabled),
 .btn-memphis-secondary:hover:not(:disabled) {
-  background: var(--mustard);
+  background: var(--accent-3);
   transform: translate(-2px, -2px);
   box-shadow: 6px 6px 0 var(--ink);
 }
 
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
 .btn-memphis-primary:active:not(:disabled),
 .btn-memphis-secondary:active:not(:disabled) {
   transform: translate(2px, 2px) scale(0.98);
   box-shadow: 1px 1px 0 var(--ink);
 }
 
-/* 禁用态需与可点状态有明显视觉区分，否则会被认为「点击没反应」 */
+.btn-primary:disabled,
+.btn-secondary:disabled,
 .btn-memphis-primary:disabled,
 .btn-memphis-secondary:disabled {
   cursor: not-allowed;
@@ -142,6 +162,7 @@ img {
 }
 
 /* ── 共享 chip 原语 ── */
+.chip,
 .memphis-chip {
   display: inline-flex;
   align-items: center;
@@ -150,8 +171,8 @@ img {
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0.45rem 0.85rem;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
+  background: var(--chip-bg);
+  border: var(--chip-border);
   color: var(--ink);
   white-space: nowrap;
 }
@@ -167,46 +188,56 @@ img {
 }
 
 .badge-status.available {
-  background: var(--mustard);
-  color: var(--ink);
+  background: var(--badge-avail-bg);
+  color: var(--badge-avail-ink);
 }
 
 .badge-status.pending {
-  background: var(--salmon);
+  background: var(--accent-5);
   color: var(--ink);
 }
 
 .badge-status.borrowed {
-  background: #d5d5d5;
-  color: #666;
+  background: var(--badge-lent-bg);
+  color: var(--badge-lent-ink);
 }
 
 /* ── 表单控件（发布页等复用） ── */
+.input,
+.textarea,
+.select,
 .memphis-input,
 .memphis-textarea,
 .memphis-select {
   width: 100%;
   min-height: 48px;
   padding: 0.7rem 0.9rem;
-  background: var(--paper-cream);
-  border: 2.5px solid var(--ink);
+  background: var(--input-bg);
+  border: var(--input-border);
   color: var(--ink);
   transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
 }
 
+.input:hover,
+.textarea:hover,
+.select:hover,
 .memphis-input:hover,
 .memphis-textarea:hover,
 .memphis-select:hover {
-  box-shadow: 3px 3px 0 var(--mustard);
+  box-shadow: 3px 3px 0 var(--accent-3);
 }
 
+.input:focus,
+.textarea:focus,
+.select:focus,
 .memphis-input:focus,
 .memphis-textarea:focus,
 .memphis-select:focus {
   outline: none;
-  box-shadow: 4px 4px 0 var(--royal-blue);
+  box-shadow: 3px 3px 0 var(--accent);
 }
 
+.textarea,
 .memphis-textarea {
   resize: vertical;
   line-height: 1.7;

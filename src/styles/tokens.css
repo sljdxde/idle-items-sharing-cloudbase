@@ -1,32 +1,249 @@
 /* ============================================================
-   邻里好物 v2 · 设计 tokens
-   风格：孟菲斯复古拼贴 Memphis Maximalism（源自 design-samples/03）
-   复古撞色 + 硬阴影 + 错位叠放 + 网点纹理；零 emoji、内联 SVG 图标
+   邻里好物 v3 · 设计 tokens（三主题语义化变量体系）
+   设计唯一来源：ui-preview/index.html
+   主题：memphis（默认）/ brutalism / editorial
    ============================================================ */
 
+/* ── 主题一：孟菲斯复古拼贴（默认，:root 定义） ── */
 :root {
-  /* ── 色板 ── */
-  --bg-cream: #f7f2e7;        /* 做旧米色暖底（页面） */
-  --paper-cream: #fffdf9;     /* 卡片纸白 */
-  --retro-red: #e63946;
-  --mustard: #e9c46a;
-  --royal-blue: #2a6f97;
-  --retro-purple: #7209b7;
-  --olive: #264653;
-  --salmon: #f4a261;
+  /* 背景与表面 */
+  --bg: #f7f2e7;
+  --bg-decor:
+    radial-gradient(#f4a261 1.5px, transparent 1.5px),
+    radial-gradient(#2a6f97 1.5px, transparent 1.5px);
+  --bg-size: 36px 36px, 72px 72px;
+  --bg-pos: 0 0, 18px 18px;
+  --surface: #fffdf9;
+  --surface-2: #f1ece1;
+  --surface-3: #e9e2d3;
+
+  /* 文字 */
   --ink: #1d1e2c;
+  --text-2: #555555;
+  --text-3: #888888;
+  --link: inherit;
 
-  /* ── 字体（离线容器：仅系统字体栈，无任何外链字体） ── */
-  --font-serif: 'Songti SC', 'STSong', 'STZhongsong', 'SimSun', Georgia, serif;   /* 标题衬线，中文宋体 */
-  --font-display: 'Arial Black', Impact, 'PingFang SC', sans-serif;               /* 仅西文 display */
+  /* 强调色 */
+  --accent: #7209b7;
+  --accent-ink: #ffffff;
+  --accent-2: #e63946;
+  --accent-3: #e9c46a;
+  --accent-4: #2a6f97;
+  --accent-5: #f4a261;
+  --accent-6: #264653;
+
+  /* 边框与圆角 */
+  --border: 3px solid var(--ink);
+  --border-thin: 2px solid var(--ink);
+  --border-dashed: 2.5px dashed var(--ink);
+  --radius: 0;
+  --radius-sm: 0;
+
+  /* 阴影 */
+  --shadow-1: 6px 6px 0 var(--ink);
+  --shadow-soft: 4px 4px 0 var(--ink);
+  --shadow-hover: 9px 9px 0 var(--ink);
+
+  /* 字体 */
+  --font-head: 'Songti SC', 'STSong', 'STZhongsong', 'SimSun', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
-  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'Songti SC', 'STSong', 'STZhongsong', 'SimSun', Georgia, serif;
+  --font-size: 16px;
 
-  /* ── 动效 ── */
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);      /* expoOut 入场 */
-  --ease-snap: 0.15s ease;                    /* 按钮换色 */
+  /* 状态徽标 */
+  --badge-avail-bg: #e9c46a;
+  --badge-avail-ink: var(--ink);
+  --badge-avail-border: var(--ink);
+  --badge-lent-bg: #d5d5d5;
+  --badge-lent-ink: #666666;
+  --badge-lent-border: var(--ink);
+  --badge-arch-bg: #f4a261;
+  --badge-arch-ink: var(--ink);
+  --badge-arch-border: var(--ink);
 
-  /* ── 布局 ── */
+  /* 组件语义变量 */
+  --photo-bg: #f1ece1;
+  --topbar-bg: transparent;
+  --topbar-border: none;
+  --topbar-sticky: static;
+  --btn-primary-bg: var(--accent);
+  --btn-primary-ink: #fff;
+  --btn-secondary-bg: var(--surface);
+  --btn-secondary-ink: var(--ink);
+  --toolbar-bg: var(--surface);
+  --toolbar-border: var(--border);
+  --card-bg: var(--surface);
+  --card-border: var(--border);
+  --card-shadow: 6px 6px 0 var(--ink);
+  --input-bg: #ffffff;
+  --input-border: var(--border-thin);
+  --fieldset-bg: rgba(255, 253, 249, 0.7);
+  --fieldset-border: 2.5px dashed var(--ink);
+  --chip-bg: var(--surface);
+  --chip-border: 2px solid var(--ink);
+  --chip-active-bg: var(--ink);
+  --chip-active-ink: var(--accent-3);
+  --modal-bg: var(--surface);
+  --modal-border: var(--border);
+  --modal-shadow: 8px 8px 0 var(--ink);
+  --hover-bg: #ffffff;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-snap: 0.15s ease;
+
+  /* 布局 */
   --container-max: 1240px;
+
+  /* ── 旧具名变量别名（指向语义化变量，过渡期兼容） ── */
+  --bg-cream: var(--bg);
+  --paper-cream: var(--surface);
+  --retro-red: var(--accent-2);
+  --mustard: var(--accent-3);
+  --royal-blue: var(--accent-4);
+  --retro-purple: var(--accent);
+  --olive: var(--accent-6);
+  --salmon: var(--accent-5);
+  --font-display: 'Arial Black', Impact, 'PingFang SC', sans-serif;
+}
+
+/* ── 主题二：功能主义网格 ── */
+[data-theme="brutalism"] {
+  --bg: #fbfbfb;
+  --bg-decor: none;
+  --bg-size: auto;
+  --bg-pos: 0 0;
+  --surface: #ffffff;
+  --surface-2: #f0f3f8;
+  --surface-3: #e4e8ee;
+  --ink: #111111;
+  --text-2: #555555;
+  --text-3: #888888;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --accent-2: #0000ee;
+  --accent-3: #f0f3f8;
+  --accent-4: #e4e8ee;
+  --accent-5: #dde1e6;
+  --accent-6: #e8f5e9;
+  --link: #0000ee;
+  --border: 1px solid #dde1e6;
+  --border-thin: 1px solid #dde1e6;
+  --border-dashed: 1px dashed #999999;
+  --radius: 0;
+  --radius-sm: 0;
+  --shadow-1: none;
+  --shadow-soft: none;
+  --shadow-hover: none;
+  --font-head: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  --font-serif: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-size: 14px;
+  --badge-avail-bg: #e8f5e9;
+  --badge-avail-ink: #1b5e20;
+  --badge-avail-border: #a5d6a7;
+  --badge-lent-bg: #eeeeee;
+  --badge-lent-ink: #757575;
+  --badge-lent-border: #e0e0e0;
+  --badge-arch-bg: #fff3e0;
+  --badge-arch-ink: #e65100;
+  --badge-arch-border: #ffcc80;
+  --photo-bg: #f4f4f4;
+  --topbar-bg: #fbfbfb;
+  --topbar-border: 1px solid #dde1e6;
+  --topbar-sticky: sticky;
+  --btn-primary-bg: #111111;
+  --btn-primary-ink: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-ink: #111111;
+  --toolbar-bg: transparent;
+  --toolbar-border: none;
+  --card-bg: #ffffff;
+  --card-border: none;
+  --card-shadow: none;
+  --input-bg: #ffffff;
+  --input-border: 1px solid #dde1e6;
+  --fieldset-bg: #ffffff;
+  --fieldset-border: 1px solid #dde1e6;
+  --chip-bg: #ffffff;
+  --chip-border: 1px solid #dde1e6;
+  --chip-active-bg: #111111;
+  --chip-active-ink: #ffffff;
+  --modal-bg: #ffffff;
+  --modal-border: 1px solid #111111;
+  --modal-shadow: none;
+  --hover-bg: #f0f3f8;
+}
+
+/* ── 主题三：暖色出版物 ── */
+[data-theme="editorial"] {
+  --bg: #f5f0e8;
+  --bg-decor:
+    radial-gradient(rgba(43,38,34,0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(252,250,246,0.6), rgba(245,240,232,0.9));
+  --bg-size: 32px 32px, 100% 100%;
+  --bg-pos: 0 0, 0 0;
+  --surface: #fcfaf6;
+  --surface-2: #ede6da;
+  --surface-3: #e8e0d2;
+  --ink: #191919;
+  --text-2: #574f47;
+  --text-3: #8e847a;
+  --accent: #cc785c;
+  --accent-ink: #ffffff;
+  --accent-2: #b56247;
+  --accent-3: #f6eae4;
+  --accent-4: #e8b9a7;
+  --accent-5: #2b2622;
+  --accent-6: #ede6da;
+  --link: inherit;
+  --border: 1px solid rgba(43, 38, 34, 0.12);
+  --border-thin: 1px solid rgba(43, 38, 34, 0.18);
+  --border-dashed: 1px dashed rgba(43, 38, 34, 0.28);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-1: 0 2px 10px rgba(43, 38, 34, 0.05), 0 1px 2px rgba(43, 38, 34, 0.03);
+  --shadow-soft: 0 2px 8px rgba(43, 38, 34, 0.04);
+  --shadow-hover: 0 12px 28px rgba(43, 38, 34, 0.09), 0 3px 8px rgba(43, 38, 34, 0.04);
+  --font-head: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', Georgia, serif;
+  --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+  --font-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', Georgia, serif;
+  --font-size: 15px;
+  --badge-avail-bg: #eaf2eb;
+  --badge-avail-ink: #2b663b;
+  --badge-avail-border: #bcd6be;
+  --badge-lent-bg: #ebe7df;
+  --badge-lent-ink: #7a7267;
+  --badge-lent-border: #dad3c7;
+  --badge-arch-bg: #faf2e3;
+  --badge-arch-ink: #966118;
+  --badge-arch-border: #e8d3b0;
+  --photo-bg: #eae3d5;
+  --topbar-bg: rgba(245, 240, 232, 0.94);
+  --topbar-border: 1px solid rgba(43, 38, 34, 0.22);
+  --topbar-sticky: sticky;
+  --btn-primary-bg: #cc785c;
+  --btn-primary-ink: #ffffff;
+  --btn-secondary-bg: #fcfaf6;
+  --btn-secondary-ink: #2b2622;
+  --toolbar-bg: #fcfaf6;
+  --toolbar-border: 1px solid rgba(43, 38, 34, 0.12);
+  --card-bg: #fcfaf6;
+  --card-border: 1px solid rgba(43, 38, 34, 0.12);
+  --card-shadow: 0 2px 10px rgba(43, 38, 34, 0.05), 0 1px 2px rgba(43, 38, 34, 0.02);
+  --input-bg: #fcfaf6;
+  --input-border: 1px solid rgba(43, 38, 34, 0.22);
+  --fieldset-bg: #fcfaf6;
+  --fieldset-border: 1px solid rgba(43, 38, 34, 0.12);
+  --chip-bg: #fcfaf6;
+  --chip-border: 1px solid rgba(43, 38, 34, 0.22);
+  --chip-active-bg: #cc785c;
+  --chip-active-ink: #ffffff;
+  --modal-bg: #fcfaf6;
+  --modal-border: 1px solid rgba(43, 38, 34, 0.12);
+  --modal-shadow: 0 16px 44px rgba(43, 38, 34, 0.14);
+  --hover-bg: #ffffff;
 }

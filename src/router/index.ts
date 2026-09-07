@@ -9,6 +9,7 @@ import PublishPage from '@/pages/PublishPage.vue'
 import DetailPage from '@/pages/DetailPage.vue'
 import MinePage from '@/pages/MinePage.vue'
 import BorrowsPage from '@/pages/BorrowsPage.vue'
+import AdminResetPage from '@/pages/AdminResetPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -43,6 +44,12 @@ const router = createRouter({
       component: DetailPage,
       meta: { title: '物品详情 — 邻里好物' },
     },
+    {
+      path: '/admin/reset-pin',
+      name: 'admin-reset-pin',
+      component: AdminResetPage,
+      meta: { title: '管理员 · 重置口令 — 邻里好物', noindex: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior(_to, _from, saved) {
@@ -54,6 +61,18 @@ const router = createRouter({
 router.afterEach((to) => {
   if (typeof document !== 'undefined') {
     document.title = (to.meta.title as string) ?? '邻里好物'
+    // 管理员页面加 noindex，防止搜索引擎索引
+    let meta = document.querySelector('meta[name="robots"]')
+    if (to.meta.noindex) {
+      if (!meta) {
+        meta = document.createElement('meta')
+        meta.setAttribute('name', 'robots')
+        document.head.appendChild(meta)
+      }
+      meta.setAttribute('content', 'noindex, nofollow')
+    } else if (meta) {
+      meta.remove()
+    }
   }
 })
 

@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="memphis">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邻里好物 · 四套 UI 评审样机</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   邻里好物 · UI 评审样机
+   同一份页面结构与功能，三套主题通过 CSS 变量 + 主题覆盖实现：
+   memphis    → 孟菲斯复古拼贴（当前线上默认）
+   brutalism  → 功能主义网格（design-samples/17）
+   editorial  → 暖色出版物（design-samples/12）
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+[hidden] { display: none !important; }
+
+/* 小屏：版本标签一律隐藏（!important 保证不被主题覆盖） */
+@media (max-width: 899px) {
+  .brand-meta { display: none !important; }
+}
+
+html { -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg);
+  background-image: var(--bg-decor);
+  background-size: var(--bg-size, auto);
+  background-position: var(--bg-pos, 0 0);
+  color: var(--ink);
+  font-size: var(--font-size, 16px);
+  line-height: 1.7;
+  line-break: strict;
+  overflow-wrap: break-word;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 100vh;
+  overflow-x: clip;
+  transition: background-color .3s ease, color .3s ease;
+}
+
+a { color: var(--link); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; font-variant-numeric: tabular-nums; }
+input, textarea, select { font-family: inherit; font-size: inherit; }
+img { max-width: 100%; display: block; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ============================================================
+   主题一：孟菲斯复古拼贴（当前默认）
+   ============================================================ */
+[data-theme="memphis"] {
+  --bg: #f7f2e7;
+  --bg-decor:
+    radial-gradient(#f4a261 1.5px, transparent 1.5px),
+    radial-gradient(#2a6f97 1.5px, transparent 1.5px);
+  --bg-size: 36px 36px, 72px 72px;
+  --bg-pos: 0 0, 18px 18px;
+  --surface: #fffdf9;
+  --surface-2: #f1ece1;
+  --surface-3: #e9e2d3;
+  --ink: #1d1e2c;
+  --text-2: #555555;
+  --text-3: #888888;
+  --accent: #7209b7;
+  --accent-ink: #ffffff;
+  --accent-2: #e63946;
+  --accent-3: #e9c46a;
+  --accent-4: #2a6f97;
+  --accent-5: #f4a261;
+  --accent-6: #264653;
+  --link: inherit;
+  --border: 3px solid var(--ink);
+  --border-thin: 2px solid var(--ink);
+  --border-dashed: 2.5px dashed var(--ink);
+  --radius: 0;
+  --radius-sm: 0;
+  --shadow-1: 6px 6px 0 var(--ink);
+  --shadow-soft: 4px 4px 0 var(--ink);
+  --shadow-hover: 9px 9px 0 var(--ink);
+  --font-head: 'Songti SC', 'STSong', 'STZhongsong', 'SimSun', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+  --font-size: 16px;
+  --badge-avail-bg: #e9c46a;  --badge-avail-ink: var(--ink);
+  --badge-lent-bg: #d5d5d5;   --badge-lent-ink: #666666;
+  --badge-arch-bg: #f4a261;   --badge-arch-ink: var(--ink);
+  --photo-bg: #f1ece1;
+  --topbar-bg: transparent;
+  --topbar-border: none;
+  --topbar-sticky: static;
+  --btn-primary-bg: var(--accent);
+  --btn-primary-ink: #fff;
+  --btn-secondary-bg: var(--surface);
+  --btn-secondary-ink: var(--ink);
+  --toolbar-bg: var(--surface);
+  --toolbar-border: var(--border);
+  --card-bg: var(--surface);
+  --card-border: var(--border);
+  --card-shadow: 6px 6px 0 var(--ink);
+  --input-bg: #ffffff;
+  --input-border: var(--border-thin);
+  --fieldset-bg: rgba(255, 253, 249, 0.7);
+  --fieldset-border: 2.5px dashed var(--ink);
+  --chip-bg: var(--surface);
+  --chip-border: 2px solid var(--ink);
+  --chip-active-bg: var(--ink);
+  --chip-active-ink: var(--accent-3);
+  --modal-bg: var(--surface);
+  --modal-border: var(--border);
+  --modal-shadow: 8px 8px 0 var(--ink);
+  --hover-bg: #ffffff;
+}
+
+/* ============================================================
+   主题二：功能主义网格（17）
+   ============================================================ */
+[data-theme="brutalism"] {
+  --bg: #fbfbfb;
+  --bg-decor: none;
+  --surface: #ffffff;
+  --surface-2: #f0f3f8;
+  --surface-3: #e4e8ee;
+  --ink: #111111;
+  --text-2: #555555;
+  --text-3: #888888;
+  --accent: #111111;
+  --accent-ink: #ffffff;
+  --accent-2: #0000ee;
+  --accent-3: #f0f3f8;
+  --accent-4: #e4e8ee;
+  --accent-5: #dde1e6;
+  --accent-6: #e8f5e9;
+  --link: #0000ee;
+  --border: 1px solid #dde1e6;
+  --border-thin: 1px solid #dde1e6;
+  --border-dashed: 1px dashed #999999;
+  --radius: 0;
+  --radius-sm: 0;
+  --shadow-1: none;
+  --shadow-soft: none;
+  --shadow-hover: none;
+  --font-head: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  --font-size: 14px;
+  --badge-avail-bg: #e8f5e9; --badge-avail-ink: #1b5e20;
+  --badge-lent-bg: #eeeeee;  --badge-lent-ink: #757575;
+  --badge-arch-bg: #fff3e0;  --badge-arch-ink: #e65100;
+  --photo-bg: #f4f4f4;
+  --topbar-bg: #fbfbfb;
+  --topbar-border: 1px solid #dde1e6;
+  --topbar-sticky: sticky;
+  --btn-primary-bg: #111111;
+  --btn-primary-ink: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-ink: #111111;
+  --toolbar-bg: transparent;
+  --toolbar-border: none;
+  --card-bg: #ffffff;
+  --card-border: none;
+  --card-shadow: none;
+  --input-bg: #ffffff;
+  --input-border: 1px solid #dde1e6;
+  --fieldset-bg: #ffffff;
+  --fieldset-border: 1px solid #dde1e6;
+  --chip-bg: #ffffff;
+  --chip-border: 1px solid #dde1e6;
+  --chip-active-bg: #111111;
+  --chip-active-ink: #ffffff;
+  --modal-bg: #ffffff;
+  --modal-border: 1px solid #111111;
+  --modal-shadow: none;
+  --hover-bg: #f0f3f8;
+}
+
+/* ============================================================
+   主题三：暖色出版物（12）
+   ============================================================ */
+[data-theme="editorial"] {
+  --bg: #f5f0e8;
+  --bg-decor:
+    radial-gradient(rgba(43,38,34,0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(252,250,246,0.6), rgba(245,240,232,0.9));
+  --bg-size: 32px 32px, 100% 100%;
+  --bg-pos: 0 0, 0 0;
+  --surface: #fcfaf6;
+  --surface-2: #ede6da;
+  --surface-3: #e8e0d2;
+  --ink: #191919;
+  --text-2: #574f47;
+  --text-3: #8e847a;
+  --accent: #cc785c;
+  --accent-ink: #ffffff;
+  --accent-2: #b56247;
+  --accent-3: #f6eae4;
+  --accent-4: #e8b9a7;
+  --accent-5: #2b2622;
+  --accent-6: #ede6da;
+  --link: inherit;
+  --border: 1px solid rgba(43, 38, 34, 0.12);
+  --border-thin: 1px solid rgba(43, 38, 34, 0.18);
+  --border-dashed: 1px dashed rgba(43, 38, 34, 0.28);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-1: 0 2px 10px rgba(43, 38, 34, 0.05), 0 1px 2px rgba(43, 38, 34, 0.03);
+  --shadow-soft: 0 2px 8px rgba(43, 38, 34, 0.04);
+  --shadow-hover: 0 12px 28px rgba(43, 38, 34, 0.09), 0 3px 8px rgba(43, 38, 34, 0.04);
+  --font-head: 'Noto Serif SC', 'Songti SC', 'STSong', 'SimSun', Georgia, serif;
+  --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Courier New', monospace;
+  --font-size: 15px;
+  --badge-avail-bg: #eaf2eb; --badge-avail-ink: #2b663b; --badge-avail-border: #bcd6be;
+  --badge-lent-bg: #ebe7df;  --badge-lent-ink: #7a7267;  --badge-lent-border: #dad3c7;
+  --badge-arch-bg: #faf2e3;  --badge-arch-ink: #966118;  --badge-arch-border: #e8d3b0;
+  --photo-bg: #eae3d5;
+  --topbar-bg: rgba(245, 240, 232, 0.94);
+  --topbar-border: 1px solid rgba(43, 38, 34, 0.22);
+  --topbar-sticky: sticky;
+  --btn-primary-bg: #cc785c;
+  --btn-primary-ink: #ffffff;
+  --btn-secondary-bg: #fcfaf6;
+  --btn-secondary-ink: #2b2622;
+  --toolbar-bg: #fcfaf6;
+  --toolbar-border: 1px solid rgba(43, 38, 34, 0.12);
+  --card-bg: #fcfaf6;
+  --card-border: 1px solid rgba(43, 38, 34, 0.12);
+  --card-shadow: 0 2px 10px rgba(43, 38, 34, 0.05), 0 1px 2px rgba(43, 38, 34, 0.02);
+  --input-bg: #fcfaf6;
+  --input-border: 1px solid rgba(43, 38, 34, 0.22);
+  --fieldset-bg: #fcfaf6;
+  --fieldset-border: 1px solid rgba(43, 38, 34, 0.12);
+  --chip-bg: #fcfaf6;
+  --chip-border: 1px solid rgba(43, 38, 34, 0.22);
+  --chip-active-bg: #cc785c;
+  --chip-active-ink: #ffffff;
+  --modal-bg: #fcfaf6;
+  --modal-border: 1px solid rgba(43, 38, 34, 0.12);
+  --modal-shadow: 0 16px 44px rgba(43, 38, 34, 0.14);
+  --hover-bg: #ffffff;
+}
+
+/* ============================================================
+   主题四：已按用户要求移除（原瑞士极致黑白 design-samples/19）
+   ============================================================ */
+</style>
+</head>
+<style>
+/* ============================================================
+   共享组件样式（基于主题变量）
+   ============================================================ */
+.container { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1rem 1.25rem; position: relative; }
+@media (min-width: 768px) { .container { padding: 1.75rem 1.5rem; } }
+
+/* ── 评审提示条（仅样机，最终版移除） ── */
+.review-note {
+  background: var(--surface);
+  border: 1px dashed var(--accent);
+  color: var(--text-2);
+  font-size: 0.82rem;
+  padding: 0.5rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.review-note b { color: var(--accent); }
+.review-note .rn-close { margin-left: auto; border: none; background: none; color: var(--text-3); font-size: 1rem; line-height: 1; padding: 0.2rem; }
+
+/* ── 顶部导航 ── */
+.topbar {
+  background: var(--topbar-bg);
+  border-bottom: var(--topbar-border);
+  position: var(--topbar-sticky);
+  top: 0;
+  z-index: 60;
+  backdrop-filter: blur(12px);
+}
+.topbar-inner { display: flex; align-items: center; gap: 0.75rem; max-width: 1240px; margin: 0 auto; padding: 0.6rem 1rem; flex-wrap: nowrap; }
+@media (min-width: 768px) { .topbar-inner { padding: 0.75rem 1.5rem; } }
+
+.brand { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+.brand-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; flex: none;
+  background: var(--accent-2); color: var(--accent-ink, #fff);
+  border: var(--border-thin); box-shadow: 3px 3px 0 var(--ink);
+}
+.brand-mark svg { width: 20px; height: 20px; }
+.brand-title { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; white-space: nowrap; color: var(--ink); }
+.brand-meta { display: none; font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-3); }
+@media (min-width: 900px) { .brand-meta { display: block; } }
+
+.nav-links { display: flex; align-items: center; gap: 0.35rem; margin-left: 0.5rem; flex: 1; overflow-x: auto; scrollbar-width: none; }
+.nav-links::-webkit-scrollbar { display: none; }
+.nav-item {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  min-height: 40px; padding: 0 0.8rem; white-space: nowrap; flex-shrink: 0;
+  font-size: 0.9rem; font-weight: 600; color: var(--ink);
+  border: var(--border-thin); border-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.nav-item svg { width: 14px; height: 14px; }
+.nav-item:hover { background: var(--hover-bg); border-color: var(--ink); }
+.nav-item.active { background: var(--ink); color: var(--chip-active-ink); border-color: var(--ink); }
+
+/* 顶栏主题切换按钮（导航区内，与首页/发布/我的并列） */
+.theme-switch {
+  color: var(--accent); font-weight: 700;
+}
+.theme-switch svg { width: 15px; height: 15px; color: var(--accent); }
+.theme-switch:hover { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.theme-switch:hover svg { color: var(--accent-ink); }
+
+.user-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  min-height: 38px; padding: 0 0.7rem; white-space: nowrap; flex-shrink: 0;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+  color: var(--accent-ink, #fff); background: var(--accent-4, var(--ink));
+  border: var(--border-thin);
+}
+.user-chip svg { width: 13px; height: 13px; }
+.btn-login {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  min-height: 38px; padding: 0 0.9rem; white-space: nowrap; flex-shrink: 0;
+  font-size: 0.85rem; font-weight: 700;
+  background: var(--btn-primary-bg); color: var(--btn-primary-ink); border: var(--border-thin);
+}
+.btn-login svg { width: 14px; height: 14px; }
+.btn-logout { border: none; background: none; color: var(--text-2); font-size: 0.82rem; min-height: 36px; padding: 0 0.4rem; flex-shrink: 0; }
+
+/* ── 通用按钮 ── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 46px; padding: 0.65rem 1.35rem;
+  font-weight: 700; font-size: 0.95rem; border: var(--border-thin);
+  transition: background 0.15s, color 0.15s, transform 0.2s, box-shadow 0.2s;
+}
+.btn svg { width: 17px; height: 17px; }
+.btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-ink); }
+.btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-ink); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-block { width: 100%; }
+
+/* ── 我的发布 / 我的借用 双卡 ── */
+.mypanel { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin-bottom: 2rem; }
+.mycard {
+  display: flex; flex-direction: column; gap: 0.3rem; text-align: left;
+  background: var(--card-bg); border: var(--card-border);
+  box-shadow: var(--shadow-soft); padding: 0.8rem 1rem; border-radius: var(--radius);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.mycard:hover { transform: translateY(-2px); box-shadow: var(--shadow-1); }
+.mycard-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.mycard-title { font-family: var(--font-head); font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+.mycard-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 1.7rem; height: 1.7rem; padding: 0 0.35rem;
+  font-family: var(--font-mono); font-size: 0.82rem; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink); border: var(--border-thin);
+}
+.mycard-desc { font-size: 0.74rem; color: var(--text-3); }
+
+/* ── Hero ── */
+.hero { margin-bottom: 2.5rem; position: relative; }
+.hero-box { max-width: 46rem; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+.hero-badge svg { width: 14px; height: 14px; }
+.hero-title { font-family: var(--font-head); font-size: clamp(2rem, 5.5vw, 3.4rem); font-weight: 900; line-height: 1.15; color: var(--ink); text-wrap: balance; margin-bottom: 1.15rem; max-width: 18ch; }
+.hero-title em { font-style: normal; }
+.hero-sub { max-width: 34em; color: var(--text-2); margin-bottom: 1.75rem; font-size: 0.98rem; line-height: 1.75; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+
+/* ── 工具栏 ── */
+.toolbar {
+  background: var(--toolbar-bg); border: var(--toolbar-border);
+  box-shadow: var(--shadow-soft); border-radius: var(--radius);
+  padding: 1.1rem; margin-bottom: 2.5rem;
+  display: flex; flex-direction: column; gap: 0.9rem;
+}
+.tool-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.search-box {
+  flex: 1 1 220px; min-width: 0; min-height: 44px;
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0 0.7rem; background: var(--input-bg); border: var(--input-border);
+  border-radius: var(--radius-sm);
+  transition: box-shadow 0.2s;
+}
+.search-box:focus-within { box-shadow: 3px 3px 0 var(--accent); }
+.search-box svg { flex: none; width: 16px; height: 16px; color: var(--text-3); }
+.search-input { width: 100%; border: none; outline: none; background: transparent; font-size: 0.92rem; line-height: 1.6; color: var(--ink); }
+.count-chip {
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+  background: var(--accent); color: var(--accent-ink); border: var(--border-thin);
+  padding: 0.45rem 0.7rem; border-radius: var(--radius-sm);
+}
+.btn-refresh {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  min-height: 40px; padding: 0 0.85rem;
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  background: var(--btn-secondary-bg); color: var(--btn-secondary-ink); border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-refresh svg { width: 14px; height: 14px; }
+.btn-refresh:hover { background: var(--hover-bg); box-shadow: 2px 2px 0 var(--accent); }
+.chip-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  min-height: 38px; padding: 0 0.9rem; white-space: nowrap;
+  font-size: 0.85rem; font-weight: 600;
+  background: var(--chip-bg); color: var(--ink); border: var(--chip-border);
+  border-radius: var(--radius-sm);
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.chip:hover { box-shadow: 2px 2px 0 var(--accent); }
+.chip.active { background: var(--chip-active-bg); color: var(--chip-active-ink); }
+.radius-select {
+  min-height: 40px; padding: 0 0.7rem;
+  background: var(--input-bg); color: var(--ink); border: var(--input-border);
+  border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;
+}
+.loc-hint { font-size: 0.8rem; color: var(--text-3); }
+
+/* ── 物品卡片网格 ── */
+.card-grid { position: relative; display: grid; grid-template-columns: 1fr; gap: 1.85rem 1.4rem; }
+@media (min-width: 640px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px) { .card-grid { grid-template-columns: repeat(3, 1fr); } }
+.grid-end { grid-column: 1 / -1; margin: 0.5rem 0 0; font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-3); text-align: center; }
+
+.card {
+  position: relative; display: flex; flex-direction: column;
+  background: var(--card-bg); border: var(--card-border);
+  border-radius: var(--radius); box-shadow: var(--card-shadow);
+  overflow: hidden; transition: transform 0.25s, box-shadow 0.25s;
+}
+.card:hover { box-shadow: var(--shadow-hover); }
+.card-tape { display: none; }
+
+.cell-photo {
+  position: relative; min-height: 145px; flex: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+  background: var(--photo-bg); color: var(--text-3);
+}
+.cell-photo svg { width: 30px; height: 30px; }
+.photo-label { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700; background: var(--surface); border: var(--border-thin); padding: 0.2rem 0.55rem; }
+
+.cell-main { padding: 1rem 1.1rem 0; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+.cell-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.badge {
+  display: inline-flex; align-items: center;
+  font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
+  padding: 0.2rem 0.55rem; border: 1px solid var(--ink);
+  border-radius: var(--radius-sm);
+}
+.badge.avail { background: var(--badge-avail-bg); color: var(--badge-avail-ink); border-color: var(--badge-avail-border, var(--ink)); }
+.badge.lent { background: var(--badge-lent-bg); color: var(--badge-lent-ink); border-color: var(--badge-lent-border, var(--ink)); }
+.badge.arch { background: var(--badge-arch-bg); color: var(--badge-arch-ink); border-color: var(--badge-arch-border, var(--ink)); border-style: var(--badge-arch-dashed, solid) ? dashed : solid; }
+.dist { font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700; color: var(--accent); display: inline-flex; align-items: center; gap: 0.25rem; }
+.dist svg { width: 12px; height: 12px; }
+.card-title { font-family: var(--font-head); font-size: 1.25rem; font-weight: 700; line-height: 1.3; text-wrap: balance; color: var(--ink); }
+.card-title a { color: inherit; }
+.card-title a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.card-desc { font-size: 0.88rem; line-height: 1.6; color: var(--text-2); flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cell-info {
+  display: flex; flex-wrap: wrap; gap: 0.4em 1.1em; align-items: center;
+  border-top: 1px dashed var(--text-3); padding-top: 0.6rem; margin-top: 0.1rem;
+  font-family: var(--font-mono); font-size: 0.78rem; font-weight: 600; color: var(--text-2);
+}
+.rent-group { display: inline-flex; align-items: center; gap: 0.45em; }
+.c-rent { color: var(--accent); font-weight: 700; }
+.cell-actions {
+  display: grid; grid-template-columns: 1fr auto; margin-top: 0.9rem;
+  border-top: var(--border-thin);
+}
+.btn-act {
+  min-height: 44px; padding: 0 1rem;
+  font-family: var(--font-mono); font-size: 0.86rem; font-weight: 700;
+  border: none; transition: background 0.15s, color 0.15s;
+}
+.btn-act.primary { background: var(--accent); color: var(--accent-ink); }
+.btn-act.primary:hover:not(:disabled) { background: var(--accent-2); }
+.btn-act.primary:disabled { background: var(--surface-3); color: var(--text-3); cursor: not-allowed; }
+.btn-act.return { background: var(--accent-4, var(--ink)); }
+.btn-act.ghost { background: var(--surface); color: var(--ink); border-left: var(--border-thin); }
+.btn-act.ghost:hover:not(:disabled) { background: var(--hover-bg); }
+.btn-act.ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-act.wide { grid-column: 1 / -1; }
+
+/* ── 空状态 / 加载态 ── */
+.empty-box {
+  background: var(--surface); border: var(--border); box-shadow: var(--shadow-soft);
+  border-radius: var(--radius); padding: 3rem 1.5rem; margin-bottom: 1rem;
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.9rem;
+}
+.empty-title { font-family: var(--font-head); font-size: 1.35rem; color: var(--ink); }
+.empty-desc { color: var(--text-2); font-size: 0.92rem; }
+.loading-box {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: var(--font-mono); font-weight: 700; font-size: 0.9rem; color: var(--text-2);
+  background: var(--surface); border: var(--border-thin); border-radius: var(--radius-sm);
+  padding: 1.1rem 1.3rem; margin-bottom: 2rem;
+}
+.loading-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); animation: pulse 0.9s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(0.7); opacity: 0.6; } 50% { transform: scale(1); opacity: 1; } }
+
+/* ── 共享说明 ── */
+.data-manage-box {
+  margin-top: 2.5rem; background: var(--surface);
+  border: var(--border-dashed); border-radius: var(--radius);
+  padding: 1.1rem; display: flex; align-items: center; gap: 0.9rem;
+}
+.data-manage-box svg { width: 34px; height: 34px; flex: none; color: var(--accent); }
+.data-manage-title { font-family: var(--font-head); font-size: 1.05rem; color: var(--ink); }
+.data-manage-desc { font-size: 0.8rem; color: var(--text-3); }
+
+/* ── 详情页 ── */
+.back-link {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700;
+  min-height: 44px; padding: 0 0.4rem; color: var(--ink); margin-bottom: 0.5rem;
+}
+.back-link svg { width: 14px; height: 14px; }
+.back-link:hover { color: var(--accent); }
+.detail { display: grid; grid-template-columns: 1fr; gap: 1.5rem; background: var(--card-bg); border: var(--card-border); box-shadow: var(--card-shadow); border-radius: var(--radius); padding: 1.2rem; }
+@media (min-width: 860px) { .detail { grid-template-columns: 1.05fr 1fr; gap: 2rem; padding: 2rem; } }
+.detail-photo {
+  position: relative; min-height: 280px; border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem;
+  background: var(--photo-bg); color: var(--text-3);
+}
+.detail-photo svg { width: 52px; height: 52px; }
+.detail-photo .badge { position: absolute; top: 0.8rem; left: 0.8rem; }
+.detail-info { display: flex; flex-direction: column; gap: 0.9rem; }
+.meta-mono { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-3); }
+.detail-title { font-family: var(--font-head); font-size: clamp(1.5rem, 3.5vw, 2.1rem); font-weight: 900; line-height: 1.25; color: var(--ink); text-wrap: balance; }
+.detail-desc { color: var(--text-2); line-height: 1.8; }
+.detail-rows { border: var(--border-thin); border-radius: var(--radius-sm); overflow: hidden; }
+.detail-row { display: flex; gap: 1rem; padding: 0.7rem 0.9rem; border-bottom: var(--border-thin); font-size: 0.9rem; }
+.detail-row:last-child { border-bottom: none; }
+.detail-row dt { flex: none; width: 5.5em; font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--text-3); padding-top: 0.15rem; }
+.detail-row dd { color: var(--ink); word-break: break-all; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 0.3rem; }
+
+/* ── 发布页表单 ── */
+.form-shell { max-width: 760px; margin: 0 auto; background: var(--surface); border: var(--card-border); box-shadow: var(--card-shadow); border-radius: var(--radius); padding: clamp(1.3rem, 3.5vw, 2.2rem); }
+.form-title { font-family: var(--font-head); font-size: 1.7rem; font-weight: 900; color: var(--ink); margin-bottom: 0.4rem; }
+.form-sub { color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; }
+.publish-form { display: flex; flex-direction: column; gap: 1.2rem; }
+.form-section {
+  background: var(--fieldset-bg); border: var(--fieldset-border); border-radius: var(--radius);
+  padding: 1.1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 1rem;
+}
+.form-legend {
+  float: left; margin: -1.5rem 0 0 -0.2rem; padding: 0.1rem 0.6rem;
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  background: var(--accent); color: var(--accent-ink);
+}
+.field { display: flex; flex-direction: column; gap: 0.4rem; }
+.field-label { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+.field-label small { color: var(--text-3); font-weight: 400; }
+.req { color: var(--accent-2); font-style: normal; }
+.input, .select, .textarea {
+  width: 100%; min-height: 46px; padding: 0.65rem 0.85rem;
+  background: var(--input-bg); color: var(--ink);
+  border: var(--input-border); border-radius: var(--radius-sm);
+  transition: box-shadow 0.2s;
+}
+.input:focus, .select:focus, .textarea:focus { outline: none; box-shadow: 3px 3px 0 var(--accent); }
+.textarea { resize: vertical; line-height: 1.7; }
+.radio-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.radio-option {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  min-height: 42px; padding: 0 1rem; font-size: 0.88rem; font-weight: 600;
+  background: var(--chip-bg); color: var(--ink); border: var(--chip-border);
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.radio-option input { accent-color: var(--accent); }
+.radio-option.active { background: var(--chip-active-bg); color: var(--chip-active-ink); }
+.photo-box {
+  min-height: 150px; border: var(--border-dashed); border-radius: var(--radius);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+  color: var(--text-3); font-size: 0.85rem; background: var(--photo-bg);
+}
+.photo-box svg { width: 28px; height: 28px; }
+.loc-box {
+  display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+  padding: 0.65rem 0.85rem; background: var(--input-bg); border: var(--input-border);
+  border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text-2);
+}
+.loc-box .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; }
+.loc-box .ok { color: var(--badge-avail-ink); font-weight: 700; }
+.loc-box .fail { color: var(--badge-arch-ink); font-weight: 700; }
+.btn-loc { min-height: 34px; padding: 0 0.8rem; font-size: 0.8rem; font-weight: 700; background: var(--btn-secondary-bg); color: var(--btn-secondary-ink); border: var(--border-thin); border-radius: var(--radius-sm); }
+.btn-upload {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  min-height: 42px; padding: 0 1rem; font-size: 0.85rem; font-weight: 700;
+  background: var(--btn-secondary-bg); color: var(--btn-secondary-ink); border: var(--border-thin);
+  border-radius: var(--radius-sm);
+}
+.btn-upload svg { width: 15px; height: 15px; }
+.contact-hint { font-size: 0.78rem; color: var(--text-3); }
+.rent-hint { font-size: 0.82rem; color: var(--text-3); }
+.fee-row { display: flex; align-items: center; gap: 0.5rem; }
+.fee-row .prefix { font-family: var(--font-mono); font-weight: 700; color: var(--ink); }
+.fee-row .input { max-width: 160px; }
+.btn-submit { min-height: 50px; }
+.submit-hint { font-size: 0.78rem; color: var(--text-3); text-align: center; }
+
+/* ── 我的页面 ── */
+.page-head { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.4rem; }
+.page-title { font-family: var(--font-head); font-size: 1.6rem; font-weight: 900; color: var(--ink); }
+.page-sub { color: var(--text-2); font-size: 0.88rem; margin-bottom: 1.4rem; max-width: 46em; }
+.section-block { margin-bottom: 2.2rem; }
+.section-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.8rem; }
+.section-head h2 { font-family: var(--font-head); font-size: 1.15rem; color: var(--ink); }
+.rent-stats {
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+  background: var(--surface); border: var(--border-thin); border-radius: var(--radius);
+  padding: 0.8rem 1rem; margin-bottom: 1rem;
+}
+.rent-stats-label { font-size: 0.82rem; color: var(--text-2); }
+.rent-stats-total { font-family: var(--font-mono); font-size: 1.3rem; color: var(--accent); }
+.rent-stats-sub { font-size: 0.78rem; color: var(--text-3); }
+.row-list { list-style: none; display: flex; flex-direction: column; gap: 0.7rem; }
+.row-card {
+  background: var(--card-bg); border: var(--card-border); box-shadow: var(--shadow-soft);
+  border-radius: var(--radius); padding: 0.9rem 1rem;
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.row-head { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+.row-name { font-family: var(--font-head); font-size: 1.02rem; font-weight: 700; color: var(--ink); }
+.row-name:hover { color: var(--accent); }
+.row-meta { display: flex; flex-wrap: wrap; gap: 0.4em 1.1em; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-2); }
+.row-meta .income { color: var(--accent); font-weight: 700; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.btn-sm {
+  min-height: 36px; padding: 0 0.9rem; font-size: 0.82rem; font-weight: 700;
+  background: var(--btn-secondary-bg); color: var(--btn-secondary-ink); border: var(--border-thin);
+  border-radius: var(--radius-sm);
+}
+.btn-sm:hover { box-shadow: 2px 2px 0 var(--accent); }
+.btn-sm.danger { color: var(--accent-2); }
+.btn-sm.danger.arming { background: var(--ink); color: var(--accent-3); border-color: var(--ink); }
+
+/* ── 页脚 ── */
+.site-footer {
+  margin-top: 3rem; border-top: var(--border-thin); background: var(--topbar-bg);
+  padding: 1.6rem 1rem 2.2rem; text-align: center;
+}
+.site-footer .f-brand { font-family: var(--font-head); font-weight: 900; font-size: 1.05rem; color: var(--ink); margin-bottom: 0.3rem; }
+.site-footer .f-copy { font-size: 0.78rem; color: var(--text-3); }
+
+/* ── 弹窗 ── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(15, 15, 20, 0.5);
+  display: none; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-backdrop.open { display: flex; }
+.modal-card {
+  width: 100%; max-width: 460px; max-height: 88vh; overflow-y: auto;
+  background: var(--modal-bg); border: var(--modal-border); border-radius: var(--radius);
+  box-shadow: var(--modal-shadow); padding: 1.4rem;
+  display: flex; flex-direction: column; gap: 1rem;
+  animation: modalIn 0.25s var(--ease, ease-out);
+}
+@keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.modal-head { display: flex; align-items: flex-start; gap: 0.8rem; }
+.modal-head-icon {
+  display: inline-flex; width: 42px; height: 42px; flex: none;
+  align-items: center; justify-content: center;
+  background: var(--accent); color: var(--accent-ink); border: var(--border-thin);
+}
+.modal-head-icon svg { width: 20px; height: 20px; }
+.modal-title { font-family: var(--font-head); font-size: 1.15rem; color: var(--ink); text-wrap: balance; }
+.modal-sub { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-3); }
+.modal-body { display: flex; flex-direction: column; gap: 0.9rem; }
+.modal-close {
+  margin-left: auto; flex: none; border: none; background: none;
+  font-size: 1.3rem; line-height: 1; color: var(--text-3); padding: 0.2rem 0.4rem;
+}
+.contact-card { border: var(--border-thin); border-radius: var(--radius-sm); overflow: hidden; }
+.contact-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.65rem 0.85rem; border-bottom: var(--border-thin); font-size: 0.9rem; }
+.contact-row:last-child { border-bottom: none; }
+.contact-row .k { color: var(--text-3); font-size: 0.8rem; }
+.contact-row .v { color: var(--ink); }
+.rent-note {
+  font-size: 0.82rem; color: var(--text-2); background: var(--surface-2);
+  border: var(--border-thin); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem;
+}
+.rent-note b { color: var(--accent); }
+.privacy-tip { font-size: 0.78rem; color: var(--text-3); }
+
+/* ── 登录 / 注册（Tab + 手机号 + 6 位管理口令） ── */
+.login-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.2rem; }
+.login-tab {
+  flex: 1; min-height: 42px; font-size: 0.9rem; font-weight: 700;
+  background: var(--surface-2); color: var(--text-2);
+  border: var(--border-thin); border-radius: var(--radius-sm); cursor: pointer;
+}
+.login-tab.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.login-form { display: flex; flex-direction: column; gap: 0.9rem; }
+.login-tip { font-size: 0.82rem; color: var(--text-2); }
+.login-field { display: flex; flex-direction: column; gap: 0.4rem; }
+.login-label { font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+.login-hint { font-size: 0.74rem; color: var(--text-3); }
+.login-error { font-size: 0.8rem; color: var(--accent-2); font-weight: 600; margin: 0; }
+.login-footer { font-size: 0.76rem; color: var(--text-3); text-align: center; margin: 0; }
+.pin-inputs { display: flex; gap: 0.45rem; }
+.pin-box {
+  width: 2.6rem; height: 3rem; text-align: center;
+  font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700;
+  background: var(--input-bg); color: var(--ink);
+  border: var(--input-border); border-radius: var(--radius-sm);
+}
+.pin-box:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-4); }
+
+/* ── 管理弹窗：状态总览 + 指引 ── */
+.info-card { border: var(--border-thin); border-radius: var(--radius-sm); overflow: hidden; }
+.info-row { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.65rem 0.85rem; border-bottom: var(--border-thin); font-size: 0.9rem; }
+.info-row:last-child { border-bottom: none; }
+.info-row .k { font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; color: var(--text-3); }
+.info-row .v { color: var(--ink); }
+.guide-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.guide-list li { font-size: 0.82rem; line-height: 1.55; color: var(--text-2); border-left: 3px solid var(--accent-3); padding-left: 0.6rem; }
+.btn-block { width: 100%; }
+
+/* ── Toast ── */
+.toast-stack { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 300; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; pointer-events: none; }
+.toast {
+  background: var(--ink); color: var(--surface);
+  border: var(--border-thin); border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem; font-size: 0.85rem; font-weight: 600;
+  box-shadow: var(--shadow-soft); animation: toastIn 0.25s ease-out;
+  max-width: 90vw; text-align: center;
+}
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── 页面切换 ── */
+.page { display: none; animation: pageIn 0.3s ease-out; }
+.page.active { display: block; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+</style>
+<style>
+/* ============================================================
+   主题差异化样式
+   ============================================================ */
+
+/* ─────────── 孟菲斯：拼贴 + 硬阴影 + 旋转 + 胶带 ─────────── */
+[data-theme="memphis"] .topbar-inner { padding-top: 1.1rem; }
+[data-theme="memphis"] .brand-mark { background: var(--accent-2); box-shadow: 3px 3px 0 var(--ink); }
+[data-theme="memphis"] .nav-item { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+[data-theme="memphis"] .nav-item.active { background: var(--accent-3); color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+[data-theme="memphis"] .theme-switch {
+  background: var(--accent-3); color: var(--ink);
+  border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+  font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.02em;
+}
+[data-theme="memphis"] .theme-switch svg { color: var(--ink); }
+[data-theme="memphis"] .theme-switch:hover { background: var(--accent-2); color: #fff; border-color: var(--ink); box-shadow: 3px 3px 0 var(--ink); }
+[data-theme="memphis"] .theme-switch:hover svg { color: #fff; }
+[data-theme="memphis"] .hero { transform: rotate(-0.6deg); }
+[data-theme="memphis"] .hero-box {
+  position: relative; background: var(--surface);
+  border: var(--border); box-shadow: 8px 8px 0 var(--accent-3);
+  padding: clamp(1.5rem, 4vw, 2.8rem);
+}
+[data-theme="memphis"] .hero-box::before,
+[data-theme="memphis"] .hero-box::after {
+  content: ''; position: absolute; width: 92px; height: 20px;
+  background: rgba(244, 162, 97, 0.75); border: 1px solid var(--ink); z-index: 5;
+}
+[data-theme="memphis"] .hero-box::before { top: -12px; left: 8%; transform: rotate(-4deg); }
+[data-theme="memphis"] .hero-box::after { bottom: -10px; right: 10%; transform: rotate(3deg); }
+[data-theme="memphis"] .hero-badge {
+  border: var(--border-thin); background: var(--bg); box-shadow: 2px 2px 0 var(--ink);
+  padding: 0.3rem 0.7rem; color: var(--ink);
+}
+[data-theme="memphis"] .hero-title em { display: inline-block; background: var(--accent-3); border: var(--border-thin); box-shadow: 4px 4px 0 var(--accent-2); padding: 0 0.3em; transform: rotate(-1.5deg) scale(1.03); }
+[data-theme="memphis"] .btn-primary { box-shadow: 4px 4px 0 var(--accent-2); }
+[data-theme="memphis"] .btn-primary:hover:not(:disabled) { background: var(--accent-2); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+[data-theme="memphis"] .btn-secondary { box-shadow: 4px 4px 0 var(--accent-4); }
+[data-theme="memphis"] .btn-secondary:hover:not(:disabled) { background: var(--accent-3); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+[data-theme="memphis"] .card { border-radius: 0; }
+[data-theme="memphis"] .card:nth-child(3n+1) { transform: rotate(-0.5deg); --card-shadow: 6px 6px 0 var(--accent-2); }
+[data-theme="memphis"] .card:nth-child(3n+2) { transform: rotate(0.6deg); --card-shadow: 6px 6px 0 var(--accent-4); }
+[data-theme="memphis"] .card:nth-child(3n) { transform: rotate(-0.4deg); --card-shadow: 6px 6px 0 var(--accent-3); }
+[data-theme="memphis"] .card:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 9px 9px 0 var(--ink); z-index: 5; }
+[data-theme="memphis"] .card-tape {
+  display: block; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  width: 70px; height: 18px; background: rgba(233, 196, 106, 0.75);
+  border: 1px solid var(--ink); z-index: 6;
+}
+[data-theme="memphis"] .cell-photo { border-bottom: var(--border-thin); }
+[data-theme="memphis"] .cell-photo { min-height: 180px; }
+[data-theme="memphis"] .chip { font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700; }
+[data-theme="memphis"] .chip:hover { box-shadow: 3px 3px 0 var(--accent-3); }
+[data-theme="memphis"] .chip.active { background: var(--ink); color: var(--accent-3); box-shadow: 3px 3px 0 var(--accent-2); }
+[data-theme="memphis"] .count-chip { box-shadow: 2px 2px 0 var(--ink); }
+[data-theme="memphis"] .btn-act.primary { border-right: var(--border-thin); }
+[data-theme="memphis"] .btn-act.ghost { border-left: none; }
+[data-theme="memphis"] .form-shell { transform: rotate(-0.35deg); }
+[data-theme="memphis"] .detail { transform: rotate(-0.3deg); }
+[data-theme="memphis"] .badge { border: 1.5px solid var(--ink); box-shadow: 1.5px 1.5px 0 var(--ink); }
+
+/* ─────────── 功能主义网格：索引表 + 分段按钮 + 单色 ─────────── */
+[data-theme="brutalism"] .brand-mark { background: #111; border-color: #111; color: #fff; box-shadow: none; }
+[data-theme="brutalism"] .brand-title { letter-spacing: -0.02em; }
+[data-theme="brutalism"] .nav-item { border: none; font-weight: 500; }
+[data-theme="brutalism"] .nav-item:hover { background: var(--surface-2); }
+[data-theme="brutalism"] .nav-item.active { background: transparent; color: var(--ink); border-bottom: 2px solid var(--ink); border-radius: 0; }
+[data-theme="brutalism"] .theme-switch {
+  border: 1px solid var(--ink); color: var(--ink); background: transparent;
+  border-radius: 0; box-shadow: none; font-weight: 500; font-size: 0.85rem;
+}
+[data-theme="brutalism"] .theme-switch svg { color: var(--ink); }
+[data-theme="brutalism"] .theme-switch:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+[data-theme="brutalism"] .theme-switch:hover svg { color: var(--bg); }
+[data-theme="brutalism"] .user-chip { background: #fff; color: var(--ink); border: 1px solid var(--border); }
+[data-theme="brutalism"] .btn-login { border: 1px solid var(--ink); }
+[data-theme="brutalism"] .hero { padding: 2rem 0 1.8rem; border-bottom: var(--border); margin-bottom: 0; }
+[data-theme="brutalism"] .hero-box { padding: 0; }
+[data-theme="brutalism"] .hero-badge { border: 1px solid var(--ink); background: var(--bg); padding: 2px 8px; color: var(--ink); }
+[data-theme="brutalism"] .hero-title { font-weight: 800; letter-spacing: -0.03em; }
+[data-theme="brutalism"] .hero-title em { color: var(--accent-2); }
+[data-theme="brutalism"] .hero-sub { color: var(--text-2); font-size: 15px; }
+[data-theme="brutalism"] .btn { border: 1px solid var(--ink); font-weight: 600; font-size: 14px; }
+[data-theme="brutalism"] .btn-secondary { border-color: var(--ink); }
+[data-theme="brutalism"] .btn-secondary:hover:not(:disabled) { background: var(--surface-2); }
+[data-theme="brutalism"] .toolbar { border: none; box-shadow: none; padding: 0.8rem 0; border-bottom: var(--border); border-radius: 0; margin-bottom: 1.6rem; }
+[data-theme="brutalism"] .search-box { border: 1px solid var(--border); }
+[data-theme="brutalism"] .search-box:focus-within { box-shadow: none; border-color: var(--ink); }
+[data-theme="brutalism"] .count-chip { background: transparent; color: var(--text-2); border: none; padding: 0; font-size: 13px; }
+[data-theme="brutalism"] .btn-refresh { border: 1px solid var(--border); font-size: 12px; }
+[data-theme="brutalism"] .btn-refresh:hover { background: var(--surface-2); box-shadow: none; border-color: var(--ink); }
+[data-theme="brutalism"] .chip-group { border: 1px solid var(--border); background: #fff; }
+[data-theme="brutalism"] .chip { border: none; border-right: 1px solid var(--border); border-radius: 0; min-height: 36px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; color: var(--text-2); }
+[data-theme="brutalism"] .chip:last-child { border-right: none; }
+[data-theme="brutalism"] .chip:hover { box-shadow: none; background: var(--surface-2); color: var(--ink); }
+[data-theme="brutalism"] .chip.active { background: var(--ink); color: #fff; font-weight: 700; }
+[data-theme="brutalism"] .radius-select { border: 1px solid var(--border); min-height: 36px; font-size: 12px; }
+[data-theme="brutalism"] .loc-hint { font-family: var(--font-mono); font-size: 12px; }
+/* 索引表布局（≥900px 桌面端为表行，卡片内单元按列重排） */
+.table-head { display: none; }
+@media (min-width: 900px) {
+  [data-theme="brutalism"] .card-grid { display: block; border: 1px solid var(--border); background: #fff; }
+  [data-theme="brutalism"] .table-head {
+    display: grid; grid-template-columns: 100px 2.5fr 1.5fr 90px 90px 90px 170px; gap: 14px;
+    align-items: center; padding: 10px 16px;
+    border: 1px solid var(--border); border-bottom: 2px solid var(--ink); background: #fff;
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--text-2);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  [data-theme="brutalism"] .card {
+    display: grid; grid-template-columns: 100px 2.5fr 1.5fr 90px 90px 90px 170px; gap: 14px;
+    align-items: center; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border);
+    border-radius: 0; background: #fff; box-shadow: none; overflow: visible;
+  }
+  [data-theme="brutalism"] .card:last-child { border-bottom: none; }
+  [data-theme="brutalism"] .card:hover { background: var(--surface-2); box-shadow: none; transform: none; }
+  [data-theme="brutalism"] .card-tape { display: none; }
+  [data-theme="brutalism"] .cell-photo { grid-column: 1; min-height: 68px; height: 68px; background: #f4f4f4; border: 1px solid var(--border); }
+  [data-theme="brutalism"] .cell-photo svg { width: 22px; height: 22px; color: var(--text-3); }
+  [data-theme="brutalism"] .photo-label { display: none; }
+  [data-theme="brutalism"] .cell-main { display: contents; }
+  [data-theme="brutalism"] .cell-text { grid-column: 2; display: flex; flex-direction: column; gap: 2px; }
+  [data-theme="brutalism"] .card-title { font-family: var(--font-body); font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  [data-theme="brutalism"] .card-desc { font-size: 13px; -webkit-line-clamp: 1; }
+  [data-theme="brutalism"] .cell-top { display: contents; }
+  [data-theme="brutalism"] .badge { grid-column: 4; justify-self: start; font-size: 12px; font-weight: 600; padding: 3px 6px; }
+  [data-theme="brutalism"] .dist { grid-column: 5; justify-self: start; font-size: 13px; color: var(--text-2); }
+  [data-theme="brutalism"] .cell-info { display: contents; }
+  [data-theme="brutalism"] .c-place { display: none; }
+  [data-theme="brutalism"] .rent-group { grid-column: 3; display: flex; flex-direction: column; gap: 2px; font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
+  [data-theme="brutalism"] .c-rent { color: var(--text-2); font-weight: 600; }
+  [data-theme="brutalism"] .c-date { grid-column: 6; justify-self: start; font-family: var(--font-mono); font-size: 13px; color: var(--text-2); }
+  [data-theme="brutalism"] .cell-actions { grid-column: 7; margin-top: 0; border: none; display: flex; justify-content: flex-end; gap: 8px; }
+  [data-theme="brutalism"] .btn-act { min-height: 38px; padding: 0 12px; border: 1px solid var(--ink); background: #fff; color: var(--ink); font-size: 12px; font-weight: 600; }
+  [data-theme="brutalism"] .btn-act:hover:not(:disabled) { background: var(--surface-2); }
+  [data-theme="brutalism"] .btn-act.primary { background: #fff; color: var(--ink); }
+  [data-theme="brutalism"] .btn-act.primary:disabled { background: #fff; color: var(--text-3); border-color: var(--border); }
+  [data-theme="brutalism"] .btn-act.return { background: var(--ink); color: #fff; }
+  [data-theme="brutalism"] .btn-act.ghost { background: #fff; border: 1px solid var(--border); }
+  [data-theme="brutalism"] .grid-end { text-align: left; font-size: 12px; margin-top: 0.8rem; }
+}
+/* 桌面端表头对应的「功能说明」小字 */
+[data-theme="brutalism"] .card { border-bottom: 1px solid var(--border); }
+[data-theme="brutalism"] .badge.arch { border-style: solid; }
+
+/* 列表形态（<900px 小屏：单列列表行，一行一件；操作按钮在行末右列，不独占一行） */
+@media (max-width: 899px) {
+  [data-theme="brutalism"] .card-grid { display: block; border: 1px solid var(--border); background: #fff; }
+  [data-theme="brutalism"] .card {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; grid-template-rows: auto auto;
+    gap: 4px 12px; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border);
+    border-radius: 0; background: #fff; box-shadow: none; overflow: visible;
+  }
+  [data-theme="brutalism"] .card:last-child { border-bottom: none; }
+  [data-theme="brutalism"] .card:hover { background: var(--surface-2); box-shadow: none; transform: none; }
+  [data-theme="brutalism"] .card-tape { display: none; }
+  [data-theme="brutalism"] .cell-photo { grid-column: 1; grid-row: 1 / 3; min-height: 64px; height: 64px; background: #f4f4f4; border: 1px solid var(--border); }
+  [data-theme="brutalism"] .cell-photo svg { width: 20px; height: 20px; color: var(--text-3); }
+  [data-theme="brutalism"] .photo-label { display: none; }
+  [data-theme="brutalism"] .cell-main { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 0; align-self: center; }
+  [data-theme="brutalism"] .cell-top { display: flex; justify-content: flex-start; align-items: center; gap: 8px; }
+  [data-theme="brutalism"] .card-title { font-family: var(--font-body); font-size: 14px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  [data-theme="brutalism"] .card-desc { display: none; }
+  [data-theme="brutalism"] .badge { font-size: 11px; font-weight: 600; padding: 2px 6px; }
+  [data-theme="brutalism"] .dist { display: inline-flex; font-size: 12px; color: var(--text-2); }
+  [data-theme="brutalism"] .cell-info { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; padding: 0; border: none; font-family: var(--font-mono); font-size: 12px; color: var(--text-2); }
+  [data-theme="brutalism"] .c-place { display: none; }
+  [data-theme="brutalism"] .c-rent { color: var(--ink); font-weight: 700; font-size: 13px; }
+  [data-theme="brutalism"] .c-date { color: var(--text-3); }
+  [data-theme="brutalism"] .cell-actions { grid-column: 3; grid-row: 1 / 3; margin: 0; border: none; display: flex; flex-direction: column; justify-content: center; gap: 6px; align-items: stretch; }
+  [data-theme="brutalism"] .btn-act { min-height: 32px; padding: 0 12px; border: 1px solid var(--ink); background: #fff; color: var(--ink); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  [data-theme="brutalism"] .btn-act.primary:disabled { background: #fff; color: var(--text-3); border-color: var(--border); }
+  [data-theme="brutalism"] .btn-act:hover:not(:disabled) { background: var(--surface-2); }
+  [data-theme="brutalism"] .btn-act.return { background: var(--ink); color: #fff; }
+  [data-theme="brutalism"] .btn-act.ghost { background: #fff; border: 1px solid var(--border); }
+  [data-theme="brutalism"] .btn-act.wide { flex: none; align-self: stretch; grid-column: auto; }
+  [data-theme="brutalism"] .grid-end { text-align: left; font-size: 12px; margin-top: 0.8rem; }
+}
+
+/* ─────────── 暖色出版物：衬线标题 + 陶土色 + 圆角卡片 ─────────── */
+[data-theme="editorial"] .brand-mark { background: var(--accent-3); color: var(--accent); border: 1.5px solid var(--accent); box-shadow: none; }
+[data-theme="editorial"] .brand-title { font-family: var(--font-head); letter-spacing: -0.01em; }
+[data-theme="editorial"] .brand-meta { display: none; }
+[data-theme="editorial"] .nav-item { border: none; position: relative; font-size: 0.94rem; font-weight: 500; }
+[data-theme="editorial"] .nav-item::after {
+  content: ''; position: absolute; bottom: 8px; left: 0.25rem; width: 0; height: 2px;
+  background: var(--accent); transition: width 0.3s;
+}
+[data-theme="editorial"] .nav-item:hover::after, [data-theme="editorial"] .nav-item.active::after { width: calc(100% - 0.5rem); }
+[data-theme="editorial"] .nav-item.active { background: transparent; color: var(--accent-2); border: none; }
+[data-theme="editorial"] .theme-switch {
+  border-radius: 100px; color: var(--accent-2); background: var(--surface-2);
+  border: 1px solid var(--border); font-family: var(--font-serif); font-weight: 500; font-size: 0.92rem;
+  box-shadow: none;
+}
+[data-theme="editorial"] .theme-switch svg { color: var(--accent-2); }
+[data-theme="editorial"] .theme-switch:hover { background: var(--accent-2); color: #fff; border-color: var(--accent-2); }
+[data-theme="editorial"] .theme-switch:hover svg { color: #fff; }
+[data-theme="editorial"] .user-chip { background: var(--accent-3); color: var(--accent-2); border: 1px solid var(--accent-4); border-radius: 999px; }
+[data-theme="editorial"] .btn-login { border-radius: 8px; }
+[data-theme="editorial"] .hero { padding: 3rem 0 2.6rem; border-bottom: var(--border); }
+[data-theme="editorial"] .hero-badge {
+  background: var(--accent-3); border: 1px solid var(--accent-4); border-radius: 999px;
+  padding: 0.35rem 0.85rem; color: var(--accent-2); font-weight: 600; letter-spacing: 0.02em;
+}
+[data-theme="editorial"] .hero-title { letter-spacing: -0.02em; }
+[data-theme="editorial"] .hero-title em { color: var(--accent); }
+[data-theme="editorial"] .hero-sub { font-size: 1.02rem; line-height: 1.8; }
+[data-theme="editorial"] .btn { border-radius: 8px; font-weight: 600; }
+[data-theme="editorial"] .btn-primary { box-shadow: 0 4px 14px rgba(204, 120, 92, 0.28); }
+[data-theme="editorial"] .btn-primary:hover:not(:disabled) { background: var(--accent-2); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(204, 120, 92, 0.38); }
+[data-theme="editorial"] .btn-secondary { border: 1px solid rgba(43, 38, 34, 0.22); }
+[data-theme="editorial"] .btn-secondary:hover:not(:disabled) { background: #fff; border-color: var(--accent); color: var(--accent-2); transform: translateY(-2px); }
+[data-theme="editorial"] .toolbar { border-radius: 12px; box-shadow: 0 2px 8px rgba(43, 38, 34, 0.04); padding: 1.2rem 1.4rem; }
+[data-theme="editorial"] .search-box { border-radius: 8px; }
+[data-theme="editorial"] .search-box:focus-within { box-shadow: 0 0 0 2px var(--accent-4); }
+[data-theme="editorial"] .count-chip { background: transparent; color: var(--text-3); border: none; font-family: var(--font-head); padding: 0; font-size: 0.88rem; }
+[data-theme="editorial"] .count-chip b { color: var(--accent-2); font-size: 1.05rem; margin: 0 0.15rem; }
+[data-theme="editorial"] .btn-refresh { border-radius: 6px; }
+[data-theme="editorial"] .chip { border-radius: 6px; min-height: 40px; font-size: 0.875rem; }
+[data-theme="editorial"] .chip:hover { border-color: var(--accent); color: var(--accent-2); background: rgba(204, 120, 92, 0.04); box-shadow: none; }
+[data-theme="editorial"] .chip.active { box-shadow: 0 2px 6px rgba(204, 120, 92, 0.25); }
+[data-theme="editorial"] .radius-select { border-radius: 6px; min-height: 40px; }
+[data-theme="editorial"] .card { border-radius: 12px; }
+[data-theme="editorial"] .card:hover { transform: translateY(-4px); border-color: var(--accent-4); }
+[data-theme="editorial"] .cell-photo { height: 180px; min-height: 180px; background: #eae3d5; border-bottom: var(--border); }
+[data-theme="editorial"] .cell-photo svg { color: var(--accent); opacity: 0.85; }
+[data-theme="editorial"] .card-title { font-family: var(--font-head); font-weight: 700; letter-spacing: -0.01em; }
+[data-theme="editorial"] .cell-info { border-top-color: rgba(43, 38, 34, 0.14); }
+[data-theme="editorial"] .c-rent { color: var(--accent-2); }
+[data-theme="editorial"] .dist { color: var(--accent-2); }
+[data-theme="editorial"] .badge { border-radius: 999px; border-width: 1px; padding: 0.2rem 0.7rem; }
+[data-theme="editorial"] .btn-act { border: none; }
+[data-theme="editorial"] .btn-act.primary { background: var(--accent); border-radius: 8px; }
+[data-theme="editorial"] .btn-act.ghost { border-radius: 8px; }
+[data-theme="editorial"] .form-shell { border-radius: 14px; box-shadow: var(--shadow-1); }
+[data-theme="editorial"] .form-legend { background: var(--accent); border-radius: 4px; }
+[data-theme="editorial"] .detail { border-radius: 14px; }
+[data-theme="editorial"] .modal-card { border-radius: 14px; }
+[data-theme="editorial"] .empty-box { border-radius: 14px; }
+
+/* ============================================================
+   风格切换器（FAB + 面板）
+   ============================================================ */
+.theme-fab {
+  position: fixed; right: 1.1rem; bottom: 1.1rem; z-index: 150;
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--accent-ink);
+  border: 2px solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.theme-fab:hover { transform: translateY(-3px) rotate(8deg); box-shadow: 6px 6px 0 var(--ink); }
+.theme-fab svg { width: 26px; height: 26px; }
+.theme-fab .fab-label {
+  position: absolute; right: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  white-space: nowrap; font-size: 0.78rem; font-weight: 700; color: var(--ink);
+  background: var(--surface); border: var(--border-thin); border-radius: var(--radius-sm);
+  padding: 0.25rem 0.6rem; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.theme-fab:hover .fab-label { opacity: 1; }
+
+.theme-popover {
+  position: fixed; right: 1.1rem; bottom: 5.2rem; z-index: 160;
+  width: 300px; max-width: calc(100vw - 2rem);
+  background: var(--surface); border: var(--border-thin); border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+  padding: 0.8rem; display: none; flex-direction: column; gap: 0.35rem;
+}
+.theme-popover.open { display: flex; animation: popIn 0.2s ease-out; }
+@keyframes popIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.theme-popover-title { font-size: 0.75rem; font-weight: 700; color: var(--text-3); font-family: var(--font-mono); letter-spacing: 0.05em; padding: 0.15rem 0.4rem 0.4rem; border-bottom: 1px dashed var(--text-3); margin-bottom: 0.3rem; }
+.theme-option {
+  display: flex; align-items: center; gap: 0.7rem; width: 100%;
+  padding: 0.6rem 0.7rem; text-align: left; cursor: pointer;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm);
+  transition: background 0.15s, border-color 0.15s;
+}
+.theme-option:hover { background: var(--hover-bg); border-color: var(--text-3); }
+.theme-option.active { border-color: var(--accent); background: var(--hover-bg); }
+.theme-option .swatches { display: flex; gap: 3px; flex: none; }
+.theme-option .swatches i { width: 15px; height: 15px; border: 1px solid rgba(0,0,0,0.25); }
+.theme-option .t-name { font-size: 0.9rem; font-weight: 700; color: var(--ink); line-height: 1.25; }
+.theme-option .t-desc { font-size: 0.72rem; color: var(--text-3); line-height: 1.35; }
+.theme-option .t-check { margin-left: auto; color: var(--accent); font-weight: 900; flex: none; }
+.theme-option .t-check:empty { display: none; }
+
+/* ============================================================
+   响应式收尾（置于所有主题覆盖之后，保证优先级）
+   ============================================================ */
+@media (max-width: 899px) {
+  .brand-meta { display: none !important; }
+}
+@media (max-width: 640px) {
+  .container { padding: 1rem 0.875rem 1rem; }
+  .topbar-inner { flex-wrap: wrap; row-gap: 0.2rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+  .nav-links { order: 3; flex: 1 1 100%; overflow-x: auto; margin-left: 0; padding: 0.15rem 0 0; }
+  .brand-mark { width: 30px; height: 30px; box-shadow: 2px 2px 0 var(--ink); }
+  .brand-mark svg { width: 16px; height: 16px; }
+  .brand-title { font-size: 1.02rem; }
+  .nav-item { min-height: 36px; padding: 0 0.6rem; font-size: 0.8rem; }
+  .theme-switch svg { width: 14px; height: 14px; }
+  .user-chip { min-height: 32px; padding: 0 0.5rem; font-size: 0.7rem; }
+  .user-chip svg { display: none; }
+  .btn-login { min-height: 34px; padding: 0 0.6rem; font-size: 0.78rem; }
+  .btn-login svg { display: none; }
+  .btn-logout { min-height: 32px; font-size: 0.74rem; }
+  .mypanel { grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.5rem; }
+  .mycard { padding: 0.7rem 0.8rem; }
+  .mycard-desc { display: none; }
+  .hero { margin-bottom: 2rem; }
+  .hero-title { font-size: clamp(1.75rem, 8vw, 2.6rem); margin-bottom: 1rem; }
+  .hero-sub { margin-bottom: 1.4rem; font-size: 0.92rem; }
+  .toolbar { padding: 0.85rem; margin-bottom: 2rem; gap: 0.7rem; }
+  .card-grid { gap: 1.25rem; }
+  .cell-photo { min-height: 120px; }
+  .cell-photo svg { width: 26px; height: 26px; }
+  .cell-main { padding: 0.85rem 0.95rem 0; gap: 0.5rem; }
+}
+</style>
+<body>
+
+<!-- 评审提示条（样机专用，最终版移除） -->
+<div class="container" style="padding-bottom:0">
+  <div class="review-note" id="reviewNote">
+    <b>UI 评审样机</b>
+    <span>同一套功能、三种风格。点击右下角调色板按钮或右上角主题按钮随时切换；搜索 / 分类 / 距离 / 登录 / 借用弹窗均可交互体验。</span>
+    <button type="button" class="rn-close" id="reviewNoteClose" aria-label="关闭提示">×</button>
+  </div>
+</div>
+
+<!-- ================= 顶部导航 ================= -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#/home" class="brand" data-nav>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      </span>
+      <span class="brand-title">邻里好物</span>
+      <span class="brand-meta">COMMUNITY SHARE · V3</span>
+    </a>
+
+    <nav class="nav-links" aria-label="主导航">
+      <a href="#/home" class="nav-item" data-nav data-page-link="home">首页</a>
+      <a href="#/mine" class="nav-item" data-nav data-page-link="mine">我的</a>
+      <button type="button" class="nav-item theme-switch" id="themeNavBtn" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 3-3.5 3H16a2.5 2.5 0 0 0-2 4c.6.8.4 3-2 3Z"/><circle cx="7.5" cy="11.5" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="9.5" r="1"/></svg>
+        主题切换
+      </button>
+    </nav>
+
+    <span class="user-chip" id="userChip" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="userPhone">138****8000</span>
+    </span>
+    <button type="button" class="btn-login" id="loginBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      登录
+    </button>
+    <button type="button" class="btn-logout" id="logoutBtn" hidden>退出</button>
+  </div>
+</header>
+
+<!-- ================= 首页 ================= -->
+<main class="container page" id="page-home">
+  <!-- 我的发布 / 我的借用（登录后显示） -->
+  <section class="mypanel" id="myPanel" hidden aria-label="我的">
+    <a href="#/mine" class="mycard" data-nav>
+      <span class="mycard-head">
+        <span class="mycard-title">我的发布</span>
+        <span class="mycard-count" id="mineCount">0</span>
+      </span>
+      <span class="mycard-desc">上架 / 下架 / 删除</span>
+    </a>
+    <a href="#/borrows" class="mycard" data-nav>
+      <span class="mycard-head">
+        <span class="mycard-title">我的借用</span>
+        <span class="mycard-count" id="borrowCount">0</span>
+      </span>
+      <span class="mycard-desc">借来的好物，快速归还</span>
+    </a>
+  </section>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-box">
+      <span class="hero-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        社区闲置 · 邻里互助 · 就在附近
+      </span>
+      <h1 class="hero-title">让好物在<em>邻里间流转</em></h1>
+      <p class="hero-sub">发现附近的闲置好物，按距离找到身边的邻居；借用、归还，让每一件物品继续发挥价值。</p>
+      <div class="hero-actions">
+        <a href="#/publish" class="btn btn-primary" data-nav>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          发布我的闲置
+        </a>
+        <a href="#itemGrid" class="btn btn-secondary" data-nav>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          浏览好物
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 工具栏：搜索 / 分类 / 距离 / 状态 / 刷新 -->
+  <section class="toolbar" aria-label="筛选工具栏">
+    <div class="tool-row">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="searchInput" class="search-input" type="search" placeholder="搜好物：名称、描述、楼号…" aria-label="搜索闲置物品">
+      </div>
+      <span class="count-chip" id="countChip">共 0 件</span>
+      <button type="button" class="btn-refresh" id="refreshBtn" aria-label="刷新好物列表">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        刷新
+      </button>
+    </div>
+
+    <div class="tool-row">
+      <div class="chip-group" id="catChips" role="group" aria-label="分类筛选"></div>
+    </div>
+
+    <div class="tool-row">
+      <select class="radius-select" id="radiusSelect" aria-label="距离筛选">
+        <option value="1">1 公里内</option>
+        <option value="3">3 公里内</option>
+        <option value="5" selected>5 公里内</option>
+        <option value="10">10 公里内</option>
+        <option value="all">全部距离</option>
+      </select>
+      <button type="button" class="chip" id="locChip">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        已定位
+      </button>
+      <button type="button" class="chip" id="lentChip" aria-pressed="false">显示已借出</button>
+    </div>
+    <p class="loc-hint" id="locHint" hidden>尚未获取你的定位，距离筛选暂未生效——点击「获取定位」或改选「全部距离」。</p>
+  </section>
+
+  <!-- 列表区域 -->
+  <div id="homeArea"></div>
+</main>
+
+<!-- ================= 详情页 ================= -->
+<main class="container page" id="page-detail">
+  <a href="#/home" class="back-link" data-nav>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+    返回列表
+  </a>
+  <div id="detailArea"></div>
+</main>
+
+<!-- ================= 发布页 ================= -->
+<main class="container page" id="page-publish">
+  <div class="form-shell">
+    <h1 class="form-title">发布闲置物品</h1>
+    <p class="form-sub" id="publishSub">填几张卡的信息，让附近的邻居借走你的好物</p>
+
+    <div id="publishArea"></div>
+  </div>
+</main>
+
+<!-- ================= 我的页面 ================= -->
+<main class="container page" id="page-mine">
+  <a href="#/home" class="back-link" data-nav>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+    返回首页
+  </a>
+  <div class="page-head">
+    <h1 class="page-title">我的发布</h1>
+    <span class="count-chip" id="mineTotalChip">共 0 件</span>
+  </div>
+  <p class="page-sub">上架 / 下架控制邻居可见性；删除会把物品从社区列表彻底移除，不可恢复。已借出的物品请先收回再删除。</p>
+
+  <div id="mineArea"></div>
+</main>
+
+<!-- ================= 我的借用页 ================= -->
+<main class="container page" id="page-borrows">
+  <a href="#/home" class="back-link" data-nav>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+    返回首页
+  </a>
+  <div class="page-head">
+    <h1 class="page-title">我的借用</h1>
+    <span class="count-chip" id="borrowsTotalChip">共 0 件</span>
+  </div>
+  <p class="page-sub">用完记得归还，让好物继续流转。换设备登录同一手机号即可看到自己的借用。</p>
+
+  <div id="borrowsArea"></div>
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer class="site-footer">
+  <div class="f-brand">邻里好物</div>
+  <p class="f-copy">社区闲置物品互助共享 · 数据在云端，全站同一份 · UI 评审样机（三种风格可切换）</p>
+</footer>
+
+<!-- ================= 风格切换 FAB ================= -->
+<button type="button" class="theme-fab" id="themeFab" aria-label="切换界面风格" aria-haspopup="true" aria-expanded="false">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a10 10 0 1 1 10-10c0 2.5-2 3-3.5 3H16a2.5 2.5 0 0 0-2 4c.6.8.4 3-2 3Z"/><circle cx="7.5" cy="11.5" r="1"/><circle cx="11" cy="7.5" r="1"/><circle cx="15.5" cy="9.5" r="1"/></svg>
+  <span class="fab-label">切换风格</span>
+</button>
+
+<div class="theme-popover" id="themePopover" role="dialog" aria-label="选择界面风格">
+  <div class="theme-popover-title">界面风格 · UI THEME</div>
+  <div id="themeOptions"></div>
+</div>
+
+<!-- ================= 弹窗 ================= -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal-card" id="modalCard"></div>
+</div>
+
+<!-- ================= Toast ================= -->
+<div class="toast-stack" id="toastStack"></div>
+
+</body>
+<script>
+/* ============================================================
+   样机脚本：数据 + 筛选 + 页面路由 + 主题切换 + 弹窗 + Toast
+   ============================================================ */
+
+/* ---------- 主题定义 ---------- */
+const THEMES = [
+  { id: 'memphis',   name: '孟菲斯复古拼贴', desc: '当前线上默认 · 撞色硬阴影', swatches: ['#e63946', '#e9c46a', '#2a6f97', '#7209b7'] },
+  { id: 'brutalism', name: '功能主义网格',   desc: 'design-samples/17 · 索引表 + 单色', swatches: ['#111111', '#DDE1E6', '#0000EE', '#F0F3F8'] },
+  { id: 'editorial', name: '暖色出版物',     desc: 'design-samples/12 · 衬线 + 陶土色', swatches: ['#CC785C', '#F5F0E8', '#2B2622', '#E8B9A7'] },
+];
+const THEME_NAMES = { memphis: '孟菲斯', brutalism: '功能网格', editorial: '暖色出版' };
+
+/* ---------- 分类 ---------- */
+const CATEGORIES = [
+  { id: 'all', label: '全部' }, { id: 'home', label: '家居' }, { id: 'electronics', label: '电器' },
+  { id: 'kids', label: '儿童' }, { id: 'outdoor', label: '户外' }, { id: 'tools', label: '工具' },
+  { id: 'books', label: '图书' }, { id: 'clothing', label: '服饰' }, { id: 'other', label: '其他' },
+];
+const CAT_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]));
+
+/* ---------- 分类图标（内联 SVG，零外部资源） ---------- */
+const ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg>',
+  electronics: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  kids: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.8 6 6.2.7-4.6 4.2 1.3 6.1L12 15.9 6.3 19l1.3-6.1L3 8.7l6.2-.7z"/></svg>',
+  outdoor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 20 12 4l10 16z"/><path d="M6 20l6-9 6 9"/></svg>',
+  tools: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14.7 6.3a4.5 4.5 0 0 0-6 6L3 18l3 3 5.7-5.7a4.5 4.5 0 0 0 6-6L14 13l-3-3z"/></svg>',
+  books: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  clothing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 7h12l2 14H4z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>',
+  other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>',
+  photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+};
+
+/* ---------- 演示数据（字段与真实数据层一致） ---------- */
+let ITEMS = [
+  { id: 101, name: '戴森 V8 无线吸尘器', desc: '功能完好，只用了一年多，吸力依旧强劲，配齐全部吸头与充电底座。', cat: 'electronics', status: 'available', archived: false, place: '3 幢 202', phone: '138****6677', rentType: 'daily', rentFee: 5, date: '2026-09-05T10:00:00', dist: 0.6, owner: 'me', borrowedBy: null, income: 10 },
+  { id: 102, name: '宜家伸缩晾衣架', desc: '加粗款，可伸缩两米，阳台 / 窗台都好用，九成新。', cat: 'home', status: 'available', archived: false, place: '2 幢 1501', phone: '139****2031', rentType: 'free', rentFee: 0, date: '2026-09-04T09:30:00', dist: 0.3, owner: null, borrowedBy: null, income: 0 },
+  { id: 103, name: '儿童平衡车 12 寸', desc: '宝宝闲置，车况好，无脚踏款最适合学步后的第一辆小车。', cat: 'kids', status: 'lent', archived: false, place: '5 幢 601', phone: '137****4498', rentType: 'free', rentFee: 0, date: '2026-09-02T16:20:00', dist: 1.2, owner: null, borrowedBy: 'me', income: 0 },
+  { id: 104, name: '博世电钻套装 17 件', desc: '家装打孔好帮手，含钻头、批头与收纳箱，用前请自备手套。', cat: 'tools', status: 'available', archived: false, place: '8 幢 302', phone: '136****0155', rentType: 'perUse', rentFee: 3, date: '2026-09-01T11:00:00', dist: 0.8, owner: null, borrowedBy: null, income: 0 },
+  { id: 105, name: '《人类简史》等 3 本', desc: '人类简史 + 未来简史 + 今日简史，三本一起借，看完一起还。', cat: 'books', status: 'available', archived: false, place: '1 幢 805', phone: '135****7710', rentType: 'free', rentFee: 0, date: '2026-08-30T14:10:00', dist: null, owner: null, borrowedBy: null, income: 0 },
+  { id: 106, name: '双人露营帐篷 含防潮垫', desc: '自动速开帐篷，含地钉与防潮垫，适合周末公园 / 露营。', cat: 'outdoor', status: 'available', archived: false, place: '6 幢 1201', phone: '138****3322', rentType: 'daily', rentFee: 10, date: '2026-08-28T18:40:00', dist: 2.1, owner: null, borrowedBy: null, income: 0 },
+  { id: 107, name: '羊毛大衣 M 码 藏青', desc: '仅穿过几次，干洗后收纳，适合冬季通勤，含防尘袋。', cat: 'clothing', status: 'available', archived: true, place: '4 幢 903', phone: '138****8000', rentType: 'free', rentFee: 0, date: '2026-08-25T08:20:00', dist: 0.9, owner: 'me', borrowedBy: null, income: 0 },
+  { id: 108, name: '家用工具箱 26 件套', desc: '常用型号齐全，适合小修小补，借用后请清点归还。', cat: 'tools', status: 'lent', archived: false, place: '7 幢 401', phone: '134****9088', rentType: 'perUse', rentFee: 2, date: '2026-08-20T20:15:00', dist: null, owner: null, borrowedBy: null, income: 0 },
+];
+
+/* ---------- 应用状态 ---------- */
+const VALID_THEMES = new Set(THEMES.map(t => t.id));
+const savedTheme = localStorage.getItem('llhw-theme');
+const state = {
+  theme: VALID_THEMES.has(savedTheme) ? savedTheme : 'memphis',
+  page: 'home',
+  search: '',
+  category: 'all',
+  radius: 5,
+  showLent: false,
+  located: true,
+  loggedIn: true,
+  confirmId: null,
+  confirmTimer: null,
+  detailId: null,
+};
+
+/* ---------- 工具函数 ---------- */
+const $ = (sel) => document.querySelector(sel);
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '刚刚';
+  return `${d.getMonth() + 1}月${d.getDate()}日`;
+}
+function fmtRent(it) {
+  if (it.rentType === 'free') return '免费';
+  return `¥${it.rentFee}${it.rentType === 'daily' ? '/天' : '/次'}`;
+}
+function fmtDist(it) {
+  if (it.dist === null || it.dist === undefined) return '';
+  return it.dist < 1 ? `${Math.round(it.dist * 10) / 10} km` : `${it.dist} km`;
+}
+function statusInfo(it) {
+  if (it.archived) return { text: '已下架', cls: 'arch' };
+  return it.status === 'lent' ? { text: '已借出', cls: 'lent' } : { text: '可借', cls: 'avail' };
+}
+
+/* ---------- 筛选（与真实数据层同口径） ---------- */
+function visibleItems() {
+  return ITEMS.filter(it => {
+    if (it.archived) return false;                                   // 已下架不出现在公开列表
+    if (!state.showLent && it.status === 'lent') return false;        // 默认隐藏已借出
+    if (state.category !== 'all' && it.cat !== state.category) return false;
+    const q = state.search.trim().toLowerCase();
+    if (q && !(`${it.name} ${it.desc} ${it.place}`.toLowerCase().includes(q))) return false;
+    if (state.radius !== 'all' && state.located && it.dist !== null && it.dist > state.radius) return false;
+    return true;
+  }).sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+}
+
+/* ---------- 卡片角色按钮 ---------- */
+function roleActions(it) {
+  if (state.loggedIn && it.owner === 'me') {
+    return `<button type="button" class="btn-act primary" data-act="manage" data-id="${it.id}">管理</button>`;
+  }
+  if (state.loggedIn && it.borrowedBy === 'me') {
+    return `<button type="button" class="btn-act primary return wide" data-act="return" data-id="${it.id}">我要归还</button>`;
+  }
+  const disabled = it.status === 'lent' || it.archived ? 'disabled' : '';
+  const label = it.status === 'lent' ? '已借出' : it.archived ? '已下架' : '我想借';
+  return `<button type="button" class="btn-act primary wide" data-act="borrow" data-id="${it.id}" ${disabled}>${label}</button>`;
+}
+
+/* ---------- 卡片渲染 ---------- */
+function cardHTML(it, i) {
+  const st = statusInfo(it);
+  const dist = fmtDist(it);
+  const icon = ICONS[it.cat] || ICONS.other;
+  return `
+  <article class="card" data-id="${it.id}">
+    <div class="card-tape" aria-hidden="true"></div>
+    <a href="#/detail/${it.id}" class="cell-photo" data-nav aria-label="查看 ${it.name} 详情">
+      ${icon}
+      <span class="photo-label">示例图 · ${CAT_LABEL[it.cat] || '其他'}</span>
+    </a>
+    <div class="cell-main">
+      <div class="cell-top">
+        <span class="badge ${st.cls}">${st.text}</span>
+        ${dist ? `<span class="dist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>${dist}</span>` : ''}
+      </div>
+      <div class="cell-text">
+        <h3 class="card-title"><a href="#/detail/${it.id}" data-nav>${it.name}</a></h3>
+        <p class="card-desc">${it.desc || '（无描述）'}</p>
+      </div>
+      <div class="cell-info">
+        <span class="c-place">${it.place}</span>
+        <span class="rent-group"><span class="c-cat">${CAT_LABEL[it.cat] || '其他'}</span><span class="c-rent">${fmtRent(it)}</span></span>
+        <span class="c-date">${fmtDate(it.date)}</span>
+      </div>
+    </div>
+    <div class="cell-actions">${roleActions(it)}</div>
+  </article>`;
+}
+
+/* ---------- 首页渲染 ---------- */
+function renderHome() {
+  const list = visibleItems();
+  $('#countChip').textContent = `共 ${list.length} 件`;
+  const area = $('#homeArea');
+
+  if (list.length === 0) {
+    area.innerHTML = `
+      <div class="empty-box">
+        <h2 class="empty-title">${state.search || state.category !== 'all' || state.showLent ? '没找到匹配的好物' : '附近暂无闲置物品'}</h2>
+        <p class="empty-desc">${state.search || state.category !== 'all' || state.showLent ? '换个关键词，或清除筛选条件试试。' : '试着扩大距离范围，或改选「全部距离」看看。'}</p>
+        <button type="button" class="btn btn-secondary" id="clearFilterBtn">清除筛选</button>
+      </div>`;
+    const btn = $('#clearFilterBtn');
+    if (btn) btn.addEventListener('click', () => {
+      state.search = ''; state.category = 'all'; state.showLent = false;
+      $('#searchInput').value = ''; syncChips(); renderHome();
+    });
+    return;
+  }
+
+  area.innerHTML = `
+    <div class="table-head" aria-hidden="true">
+      <span>图片</span><span>名称</span><span>分类 · 租金</span><span>状态</span><span>距离</span><span>日期</span><span>操作</span>
+    </div>
+    <section class="card-grid" id="itemGrid" aria-label="闲置物品列表">
+      ${list.map(cardHTML).join('')}
+      <p class="grid-end">已显示全部 ${list.length} 件</p>
+    </section>
+    <section class="data-manage-box" aria-label="共享说明">
+      ${ICONS.other}
+      <div>
+        <h2 class="data-manage-title">社区共享</h2>
+        <p class="data-manage-desc">物品数据由全体邻居共享。发布 / 借用 / 归还 / 上下架均在本站完成，操作后全站即时可见。</p>
+      </div>
+    </section>`;
+}
+
+/* ---------- 分类 chips ---------- */
+function syncChips() {
+  $('#catChips').innerHTML = CATEGORIES.map(c =>
+    `<button type="button" class="chip ${state.category === c.id ? 'active' : ''}" data-cat="${c.id}" aria-pressed="${state.category === c.id}">${c.label}</button>`
+  ).join('');
+  $('#lentChip').classList.toggle('active', state.showLent);
+  $('#lentChip').setAttribute('aria-pressed', String(state.showLent));
+  $('#locChip').classList.toggle('active', state.located);
+  $('#locHint').hidden = !(state.radius !== 'all' && !state.located);
+}
+
+/* ---------- 我的发布页渲染 ---------- */
+function renderMine() {
+  const mine = ITEMS.filter(it => it.owner === 'me');
+  $('#mineTotalChip').textContent = `共 ${mine.length} 件`;
+
+  const charged = mine.filter(it => it.income > 0);
+  const statsHTML = charged.length > 0 ? `
+    <div class="rent-stats">
+      <span class="rent-stats-label">租金收入</span>
+      <b class="rent-stats-total">¥${charged.reduce((s, it) => s + it.income, 0)}</b>
+      <span class="rent-stats-sub">来自 ${charged.length} 件收费物品的归还结算（按天/按次）</span>
+    </div>` : '';
+
+  const rowHTML = (it) => {
+    const st = statusInfo(it);
+    const income = it.income > 0 ? ` · 累计收入 <b class="income">¥${it.income}</b>` : '';
+    const deleting = state.confirmId === it.id;
+    const deleteLabel = it.status === 'lent' ? '借出中不可删' : deleting ? '确认删除？' : '删除';
+    const deleteDisabled = it.status === 'lent' ? 'disabled' : '';
+    return `
+    <li class="row-card">
+      <div class="row-head">
+        <a href="#/detail/${it.id}" class="row-name" data-nav>${it.name}</a>
+        <span class="badge ${st.cls}">${st.text}</span>
+      </div>
+      <div class="row-meta">
+        <span>${CAT_LABEL[it.cat] || '其他'} · ${fmtRent(it)} · ${fmtDate(it.date)}${income} · ${it.desc || '（无描述）'}</span>
+      </div>
+      <div class="row-actions">
+        <button type="button" class="btn-sm" data-act="toggle" data-id="${it.id}">${it.archived ? '重新上架' : '下架'}</button>
+        <button type="button" class="btn-sm danger ${deleting ? 'arming' : ''}" data-act="delete" data-id="${it.id}" ${deleteDisabled}>${deleteLabel}</button>
+        <a href="#/detail/${it.id}" class="btn-sm" data-nav>详情</a>
+      </div>
+    </li>`;
+  };
+
+  $('#mineArea').innerHTML = `
+    ${statsHTML}
+    ${mine.length === 0
+      ? `<div class="empty-box"><h2 class="empty-title">你还没有发布过物品</h2><p class="empty-desc">把闲置的好物分享给邻居吧。</p><a href="#/publish" class="btn btn-primary" data-nav>发布第一件</a></div>`
+      : `<ul class="row-list">${mine.map(rowHTML).join('')}</ul>`}
+    <p class="page-sub" style="margin-top:1.2rem">删除需要点击两次确认；已借出的物品请先收回再删除。</p>`;
+}
+
+/* ---------- 我的借用页渲染 ---------- */
+function renderBorrows() {
+  const area = $('#borrowsArea');
+  if (!state.loggedIn) {
+    $('#borrowsTotalChip').textContent = '共 0 件';
+    area.innerHTML = `
+      <div class="loc-box" style="margin-bottom:1rem">
+        <span class="dot"></span>
+        请先登录手机号，再查看你的借用
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="borrowsLoginBtn">手机号登录</button>`;
+    $('#borrowsLoginBtn').addEventListener('click', () => openModal('login'));
+    return;
+  }
+
+  const borrowed = ITEMS.filter(it => it.borrowedBy === 'me');
+  $('#borrowsTotalChip').textContent = `共 ${borrowed.length} 件`;
+
+  if (borrowed.length === 0) {
+    area.innerHTML = `
+      <div class="empty-box">
+        <h2 class="empty-title">你还没有借用的物品</h2>
+        <p class="empty-desc">去列表里逛逛，看到心仪的好物点「我想借」吧。</p>
+        <a href="#/home" class="btn btn-secondary" data-nav>去逛逛</a>
+      </div>`;
+    return;
+  }
+
+  area.innerHTML = `<ul class="row-list">${borrowed.map(it => `
+    <li class="row-card">
+      <div class="row-head">
+        <a href="#/detail/${it.id}" class="row-name" data-nav>${it.name}</a>
+        <span class="badge ${statusInfo(it).cls}">${statusInfo(it).text}</span>
+      </div>
+      <div class="row-meta"><span>物主联系：楼号 ${it.place} · 手机号 ${it.phone}</span></div>
+      <div class="row-actions">
+        <button type="button" class="btn-sm" data-act="return" data-id="${it.id}">我要归还</button>
+        <a href="#/detail/${it.id}" class="btn-sm" data-nav>详情</a>
+      </div>
+    </li>`).join('')}</ul>`;
+}
+
+/* ---------- 详情页渲染 ---------- */
+function renderDetail() {
+  const it = ITEMS.find(x => x.id === state.detailId);
+  const area = $('#detailArea');
+  if (!it) {
+    area.innerHTML = `<div class="empty-box"><h2 class="empty-title">没有这件物品</h2><p class="empty-desc">它可能已被下架，或链接有误。</p><a href="#/home" class="btn btn-secondary" data-nav>回首页逛逛</a></div>`;
+    return;
+  }
+  const st = statusInfo(it);
+  const dist = fmtDist(it);
+  const ownerIsMe = state.loggedIn && it.owner === 'me';
+  const mineLent = state.loggedIn && it.borrowedBy === 'me';
+
+  let actions;
+  if (ownerIsMe) {
+    actions = `
+      <button type="button" class="btn btn-primary" data-act="manage" data-id="${it.id}">管理此物品</button>
+      <button type="button" class="btn btn-secondary" data-act="toggle" data-id="${it.id}">${it.archived ? '重新上架' : '下架'}</button>`;
+  } else if (mineLent) {
+    actions = `<button type="button" class="btn btn-primary" data-act="return" data-id="${it.id}">我要归还</button>`;
+  } else {
+    const disabled = it.status === 'lent' || it.archived ? 'disabled' : '';
+    const label = it.status === 'lent' ? '已借出' : it.archived ? '已下架' : '我想借';
+    actions = `<button type="button" class="btn btn-primary" data-act="borrow" data-id="${it.id}" ${disabled}>${label}</button>`;
+  }
+
+  const rentHint = it.rentType === 'daily'
+    ? `本物品按天计费 ¥${it.rentFee}/天：借期按天向上取整，不足 1 天按 1 天计算，归还时结算。`
+    : it.rentType === 'perUse'
+      ? `本物品按次计费 ¥${it.rentFee}/次，归还时结算。`
+      : '免费出借，最受邻居欢迎。';
+
+  area.innerHTML = `
+  <article class="detail">
+    <div class="detail-photo">
+      ${ICONS[it.cat] || ICONS.other}
+      <span class="photo-label">示例图 · ${CAT_LABEL[it.cat] || '其他'}</span>
+      <span class="badge ${st.cls}">${st.text}</span>
+    </div>
+    <div class="detail-info">
+      <p class="meta-mono">${CAT_LABEL[it.cat] || '其他'} · ${fmtDate(it.date)}${dist ? ` · 距你 ${dist}` : ''}</p>
+      <h1 class="detail-title">${it.name}</h1>
+      <p class="detail-desc">${it.desc || '（无描述）'}</p>
+      <dl class="detail-rows">
+        <div class="detail-row"><dt>租金</dt><dd>${fmtRent(it)}（${rentHint}）</dd></div>
+        <div class="detail-row"><dt>楼号门牌</dt><dd>${it.place}</dd></div>
+        <div class="detail-row"><dt>手机号</dt><dd>${it.phone}</dd></div>
+        <div class="detail-row"><dt>所在位置</dt><dd>${dist ? `距你 ${dist}` : '距离未知'}</dd></div>
+        ${it.archived ? '<div class="detail-row"><dt>状态</dt><dd>已下架（仅发布者可见）</dd></div>' : ''}
+      </dl>
+      <div class="detail-actions">${actions}</div>
+    </div>
+  </article>`;
+}
+
+/* ---------- 发布页渲染 ---------- */
+function renderPublish() {
+  const area = $('#publishArea');
+  if (!state.loggedIn) {
+    $('#publishSub').textContent = '发布需要先登录——用你的手机号，邻居们也能借此联系你';
+    area.innerHTML = `
+      <div class="loc-box" style="margin-bottom:1rem">
+        <span class="dot"></span>
+        请先登录手机号，再继续发布
+      </div>
+      <button type="button" class="btn btn-primary btn-block" id="publishLoginBtn">手机号登录</button>`;
+    $('#publishLoginBtn').addEventListener('click', () => openModal('login'));
+    return;
+  }
+  $('#publishSub').textContent = '填几张卡的信息，让附近的邻居借走你的好物';
+  area.innerHTML = `
+  <form class="publish-form" id="publishForm">
+    <fieldset class="form-section">
+      <legend class="form-legend">① 物品信息</legend>
+      <label class="field">
+        <span class="field-label">物品名称 <i class="req">*</i></span>
+        <input class="input" type="text" maxlength="50" placeholder="例如：九成新戴森吸尘器" required>
+      </label>
+      <label class="field">
+        <span class="field-label">分类 <i class="req">*</i></span>
+        <select class="select">
+          ${CATEGORIES.filter(c => c.id !== 'all').map(c => `<option value="${c.id}">${c.label}</option>`).join('')}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">详细描述 <i class="req">*</i></span>
+        <textarea class="textarea" rows="3" maxlength="300" placeholder="描述物品的新旧程度、可借 / 可送等" required></textarea>
+      </label>
+      <div class="field">
+        <span class="field-label">物品照片 <small>（选填，上传单张图片）</small></span>
+        <div class="photo-box" id="photoBox">
+          ${ICONS.photo}
+          <span>小主没有上传图片哦</span>
+        </div>
+        <button type="button" class="btn-upload" id="uploadBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          上传图片
+        </button>
+        <input type="file" accept="image/*" id="fileInput" hidden>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+      <legend class="form-legend">② 定位与联系</legend>
+      <div class="field">
+        <span class="field-label">我的位置 <small>（选填，自动获取）</small></span>
+        <div class="loc-box">
+          <span class="dot"></span>
+          <span class="ok">已获取定位（发布时将自动带上）</span>
+          <button type="button" class="btn-loc" data-loc>重新定位</button>
+        </div>
+      </div>
+      <div class="field">
+        <span class="field-label">联系方式 <i class="req">*</i> <small>（楼号 或 手机号，二选一）</small></span>
+        <div class="radio-group" role="radiogroup" aria-label="联系方式类型">
+          <label class="radio-option active"><input type="radio" name="contactType" value="building" checked> 楼号门牌</label>
+          <label class="radio-option"><input type="radio" name="contactType" value="phone"> 手机号</label>
+        </div>
+        <input class="input" type="text" maxlength="40" placeholder="例如：3 幢 202">
+        <p class="contact-hint">邻居将按楼号上门联系你</p>
+      </div>
+    </fieldset>
+
+    <fieldset class="form-section">
+      <legend class="form-legend">③ 租金</legend>
+      <div class="radio-group" role="radiogroup" aria-label="租金计费方式">
+        <label class="radio-option active"><input type="radio" name="rentType" value="free" checked> 免费</label>
+        <label class="radio-option"><input type="radio" name="rentType" value="daily"> 元/天</label>
+        <label class="radio-option"><input type="radio" name="rentType" value="perUse"> 元/次</label>
+      </div>
+      <div class="fee-row" id="feeRow" hidden>
+        <span class="prefix">¥</span>
+        <input class="input" type="number" min="0" step="0.01" placeholder="如：2">
+        <span class="prefix" id="feeSuffix">元 / 天</span>
+      </div>
+      <p class="rent-hint" id="rentHint">免费出借，最受邻居欢迎。</p>
+    </fieldset>
+
+    <button type="submit" class="btn btn-primary btn-submit btn-block">发布闲置</button>
+    <p class="submit-hint">提交后邻居即可看到。换设备用同一手机号登录即可管理。</p>
+  </form>`;
+
+  /* 图片预览 */
+  $('#uploadBtn').addEventListener('click', () => $('#fileInput').click());
+  $('#fileInput').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const box = $('#photoBox');
+      box.innerHTML = `<img src="${reader.result}" alt="图片预览" style="max-height:180px;border-radius:6px">`;
+      toast('图片已选入（演示），最终版将自动压缩后上传');
+    };
+    reader.readAsDataURL(f);
+  });
+
+  /* 联系方式二选一 */
+  document.querySelectorAll('input[name="contactType"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('input[name="contactType"]').forEach(x => x.closest('.radio-option').classList.toggle('active', x.checked));
+      const phone = document.querySelector('input[name="contactType"]:checked').value === 'phone';
+      document.querySelector('.publish-form .field:nth-of-type(2) input.input').placeholder = phone ? '例如：13812345678' : '例如：3 幢 202';
+      document.querySelector('.contact-hint').textContent = phone ? '邻居将通过手机号联系你' : '邻居将按楼号上门联系你';
+    });
+  });
+
+  /* 租金二选一 */
+  document.querySelectorAll('input[name="rentType"]').forEach(r => {
+    r.addEventListener('change', () => {
+      document.querySelectorAll('input[name="rentType"]').forEach(x => x.closest('.radio-option').classList.toggle('active', x.checked));
+      const v = document.querySelector('input[name="rentType"]:checked').value;
+      $('#feeRow').hidden = v === 'free';
+      $('#feeSuffix').textContent = v === 'daily' ? '元 / 天' : '元 / 次';
+      $('#rentHint').textContent = v === 'free' ? '免费出借，最受邻居欢迎。'
+        : v === 'daily' ? '按天计费：借期按天向上取整，不足 1 天按 1 天计算，归还时结算。'
+        : '按次计费：每次借用固定费用，归还时结算。';
+    });
+  });
+
+  /* 提交 */
+  $('#publishForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    toast('发布成功（演示）', '已同步到社区列表，全站可见');
+    renderHome();
+  });
+
+  document.querySelector('[data-loc]').addEventListener('click', () => {
+    toast('定位成功', '列表已按离你最近的距离排序');
+  });
+}
+
+/* ---------- Toast ---------- */
+function toast(title, sub) {
+  const stack = $('#toastStack');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = sub ? `${title} · ${sub}` : title;
+  stack.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; }, 2200);
+  setTimeout(() => el.remove(), 2600);
+}
+
+/* ---------- 弹窗 ---------- */
+/* 6 位口令输入：自动跳格 / 退格回退 / 粘贴填充 */
+function wirePins(containerId, arr) {
+  const inputs = Array.from(containerId.querySelectorAll('.pin-box'));
+  inputs.forEach((inp, i) => {
+    inp.addEventListener('input', () => {
+      const d = inp.value.replace(/\D/g, '').slice(-1);
+      arr[i] = d; inp.value = d;
+      if (d && i < 5) inputs[i + 1].focus();
+    });
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !inp.value && i > 0) {
+        inputs[i - 1].value = ''; arr[i - 1] = '';
+        inputs[i - 1].focus();
+      }
+    });
+    inp.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6 - i);
+      [...digits].forEach((ch, j) => { inputs[i + j].value = ch; arr[i + j] = ch; });
+      inputs[Math.min(i + digits.length, 5)].focus();
+    });
+  });
+}
+const pinRowHTML = () => '';
+
+function openModal(type, item) {
+  const backdrop = $('#modalBackdrop');
+  const card = $('#modalCard');
+
+  if (type === 'login') {
+    const loginPin = Array(6).fill(''), regPin = Array(6).fill(''), regPin2 = Array(6).fill('');
+    card.innerHTML = `
+      <div class="modal-head">
+        <span class="modal-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <div><h3 class="modal-title">邻里好物 · 账号</h3><div class="modal-sub">手机号 + 6 位管理口令，保护你的发布与借用</div></div>
+        <button type="button" class="modal-close" data-close aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="login-tabs" role="tablist">
+          <button type="button" class="login-tab active" data-login-tab="login">登录</button>
+          <button type="button" class="login-tab" data-login-tab="register">注册</button>
+        </div>
+
+        <form class="login-form" id="loginForm" novalidate>
+          <p class="login-tip">使用注册时的手机号和管理口令登录</p>
+          <label class="login-field">
+            <span class="login-label">手机号</span>
+            <input class="input" id="loginPhone" type="tel" inputmode="numeric" maxlength="11" placeholder="请输入 11 位手机号" autocomplete="tel">
+          </label>
+          <div class="login-field">
+            <span class="login-label">管理口令</span>
+            <div class="pin-inputs" id="loginPins"></div>
+            <p class="login-hint">6 位数字，注册时自行设置</p>
+          </div>
+          <p class="login-error" id="loginError" hidden></p>
+          <button type="submit" class="btn btn-primary btn-block">登 录</button>
+        </form>
+
+        <form class="login-form" id="registerForm" hidden novalidate>
+          <p class="login-tip">首次使用请注册。管理口令用于保护你的物品，遗忘后可联系管理员重置。</p>
+          <label class="login-field">
+            <span class="login-label">手机号</span>
+            <input class="input" id="regPhone" type="tel" inputmode="numeric" maxlength="11" placeholder="请输入 11 位手机号" autocomplete="tel">
+          </label>
+          <p class="login-hint">用于登录和账号恢复，不会公开显示</p>
+          <div class="login-field">
+            <span class="login-label">设置管理口令</span>
+            <div class="pin-inputs" id="regPins"></div>
+            <p class="login-hint">6 位数字，用于发布 / 删除 / 借用等操作鉴权</p>
+          </div>
+          <div class="login-field">
+            <span class="login-label">确认管理口令</span>
+            <div class="pin-inputs" id="regPins2"></div>
+          </div>
+          <p class="login-error" id="regError" hidden></p>
+          <button type="submit" class="btn btn-primary btn-block">注 册</button>
+        </form>
+        <p class="login-footer">忘记管理口令？请联系社区管理员重置</p>
+      </div>`;
+
+    $('#loginPins').innerHTML = Array(6).fill('<input class="pin-box" type="password" inputmode="numeric" maxlength="1" aria-label="登录口令位">').join('');
+    $('#regPins').innerHTML = Array(6).fill('<input class="pin-box" type="password" inputmode="numeric" maxlength="1" aria-label="注册口令位">').join('');
+    $('#regPins2').innerHTML = Array(6).fill('<input class="pin-box" type="password" inputmode="numeric" maxlength="1" aria-label="确认口令位">').join('');
+    wirePins($('#loginPins'), loginPin);
+    wirePins($('#regPins'), regPin);
+    wirePins($('#regPins2'), regPin2);
+
+    const setErr = (el, msg) => { el.textContent = msg || ''; el.hidden = !msg; };
+    const okPhone = (v) => /^1\d{10}$/.test(v.trim());
+    const pinDone = (arr) => arr.every(d => /^\d$/.test(d));
+
+    document.querySelectorAll('[data-login-tab]').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const which = tab.dataset.loginTab;
+        document.querySelectorAll('[data-login-tab]').forEach(t => t.classList.toggle('active', t === tab));
+        $('#loginForm').hidden = which !== 'login';
+        $('#registerForm').hidden = which !== 'register';
+        setErr($('#loginError')); setErr($('#regError'));
+      });
+    });
+
+    $('#loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const phone = $('#loginPhone').value;
+      if (!okPhone(phone)) { setErr($('#loginError'), '请输入正确的 11 位手机号'); return; }
+      if (!pinDone(loginPin)) { setErr($('#loginError'), '请完整输入 6 位管理口令'); return; }
+      state.loggedIn = true;
+      window.__loginPhone = phone.trim();
+      closeModal();
+      toast('登录成功', '欢迎回来');
+      renderAll();
+    });
+
+    $('#registerForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const phone = $('#regPhone').value;
+      if (!okPhone(phone)) { setErr($('#regError'), '请输入正确的 11 位手机号'); return; }
+      if (!pinDone(regPin)) { setErr($('#regError'), '请完整输入 6 位管理口令'); return; }
+      if (regPin.join('') !== regPin2.join('')) { setErr($('#regError'), '两次输入的管理口令不一致'); return; }
+      state.loggedIn = true;
+      window.__loginPhone = phone.trim();
+      closeModal();
+      toast('注册成功', '已用该手机号登录');
+      renderAll();
+    });
+  } else if (type === 'borrow' && item) {
+    const st = statusInfo(item);
+    const needLogin = !state.loggedIn;
+    card.innerHTML = `
+      <div class="modal-head">
+        <span class="modal-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 11 12 4l8 7"/><path d="M6 10v9h12v-9"/></svg></span>
+        <div><h3 class="modal-title">借用「${item.name}」</h3><div class="modal-sub">当前状态：${st.text}</div></div>
+        <button type="button" class="modal-close" data-close aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        ${needLogin ? `
+          <div class="field">
+            <span class="field-label">先登录手机号（借用凭证）</span>
+            <input class="input" id="borrowPhone" type="tel" maxlength="11" inputmode="numeric" placeholder="请输入 11 位手机号">
+          </div>
+          <button type="button" class="btn btn-primary btn-block" id="borrowLoginBtn">登录后继续借用</button>
+        ` : item.owner === 'me' ? `
+          <p class="rent-note">这是你自己发布的物品。邻居借用后，这里会展示借用与归还进度。</p>
+        ` : item.status === 'lent' ? `
+          <p class="rent-note">这件物品已被邻居借走${item.borrowedBy === 'me' ? '，是你借的，用完记得归还哦。' : '，晚点再来看看吧。'}</p>
+        ` : `
+          ${item.rentType !== 'free' ? `<p class="rent-note"><b>租金</b>：${item.rentType === 'daily' ? `按天计费 ¥${item.rentFee}/天：借期按天向上取整，不足 1 天按 1 天计算，归还时结算。` : `按次计费 ¥${item.rentFee}/次，归还时结算。`}</p>` : ''}
+          <div class="contact-card">
+            <div class="contact-row"><span class="k">楼号门牌</span><b class="v">${item.place}</b></div>
+            <div class="contact-row"><span class="k">手机号</span><b class="v">${item.phone}</b></div>
+          </div>
+          <p class="privacy-tip">确认借用后物品将标记为「已借出」，全站实时可见；请按上方联系方式与物主交接。</p>
+          <button type="button" class="btn btn-primary btn-block" id="confirmBorrowBtn">确认借用</button>
+        `}
+      </div>`;
+
+    if (needLogin) {
+      $('#borrowLoginBtn').addEventListener('click', () => {
+        const phone = $('#borrowPhone').value.trim();
+        if (!/^1\d{10}$/.test(phone)) { toast('请输入正确的 11 位手机号'); return; }
+        state.loggedIn = true;
+        window.__loginPhone = phone;
+        updateAuthUI();
+        openModal('borrow', item);   // 重新渲染为确认借用视图
+      });
+    } else {
+      const btn = $('#confirmBorrowBtn');
+      if (btn) btn.addEventListener('click', () => {
+        item.status = 'lent';
+        item.borrowedBy = 'me';
+        item.borrowedAt = new Date().toISOString();
+        closeModal();
+        toast('借用成功', `「${item.name}」已标记为已借出`);
+        renderAll();
+      });
+    }
+  } else if (type === 'manage' && item) {
+    const ownerIsMe = state.loggedIn && item.owner === 'me';
+    const st = statusInfo(item);
+    const at = item.borrowedAt ? new Date(item.borrowedAt) : null;
+    const atText = at && !Number.isNaN(at.getTime())
+      ? `${at.getMonth() + 1}月${at.getDate()}日 ${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`
+      : '进行中';
+    card.innerHTML = `
+      <div class="modal-head">
+        <span class="modal-head-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6Z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg></span>
+        <div><h3 class="modal-title">物品管理</h3><div class="modal-sub">${item.name} · 当前：${st.text}</div></div>
+        <button type="button" class="modal-close" data-close aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        ${ownerIsMe ? `
+          <div class="info-card">
+            <div class="info-row"><span class="k">当前状态</span><b class="v">${st.text}</b></div>
+            ${item.status === 'lent' ? `<div class="info-row"><span class="k">借出时间</span><b class="v">${atText}</b></div>` : ''}
+            <div class="info-row"><span class="k">联系方式</span><b class="v">${item.place} · ${item.phone}</b></div>
+          </div>
+          <ul class="guide-list">
+            <li>下架 / 上架在本站一键完成，操作后全站即时可见</li>
+            <li>下架后物品从公开列表隐藏（不影响已发生的借用）</li>
+            <li>物品被借用时状态自动变为「已借出」，借阅人归还后自动恢复「可借」</li>
+            <li>已借出也可下架（从公开列表隐藏）；删除需先收回</li>
+          </ul>
+          <button type="button" class="btn btn-primary btn-block" data-act="toggle" data-id="${item.id}">${item.archived ? '重新上架' : '下架'}</button>`
+        : `<p class="rent-note">只有发布者可以管理这件物品。</p>`}
+      </div>`;
+  }
+
+  backdrop.classList.add('open');
+}
+
+function closeModal() {
+  $('#modalBackdrop').classList.remove('open');
+}
+
+/* ---------- 主题切换 ---------- */
+function applyTheme(id) {
+  if (!VALID_THEMES.has(id)) id = 'memphis';
+  state.theme = id;
+  document.documentElement.dataset.theme = id;
+  localStorage.setItem('llhw-theme', id);
+  renderThemeOptions();
+}
+
+function renderThemeOptions() {
+  $('#themeOptions').innerHTML = THEMES.map(t => `
+    <button type="button" class="theme-option ${state.theme === t.id ? 'active' : ''}" data-theme="${t.id}">
+      <span class="swatches">${t.swatches.map(c => `<i style="background:${c}"></i>`).join('')}</span>
+      <span>
+        <span class="t-name">${t.name}</span><br>
+        <span class="t-desc">${t.desc}</span>
+      </span>
+      <span class="t-check">${state.theme === t.id ? '✓' : ''}</span>
+    </button>`).join('');
+  document.querySelectorAll('.theme-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyTheme(btn.dataset.theme);
+      closePopover();
+      toast('已切换风格', THEME_NAMES[btn.dataset.theme]);
+    });
+  });
+}
+
+function togglePopover() {
+  const pop = $('#themePopover');
+  const open = !pop.classList.contains('open');
+  pop.classList.toggle('open', open);
+  $('#themeNavBtn').setAttribute('aria-expanded', String(open));
+  $('#themeFab').setAttribute('aria-expanded', String(open));
+}
+function closePopover() {
+  $('#themePopover').classList.remove('open');
+  $('#themeNavBtn').setAttribute('aria-expanded', 'false');
+  $('#themeFab').setAttribute('aria-expanded', 'false');
+}
+
+/* ---------- 登录态 UI ---------- */
+function updateAuthUI() {
+  const chip = $('#userChip');
+  const loginBtn = $('#loginBtn');
+  const logoutBtn = $('#logoutBtn');
+  const panel = $('#myPanel');
+  chip.hidden = !state.loggedIn;
+  loginBtn.hidden = state.loggedIn;
+  logoutBtn.hidden = !state.loggedIn;
+  panel.hidden = !state.loggedIn;
+  if (state.loggedIn && window.__loginPhone) {
+    $('#userPhone').textContent = window.__loginPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2');
+  }
+  $('#mineCount').textContent = ITEMS.filter(it => it.owner === 'me').length;
+  $('#borrowCount').textContent = ITEMS.filter(it => it.borrowedBy === 'me').length;
+}
+
+/* ---------- 页面路由 ---------- */
+function parseHash() {
+  const h = location.hash || '#/home';
+  const m = h.match(/^#\/(home|detail|publish|mine|borrows)(?:\/(\d+))?/);
+  if (!m) return { page: 'home', id: null };
+  return { page: m[1], id: m[2] ? Number(m[2]) : null };
+}
+
+function renderAll() {
+  const { page, id } = parseHash();
+  state.page = page;
+  state.detailId = id;
+
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = page === 'home' ? $('#page-home') : page === 'detail' ? $('#page-detail') : page === 'publish' ? $('#page-publish') : page === 'mine' ? $('#page-mine') : $('#page-borrows');
+  target.classList.add('active');
+
+  document.querySelectorAll('[data-page-link]').forEach(a => {
+    a.classList.toggle('active', a.dataset.pageLink === page);
+  });
+
+  if (page === 'home') { renderHome(); }
+  if (page === 'detail') { renderDetail(); }
+  if (page === 'publish') { renderPublish(); }
+  if (page === 'mine') { renderMine(); }
+  if (page === 'borrows') { renderBorrows(); }
+  updateAuthUI();
+  syncChips();
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+/* ---------- 事件委托（卡片动作） ---------- */
+document.addEventListener('click', (e) => {
+  const actBtn = e.target.closest('[data-act]');
+  if (actBtn) {
+    const act = actBtn.dataset.act;
+    const id = Number(actBtn.dataset.id);
+    const it = ITEMS.find(x => x.id === id);
+    if (act === 'borrow') { openModal('borrow', it); return; }
+    if (act === 'manage') { openModal('manage', it); return; }
+    if (act === 'toggle') {
+      it.archived = !it.archived;
+      toast(it.archived ? '已下架' : '已上架', `「${it.name}」已${it.archived ? '从公开列表隐藏' : '重新公开'}`);
+      closeModal();
+      renderAll();
+      return;
+    }
+    if (act === 'return') {
+      it.status = 'available'; it.borrowedBy = null; it.borrowedAt = null;
+      toast('归还成功', `「${it.name}」已重新可借`);
+      renderAll();
+      return;
+    }
+    if (act === 'delete') {
+      if (state.confirmId !== id) {
+        state.confirmId = id;
+        clearTimeout(state.confirmTimer);
+        state.confirmTimer = setTimeout(() => { state.confirmId = null; renderAll(); }, 3000);
+        renderAll();
+        return;
+      }
+      clearTimeout(state.confirmTimer);
+      state.confirmId = null;
+      ITEMS = ITEMS.filter(x => x.id !== id);
+      toast('已删除', '物品已从社区列表彻底移除');
+      renderAll();
+      return;
+    }
+    return;
+  }
+
+  const closeBtn = e.target.closest('[data-close]');
+  if (closeBtn) { closeModal(); return; }
+
+  const catBtn = e.target.closest('[data-cat]');
+  if (catBtn) {
+    state.category = catBtn.dataset.cat;
+    syncChips(); renderHome();
+    return;
+  }
+});
+
+/* ---------- 事件绑定 ---------- */
+function bindEvents() {
+  $('#themeNavBtn').addEventListener('click', togglePopover);
+  $('#themeFab').addEventListener('click', togglePopover);
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#themePopover') && !e.target.closest('#themeNavBtn') && !e.target.closest('#themeFab')) {
+      closePopover();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closePopover(); closeModal(); }
+  });
+  $('#modalBackdrop').addEventListener('click', (e) => {
+    if (e.target === $('#modalBackdrop')) closeModal();
+  });
+
+  $('#searchInput').addEventListener('input', (e) => {
+    state.search = e.target.value;
+    renderHome();
+  });
+  $('#radiusSelect').addEventListener('change', (e) => {
+    state.radius = e.target.value === 'all' ? 'all' : Number(e.target.value);
+    syncChips(); renderHome();
+  });
+  $('#locChip').addEventListener('click', () => {
+    state.located = !state.located;
+    syncChips(); renderHome();
+    toast(state.located ? '定位成功' : '定位失败（演示）', state.located ? '列表已按离你最近的距离排序' : '请在浏览器设置中允许本站获取位置');
+  });
+  $('#lentChip').addEventListener('click', () => {
+    state.showLent = !state.showLent;
+    syncChips(); renderHome();
+  });
+  $('#refreshBtn').addEventListener('click', () => {
+    toast('已刷新', '已从云端重新载入社区好物');
+  });
+  $('#loginBtn').addEventListener('click', () => openModal('login'));
+  $('#logoutBtn').addEventListener('click', () => {
+    state.loggedIn = false;
+    window.__loginPhone = null;
+    updateAuthUI();
+    renderAll();
+    toast('已退出登录', '下次借用或发布时再登录即可');
+  });
+  $('#reviewNoteClose').addEventListener('click', () => $('#reviewNote').remove());
+
+  window.addEventListener('hashchange', renderAll);
+}
+
+/* ---------- 启动 ---------- */
+applyTheme(state.theme);
+bindEvents();
+renderAll();
+</script>

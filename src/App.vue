@@ -7,10 +7,14 @@ import { RouterView } from 'vue-router'
 import AppNavbar from '@/components/AppNavbar.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import ToastHost from '@/components/ToastHost.vue'
+import { useThemeStore } from '@/stores/theme'
+
+// 初始化主题 store（构造时读取 localStorage 并应用到 documentElement）
+const themeStore = useThemeStore()
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :data-theme="themeStore.theme">
     <AppNavbar />
     <RouterView v-slot="{ Component }">
       <Transition name="page" mode="out-in">

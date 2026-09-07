@@ -18,6 +18,12 @@ const emit = defineEmits<{ close: [] }>()
           </svg>
         </span>
         <h3 id="login-title" class="head-title">手机号登录</h3>
+        <button class="close-btn" aria-label="关闭" @click="emit('close')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
       </div>
       <LoginBox @logged-in="emit('close')" />
     </div>
@@ -44,14 +50,40 @@ const emit = defineEmits<{ close: [] }>()
   height: 44px;
   align-items: center;
   justify-content: center;
-  background: var(--royal-blue);
-  color: #fff;
-  border: 2.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: var(--border-thin);
 }
 
 .head-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.3rem;
+  color: var(--ink);
+  flex: 1;
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: var(--border-thin);
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.close-btn:hover {
+  background: var(--accent-2);
+  color: var(--accent-ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}
+.close-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
 }
 </style>

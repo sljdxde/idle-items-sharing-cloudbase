@@ -43,7 +43,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(29, 30, 44, 0.55);
+  background: rgba(15, 15, 20, 0.5);
 }
 
 @media (max-width: 640px) {
@@ -58,9 +58,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
   max-width: 480px;
   max-height: min(86vh, 720px);
   overflow-y: auto;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--retro-purple);
+  background: var(--modal-bg);
+  border: var(--modal-border);
+  border-radius: var(--radius);
+  box-shadow: var(--modal-shadow);
 }
 
 @media (max-width: 640px) {
@@ -69,8 +70,12 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
     border-left: none;
     border-right: none;
     border-bottom: none;
-    box-shadow: 0 -6px 0 rgba(114, 9, 183, 0.35);
+    box-shadow: 0 -6px 0 color-mix(in srgb, var(--accent) 30%, transparent);
     border-radius: 20px 20px 0 0;
   }
+}
+
+:global([data-theme="editorial"]) .modal-panel {
+  border-radius: 14px;
 }
 </style>

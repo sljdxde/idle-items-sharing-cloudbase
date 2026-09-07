@@ -53,7 +53,7 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
 </script>
 
 <template>
-  <main class="memphis-container mine-main">
+  <main class="container mine-main">
     <RouterLink to="/" class="back-link">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
         aria-hidden="true">
@@ -76,7 +76,7 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
         <div v-if="store.myItems.length === 0" class="empty-box">
           <h2 class="empty-title">你还没有发布过物品</h2>
           <p class="empty-desc">把闲置的好物分享给邻居吧。</p>
-          <RouterLink to="/publish" class="btn-memphis-primary">发布第一件</RouterLink>
+          <RouterLink to="/publish" class="btn-primary">发布第一件</RouterLink>
         </div>
 
         <div v-if="rentStats.chargedCount > 0" class="rent-stats">
@@ -92,20 +92,20 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
               <span class="badge-status" :class="statusClass(it)">{{ statusText(it) }}</span>
             </div>
             <div class="row-meta">
-              <span class="rent-inline">{{ rentLabel(it) }}</span>
-              <template v-if="rentIncome(it) > 0"> · 累计收入 <b class="rent-income">¥{{ rentIncome(it) }}</b></template>
+              <span>{{ rentLabel(it) }}</span>
+              <template v-if="rentIncome(it) > 0"> · 累计收入 <b class="income">¥{{ rentIncome(it) }}</b></template>
               · {{ formatDateShort(it.createTime) }} · {{ it.desc || '（无描述）' }}
             </div>
             <div class="row-actions">
-              <button type="button" class="btn-act" :disabled="store.writing"
+              <button type="button" class="btn-sm" :disabled="store.writing"
                 @click="store.setArchived(it.id, !it.archived)">
                 {{ it.archived ? '上架' : '下架' }}
               </button>
-              <button type="button" class="btn-act danger" :class="{ arming: confirmId === it.id }"
+              <button type="button" class="btn-sm danger" :class="{ arming: confirmId === it.id }"
                 :disabled="store.writing || it.status === 'lent'" @click="onDelete(it)">
                 {{ it.status === 'lent' ? '借出中不可删' : confirmId === it.id ? '确认删除？' : '删除' }}
               </button>
-              <RouterLink :to="`/items/${it.id}`" class="btn-act ghost">详情</RouterLink>
+              <RouterLink :to="`/items/${it.id}`" class="btn-sm ghost">详情</RouterLink>
             </div>
           </li>
         </ul>
@@ -128,17 +128,19 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   font-weight: 700;
   min-height: 44px;
   padding: 0 0.4rem;
+  color: var(--ink);
 }
 
+/* ── 页面外壳 ── */
 .page-collage {
   position: relative;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--olive);
-  padding: clamp(1.4rem, 3.5vw, 2.2rem);
-  transform: rotate(-0.35deg);
+  background: var(--surface);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
+  padding: clamp(1.3rem, 3.5vw, 2.2rem);
 }
 
 .hero-tape {
@@ -148,7 +150,8 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   transform: translateX(-50%) rotate(-2deg);
   width: 92px;
   height: 22px;
-  background: rgba(233, 196, 106, 0.75);
+  background: var(--accent-3);
+  opacity: 0.75;
   border: 1px solid var(--ink);
   z-index: 5;
 }
@@ -158,11 +161,14 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
+  margin-bottom: 0.4rem;
 }
 
 .page-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--ink);
 }
 
 .count-chip {
@@ -170,53 +176,89 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
-  background: var(--olive);
-  color: #fff;
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--accent-6);
+  color: var(--ink);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-soft);
   padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-sm);
 }
 
 .page-sub {
-  margin: 0.4rem 0 1.4rem;
-  font-size: 0.85rem;
-  color: #777;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  margin-bottom: 1.4rem;
+  max-width: 46em;
 }
 
+/* ── 空状态 ── */
 .empty-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.8rem;
   padding: 2rem 1rem;
-  border: 2.5px dashed var(--ink);
-  background: var(--bg-cream);
+  border: var(--border-dashed);
+  background: var(--photo-bg);
+  border-radius: var(--radius);
   text-align: center;
 }
 
 .empty-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.3rem;
+  color: var(--ink);
 }
 
 .empty-desc {
-  color: #666;
+  color: var(--text-2);
   font-size: 0.9rem;
 }
 
+/* ── 租金统计 ── */
+.rent-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: var(--border-thin);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.rent-stats-label {
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+.rent-stats-total {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.rent-stats-sub {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+/* ── 列表 ── */
 .row-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .row-card {
-  border: 2.5px solid var(--ink);
-  background: var(--bg-cream);
-  box-shadow: 4px 4px 0 var(--mustard);
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
   padding: 0.9rem 1rem;
   display: flex;
   flex-direction: column;
@@ -227,116 +269,100 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.8rem;
 }
 
 .row-name {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
+  font-family: var(--font-head);
+  font-size: 1.02rem;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .row-name:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--mustard);
-  text-decoration-thickness: 3px;
-  text-underline-offset: 4px;
+  color: var(--accent);
 }
 
 .row-meta {
-  font-size: 0.8rem;
-  color: #777;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rent-inline {
-  color: var(--retro-purple);
-  font-weight: 700;
-}
-
-.rent-income {
-  color: var(--retro-purple);
-}
-
-.rent-stats {
   display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
   flex-wrap: wrap;
-  margin: 0 0 1.2rem;
-  padding: 0.9rem 1rem;
-  border: 2.5px solid var(--ink);
-  background: rgba(197, 167, 232, 0.22);
-  box-shadow: 3px 3px 0 var(--ink);
+  gap: 0.4em 1.1em;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-2);
 }
 
-.rent-stats-label {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+.row-meta .income {
+  color: var(--accent);
   font-weight: 700;
-}
-
-.rent-stats-total {
-  font-family: var(--font-mono);
-  font-size: 1.6rem;
-  color: var(--retro-purple);
-}
-
-.rent-stats-sub {
-  font-size: 0.8rem;
-  color: #666;
 }
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.btn-act {
-  min-height: 40px;
+/* ── 小按钮 ── */
+.btn-sm {
+  min-height: 36px;
   padding: 0 0.9rem;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  border: 2px solid var(--ink);
-  background: var(--paper-cream);
-  color: var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  transition: background var(--ease-snap), transform 0.15s var(--ease);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
 }
 
-.btn-act:hover:not(:disabled) {
-  background: var(--mustard);
-  transform: translate(-1px, -1px);
+.btn-sm:hover:not(:disabled) {
+  box-shadow: 2px 2px 0 var(--accent);
 }
 
-.btn-act:disabled {
+.btn-sm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-act.danger {
-  background: var(--retro-red);
-  color: #fff;
+.btn-sm.danger {
+  color: var(--accent-2);
 }
 
-.btn-act.danger:hover:not(:disabled) {
+.btn-sm.danger.arming {
   background: var(--ink);
+  color: var(--accent-3);
+  border-color: var(--ink);
 }
 
-.btn-act.danger.arming {
-  background: var(--ink);
-  color: var(--mustard);
-}
-
-.btn-act.ghost {
-  display: inline-flex;
-  align-items: center;
-  box-shadow: none;
+.btn-sm.ghost {
+  background: transparent;
   border-color: transparent;
-  color: var(--royal-blue);
+  color: var(--accent-4);
+  box-shadow: none;
+}
+
+/* ================================================================
+   主题差异化
+   ================================================================ */
+[data-theme="memphis"] .page-collage {
+  transform: rotate(-0.35deg);
+}
+
+[data-theme="memphis"] .hero-tape {
+  display: block;
+}
+
+[data-theme="brutalism"] .hero-tape,
+[data-theme="editorial"] .hero-tape {
+  display: none;
+}
+
+[data-theme="editorial"] .page-collage {
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+}
+
+[data-theme="editorial"] .empty-box {
+  border-radius: 14px;
 }
 </style>

@@ -210,7 +210,7 @@ async function handleRegister(): Promise<void> {
           type="tel"
           inputmode="numeric"
           maxlength="11"
-          class="memphis-input"
+          class="input"
           :class="{ 'login-input-error': loginError && !loginPhone }"
           placeholder="请输入 11 位手机号"
           autocomplete="tel"
@@ -239,7 +239,7 @@ async function handleRegister(): Promise<void> {
 
       <p v-if="loginError" class="login-error" role="alert">{{ loginError }}</p>
 
-      <button type="submit" class="btn-memphis-primary login-submit" :disabled="submitting">
+      <button type="submit" class="btn-primary login-submit" :disabled="submitting">
         {{ submitting ? '登录中…' : '登 录' }}
       </button>
     </form>
@@ -255,7 +255,7 @@ async function handleRegister(): Promise<void> {
           type="tel"
           inputmode="numeric"
           maxlength="11"
-          class="memphis-input"
+          class="input"
           :class="{ 'login-input-error': regError && !regPhone }"
           placeholder="请输入 11 位手机号"
           autocomplete="tel"
@@ -303,7 +303,7 @@ async function handleRegister(): Promise<void> {
 
       <p v-if="regError" class="login-error" role="alert">{{ regError }}</p>
 
-      <button type="submit" class="btn-memphis-primary login-submit" :disabled="submitting">
+      <button type="submit" class="btn-primary login-submit" :disabled="submitting">
         {{ submitting ? '注册中…' : '注 册' }}
       </button>
     </form>
@@ -320,16 +320,16 @@ async function handleRegister(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: 0;
-  border: 2.5px dashed var(--ink);
-  background: var(--paper-cream);
+  border: var(--border-dashed);
+  background: var(--surface);
   overflow: hidden;
 }
 
 /* Tab 切换 */
 .login-tabs {
   display: flex;
-  border-bottom: 2.5px solid var(--ink);
-  background: var(--bg-cream);
+  border-bottom: var(--border-thin);
+  background: var(--bg);
 }
 .login-tab {
   flex: 1;
@@ -345,14 +345,14 @@ async function handleRegister(): Promise<void> {
   transition: background 0.15s ease;
 }
 .login-tab:first-child {
-  border-right: 2px solid var(--ink);
+  border-right: var(--border-thin);
 }
 .login-tab:hover {
-  background: var(--mustard);
+  background: var(--accent-3);
 }
 .login-tab.active {
-  background: var(--paper-cream);
-  color: var(--retro-purple);
+  background: var(--surface);
+  color: var(--accent);
 }
 
 /* 表单 */
@@ -366,11 +366,11 @@ async function handleRegister(): Promise<void> {
 .login-tip {
   margin: 0;
   font-size: 0.82rem;
-  color: #666;
+  color: var(--text-2);
   line-height: 1.6;
   padding: 0.5rem 0.7rem;
-  background: var(--bg-cream);
-  border-left: 3px solid var(--mustard);
+  background: var(--bg);
+  border-left: 3px solid var(--accent-3);
 }
 
 .login-field {
@@ -383,12 +383,13 @@ async function handleRegister(): Promise<void> {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .login-hint {
   margin: 0;
   font-size: 0.72rem;
-  color: #888;
+  color: var(--text-3);
   font-family: var(--font-mono);
 }
 
@@ -405,31 +406,32 @@ async function handleRegister(): Promise<void> {
   font-family: var(--font-mono);
   font-size: 1.3rem;
   font-weight: 700;
-  background: var(--paper-cream);
-  border: 2.5px solid var(--ink);
+  background: var(--input-bg);
+  border: var(--input-border);
   color: var(--ink);
   transition: box-shadow 0.2s var(--ease), background 0.15s ease;
 }
 .pin-box:hover {
-  box-shadow: 2px 2px 0 var(--mustard);
+  box-shadow: 2px 2px 0 var(--accent-3);
 }
 .pin-box:focus {
   outline: none;
-  box-shadow: 3px 3px 0 var(--royal-blue);
-  background: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-4);
+  background: var(--input-bg);
 }
 
 .login-error {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--retro-red);
+  color: var(--accent-2);
   font-family: var(--font-mono);
 }
 
 .login-input-error {
-  border-color: var(--retro-red);
-  box-shadow: 3px 3px 0 rgba(230, 57, 70, 0.35);
+  border-color: var(--accent-2);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--accent-2) 35%, transparent);
 }
 
 .login-submit {
@@ -440,10 +442,10 @@ async function handleRegister(): Promise<void> {
 .login-footer {
   margin: 0;
   padding: 0.7rem 1.1rem;
-  border-top: 2px dashed var(--ink);
-  background: var(--bg-cream);
+  border-top: var(--border-dashed);
+  background: var(--bg);
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-3);
   text-align: center;
   line-height: 1.5;
 }

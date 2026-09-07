@@ -155,7 +155,8 @@ export function isWeakPin(pin) {
 // 兼容 Cloudflare Worker (Web Crypto) 和 Node.js (globalThis.crypto)
 // ================================================
 
-const _crypto = globalThis.crypto || (await import('crypto')).webcrypto
+// Cloudflare Worker / Pages / Node.js 19+ 均原生支持 globalThis.crypto (Web Crypto)
+const _crypto = globalThis.crypto
 
 /** Buffer → hex string */
 function buf2hex(buf) {

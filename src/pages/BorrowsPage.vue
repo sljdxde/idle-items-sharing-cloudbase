@@ -26,7 +26,7 @@ const ownerContact = (it: Item) => {
 </script>
 
 <template>
-  <main class="memphis-container borrow-main">
+  <main class="container borrow-main">
     <RouterLink to="/" class="back-link">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
         aria-hidden="true">
@@ -49,7 +49,7 @@ const ownerContact = (it: Item) => {
         <div v-if="store.borrowedItems.length === 0" class="empty-box">
           <h2 class="empty-title">你还没有借用的物品</h2>
           <p class="empty-desc">去列表里逛逛，看到心仪的好物点「我想借」吧。</p>
-          <RouterLink to="/" class="btn-memphis-secondary">去逛逛</RouterLink>
+          <RouterLink to="/" class="btn-secondary">去逛逛</RouterLink>
         </div>
 
         <ul v-else class="row-list">
@@ -62,11 +62,11 @@ const ownerContact = (it: Item) => {
             </div>
             <div class="row-meta">物主联系：{{ ownerContact(it) }}</div>
             <div class="row-actions">
-              <button type="button" class="btn-act return" :disabled="store.writing"
+              <button type="button" class="btn-sm return" :disabled="store.writing"
                 @click="store.returnBack(it.id)">
                 我要归还
               </button>
-              <RouterLink :to="`/items/${it.id}`" class="btn-act ghost">详情</RouterLink>
+              <RouterLink :to="`/items/${it.id}`" class="btn-sm ghost">详情</RouterLink>
             </div>
           </li>
         </ul>
@@ -89,17 +89,19 @@ const ownerContact = (it: Item) => {
   font-weight: 700;
   min-height: 44px;
   padding: 0 0.4rem;
+  color: var(--ink);
 }
 
+/* ── 页面外壳 ── */
 .page-collage {
   position: relative;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--retro-red);
-  padding: clamp(1.4rem, 3.5vw, 2.2rem);
-  transform: rotate(-0.35deg);
+  background: var(--surface);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
+  padding: clamp(1.3rem, 3.5vw, 2.2rem);
 }
 
 .hero-tape {
@@ -109,7 +111,8 @@ const ownerContact = (it: Item) => {
   transform: translateX(-50%) rotate(-2deg);
   width: 92px;
   height: 22px;
-  background: rgba(233, 196, 106, 0.75);
+  background: var(--accent-3);
+  opacity: 0.75;
   border: 1px solid var(--ink);
   z-index: 5;
 }
@@ -119,11 +122,14 @@ const ownerContact = (it: Item) => {
   align-items: center;
   gap: 0.8rem;
   flex-wrap: wrap;
+  margin-bottom: 0.4rem;
 }
 
 .page-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--ink);
 }
 
 .count-chip {
@@ -131,53 +137,60 @@ const ownerContact = (it: Item) => {
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
-  background: var(--retro-red);
-  color: #fff;
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--accent-2);
+  color: var(--accent-ink);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-soft);
   padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-sm);
 }
 
 .page-sub {
-  margin: 0.4rem 0 1.4rem;
-  font-size: 0.85rem;
-  color: #777;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  margin-bottom: 1.4rem;
+  max-width: 46em;
 }
 
+/* ── 空状态 ── */
 .empty-box {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.8rem;
   padding: 2rem 1rem;
-  border: 2.5px dashed var(--ink);
-  background: var(--bg-cream);
+  border: var(--border-dashed);
+  background: var(--photo-bg);
+  border-radius: var(--radius);
   text-align: center;
 }
 
 .empty-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.3rem;
+  color: var(--ink);
 }
 
 .empty-desc {
-  color: #666;
+  color: var(--text-2);
   font-size: 0.9rem;
 }
 
+/* ── 列表 ── */
 .row-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .row-card {
-  border: 2.5px solid var(--ink);
-  background: var(--bg-cream);
-  box-shadow: 4px 4px 0 var(--royal-blue);
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
   padding: 0.9rem 1rem;
   display: flex;
   flex-direction: column;
@@ -188,68 +201,96 @@ const ownerContact = (it: Item) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.8rem;
 }
 
 .row-name {
-  font-family: var(--font-serif);
-  font-size: 1.1rem;
+  font-family: var(--font-head);
+  font-size: 1.02rem;
   font-weight: 700;
+  color: var(--ink);
 }
 
 .row-name:hover {
-  text-decoration: underline;
-  text-decoration-color: var(--mustard);
-  text-decoration-thickness: 3px;
-  text-underline-offset: 4px;
+  color: var(--accent);
 }
 
 .row-meta {
-  font-size: 0.8rem;
-  color: #777;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em 1.1em;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-2);
 }
 
 .row-actions {
   display: flex;
-  gap: 0.5rem;
   flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
-.btn-act {
-  min-height: 40px;
+/* ── 小按钮 ── */
+.btn-sm {
+  min-height: 36px;
   padding: 0 0.9rem;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  border: 2px solid var(--ink);
-  background: var(--paper-cream);
-  color: var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  transition: background var(--ease-snap), transform 0.15s var(--ease);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
 }
 
-.btn-act:disabled {
+.btn-sm:hover:not(:disabled) {
+  box-shadow: 2px 2px 0 var(--accent);
+}
+
+.btn-sm:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-act.return {
-  background: var(--royal-blue);
-  color: #fff;
+.btn-sm.return {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-ink);
+  border-color: var(--ink);
 }
 
-.btn-act.return:hover:not(:disabled) {
-  background: var(--ink);
+.btn-sm.return:hover:not(:disabled) {
+  background: var(--accent-2);
+  box-shadow: 3px 3px 0 var(--ink);
 }
 
-.btn-act.ghost {
-  display: inline-flex;
-  align-items: center;
-  box-shadow: none;
+.btn-sm.ghost {
+  background: transparent;
   border-color: transparent;
-  color: var(--royal-blue);
+  color: var(--accent-4);
+  box-shadow: none;
+}
+
+/* ================================================================
+   主题差异化
+   ================================================================ */
+[data-theme="memphis"] .page-collage {
+  transform: rotate(-0.35deg);
+}
+
+[data-theme="memphis"] .hero-tape {
+  display: block;
+}
+
+[data-theme="brutalism"] .hero-tape,
+[data-theme="editorial"] .hero-tape {
+  display: none;
+}
+
+[data-theme="editorial"] .page-collage {
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+}
+
+[data-theme="editorial"] .empty-box {
+  border-radius: 14px;
 }
 </style>

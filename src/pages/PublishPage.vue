@@ -162,9 +162,9 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <main class="memphis-container publish-main">
+  <main class="container publish-main">
     <!-- ① 未登录：先登录 -->
-    <div v-if="!auth.isLoggedIn" class="form-collage">
+    <div v-if="!auth.isLoggedIn" class="form-shell">
       <span class="hero-tape" aria-hidden="true"></span>
       <h1 class="form-title">发布闲置物品</h1>
       <p class="form-sub">发布需要先登录——用你的手机号，邻居们也能借此联系你</p>
@@ -172,32 +172,32 @@ async function onSubmit(): Promise<void> {
     </div>
 
     <!-- ② 已登录：发布表单 -->
-    <div v-else class="form-collage">
+    <div v-else class="form-shell">
       <span class="hero-tape" aria-hidden="true"></span>
       <h1 class="form-title">发布闲置物品</h1>
       <p class="form-sub">填几张卡的信息，让附近的邻居借走你的好物</p>
 
       <form class="publish-form" @submit.prevent="onSubmit">
         <!-- 分区一：物品信息 -->
-        <fieldset class="form-section sec-red">
-          <legend>① 物品信息</legend>
+        <fieldset class="form-section">
+          <legend class="form-legend">① 物品信息</legend>
 
           <label class="field">
             <span class="field-label">物品名称 <i class="req">*</i></span>
-            <input v-model="name" type="text" class="memphis-input" maxlength="50" placeholder="例如：九成新戴森吸尘器"
+            <input v-model="name" type="text" class="input" maxlength="50" placeholder="例如：九成新戴森吸尘器"
               required />
           </label>
 
           <label class="field">
             <span class="field-label">分类 <i class="req">*</i></span>
-            <select v-model="category" class="memphis-select">
+            <select v-model="category" class="select">
               <option v-for="c in PUBLISH_CATEGORIES" :key="c.id" :value="c.id">{{ c.label }}</option>
             </select>
           </label>
 
           <label class="field">
             <span class="field-label">详细描述 <i class="req">*</i></span>
-            <textarea v-model="desc" rows="3" class="memphis-textarea" maxlength="300"
+            <textarea v-model="desc" rows="3" class="textarea" maxlength="300"
               placeholder="描述物品的新旧程度、可借 / 可送等" required></textarea>
           </label>
 
@@ -207,7 +207,7 @@ async function onSubmit(): Promise<void> {
               <img :src="imgDataUri" alt="图片预览" class="img-preview" />
               <button type="button" class="btn-img-remove" @click="clearImage">移除图片</button>
             </div>
-            <div v-else class="img-empty" role="status">
+            <div v-else class="photo-box" role="status">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                 aria-hidden="true">
                 <rect x="3" y="3" width="18" height="18"></rect>
@@ -217,7 +217,7 @@ async function onSubmit(): Promise<void> {
               <span>小主没有上传图片哦</span>
             </div>
             <p v-if="imgError" class="img-error" role="alert">{{ imgError }}</p>
-            <button type="button" class="btn-photo" :disabled="compressing" @click="fileInput?.click()">
+            <button type="button" class="btn-upload" :disabled="compressing" @click="fileInput?.click()">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
                 aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -232,34 +232,34 @@ async function onSubmit(): Promise<void> {
         </fieldset>
 
         <!-- 分区二：定位与联系 -->
-        <fieldset class="form-section sec-blue">
-          <legend>② 定位与联系</legend>
+        <fieldset class="form-section">
+          <legend class="form-legend">② 定位与联系</legend>
 
           <!-- 自动定位 -->
           <div class="field">
             <span class="field-label">我的位置 <small>（选填，自动获取，用于附近邻居按距离发现）</small></span>
             <div class="loc-box" role="status">
               <template v-if="locating">
-                <span class="loc-dot" aria-hidden="true"></span>
+                <span class="dot" aria-hidden="true"></span>
                 正在获取定位…
               </template>
               <template v-else-if="locateState === 'ok'">
-                <span class="loc-ok" aria-hidden="true">✓</span>
+                <span class="ok" aria-hidden="true">✓</span>
                 已获取定位（发布时将自动带上）
               </template>
               <template v-else-if="locateState === 'insecure'">
-                <span class="loc-fail" aria-hidden="true">!</span>
+                <span class="fail" aria-hidden="true">!</span>
                 当前为 HTTP 访问，浏览器禁用了定位——可跳过，不影响发布
               </template>
               <template v-else-if="locateState === 'denied'">
-                <span class="loc-fail" aria-hidden="true">!</span>
+                <span class="fail" aria-hidden="true">!</span>
                 定位权限被拒绝——请在浏览器设置中允许，或跳过
               </template>
               <template v-else>
-                <span class="loc-fail" aria-hidden="true">!</span>
+                <span class="fail" aria-hidden="true">!</span>
                 未获取到定位（可重试，或跳过——不影响发布）
               </template>
-              <button v-if="locateState !== 'insecure'" type="button" class="btn-loc-retry" :disabled="locating"
+              <button v-if="locateState !== 'insecure'" type="button" class="btn-loc" :disabled="locating"
                 @click="tryLocate">
                 {{ locateState === 'ok' ? '重新定位' : '重试定位' }}
               </button>
@@ -269,51 +269,51 @@ async function onSubmit(): Promise<void> {
           <!-- 联系方式：手机号 / 楼号 二选一 -->
           <div class="field">
             <span class="field-label">联系方式 <i class="req">*</i> <small>（楼号 或 手机号，二选一）</small></span>
-            <div class="contact-type-group" role="radiogroup" aria-label="联系方式类型">
-              <label class="contact-type-option" :class="{ active: contactType === 'building' }">
+            <div class="radio-group" role="radiogroup" aria-label="联系方式类型">
+              <label class="radio-option" :class="{ active: contactType === 'building' }">
                 <input v-model="contactType" type="radio" value="building" name="contactType" />
                 楼号门牌
               </label>
-              <label class="contact-type-option" :class="{ active: contactType === 'phone' }">
+              <label class="radio-option" :class="{ active: contactType === 'phone' }">
                 <input v-model="contactType" type="radio" value="phone" name="contactType" />
                 手机号
               </label>
             </div>
-            <input v-model="contact" type="text" class="memphis-input" maxlength="40"
+            <input v-model="contact" type="text" class="input" maxlength="40"
               :inputmode="contactType === 'phone' ? 'numeric' : 'text'"
               :placeholder="contactPlaceholder" />
             <p class="contact-hint">{{ contactType === 'phone' ? '邻居将通过手机号联系你' : '邻居将按楼号上门联系你' }}</p>
           </div>
         </fieldset>
 
-        <fieldset class="form-section sec-purple">
-          <legend class="sec-label">租金</legend>
-          <div class="rent-group" role="radiogroup" aria-label="租金计费方式">
-            <label class="rent-option" :class="{ active: rentType === 'free' }">
+        <fieldset class="form-section">
+          <legend class="form-legend">租金</legend>
+          <div class="radio-group" role="radiogroup" aria-label="租金计费方式">
+            <label class="radio-option" :class="{ active: rentType === 'free' }">
               <input v-model="rentType" type="radio" value="free" name="rentType" />
               免费
             </label>
-            <label class="rent-option" :class="{ active: rentType === 'daily' }">
+            <label class="radio-option" :class="{ active: rentType === 'daily' }">
               <input v-model="rentType" type="radio" value="daily" name="rentType" />
               元/天
             </label>
-            <label class="rent-option" :class="{ active: rentType === 'perUse' }">
+            <label class="radio-option" :class="{ active: rentType === 'perUse' }">
               <input v-model="rentType" type="radio" value="perUse" name="rentType" />
               元/次
             </label>
           </div>
-          <div v-if="rentType !== 'free'" class="rent-fee-row">
-            <span class="rent-fee-prefix">¥</span>
-            <input v-model="rentFee" type="number" min="0" step="0.01" class="memphis-input rent-fee-input"
+          <div v-if="rentType !== 'free'" class="fee-row">
+            <span class="prefix">¥</span>
+            <input v-model="rentFee" type="number" min="0" step="0.01" class="input"
               :inputmode="'decimal'" :placeholder="rentType === 'daily' ? '如：2' : '如：5'" />
-            <span class="rent-fee-suffix">{{ rentType === 'daily' ? '元 / 天' : '元 / 次' }}</span>
+            <span class="suffix">{{ rentType === 'daily' ? '元 / 天' : '元 / 次' }}</span>
           </div>
           <p class="rent-hint">
             {{ rentType === 'free' ? '免费出借，最受邻居欢迎。' : rentType === 'daily' ? '按天计费：借期按天向上取整，不足 1 天按 1 天计算，归还时结算。' : '按次计费：每次借用固定费用，归还时结算。' }}
           </p>
         </fieldset>
 
-        <button type="submit" class="btn-memphis-primary btn-submit" :disabled="publishing || store.writing">
+        <button type="submit" class="btn-primary btn-submit" :disabled="publishing || store.writing">
           {{ publishing ? '发布中，请稍等…' : '发布闲置' }}
         </button>
         <p class="submit-hint">{{ publishing ? '正在同步到社区列表，通常只需几秒，请稍候…' : '提交后邻居即可看到。换设备用同一手机号登录即可管理。' }}</p>
@@ -327,15 +327,16 @@ async function onSubmit(): Promise<void> {
   padding-top: 0.75rem;
 }
 
-.form-collage {
+/* ── 表单外壳 ── */
+.form-shell {
   position: relative;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--retro-purple);
-  padding: clamp(1.4rem, 3.5vw, 2.2rem);
-  transform: rotate(-0.35deg);
+  background: var(--surface);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
+  padding: clamp(1.3rem, 3.5vw, 2.2rem);
 }
 
 .hero-tape {
@@ -345,153 +346,135 @@ async function onSubmit(): Promise<void> {
   transform: translateX(-50%) rotate(-2deg);
   width: 92px;
   height: 22px;
-  background: rgba(233, 196, 106, 0.75);
+  background: var(--accent-3);
+  opacity: 0.75;
   border: 1px solid var(--ink);
   z-index: 5;
 }
 
 .form-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
-  text-wrap: balance;
+  font-family: var(--font-head);
+  font-size: 1.7rem;
+  font-weight: 900;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
 }
 
 .form-sub {
-  color: #666;
-  font-size: 0.92rem;
-  margin: 0.4rem 0 1.6rem;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
 }
 
 .publish-form {
   display: flex;
   flex-direction: column;
-  gap: 1.6rem;
+  gap: 1.2rem;
 }
 
+/* ── 分区 ── */
 .form-section {
-  border: 2.5px solid var(--ink);
-  padding: 1.2rem;
+  background: var(--fieldset-bg);
+  border: var(--fieldset-border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.1rem 1.2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-.form-section legend {
+.form-legend {
+  float: left;
+  margin: -1.5rem 0 0 -0.2rem;
+  padding: 0.1rem 0.6rem;
   font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  padding: 0.25rem 0.7rem;
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.sec-red legend {
-  background: var(--salmon);
-}
-
-.sec-blue legend {
-  background: var(--mustard);
-}
-
-.sec-purple legend {
-  background: var(--retro-purple);
-}
-
-.rent-group {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.rent-option {
-  flex: 1 1 96px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: 44px;
-  border: 2px solid var(--ink);
-  background: var(--paper-cream);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background var(--ease-snap),
-    color var(--ease-snap),
-    box-shadow 0.15s var(--ease),
-    transform 0.15s var(--ease);
-}
-
-.rent-option:hover {
-  box-shadow: 3px 3px 0 var(--ink);
-  transform: translate(-1px, -1px);
-}
-
-.rent-option.active {
-  background: var(--retro-purple);
-  color: #fff;
-  box-shadow: 3px 3px 0 var(--ink);
-  transform: translate(-1px, -1px);
-}
-
-.rent-fee-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.rent-fee-prefix {
-  font-family: var(--font-mono);
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.rent-fee-input {
-  width: 6.5rem;
-}
-
-.rent-fee-suffix {
-  font-size: 0.85rem;
-  color: #555;
-  font-family: var(--font-mono);
-}
-
-.rent-hint {
   font-size: 0.8rem;
-  color: #777;
-  margin: 0;
+  font-weight: 700;
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
+/* ── 字段 ── */
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .field-label {
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .field-label small {
-  color: #888;
+  color: var(--text-3);
   font-weight: 400;
 }
 
 .req {
-  color: var(--retro-red);
+  color: var(--accent-2);
   font-style: normal;
+}
+
+/* ── 单选组 ── */
+.radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding: 0 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: var(--chip-bg);
+  color: var(--ink);
+  border: var(--chip-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.radio-option input {
+  accent-color: var(--accent);
+}
+
+.radio-option.active {
+  background: var(--chip-active-bg);
+  color: var(--chip-active-ink);
+}
+
+/* ── 照片 ── */
+.photo-box {
+  min-height: 150px;
+  border: var(--border-dashed);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--text-3);
+  font-size: 0.85rem;
+  background: var(--photo-bg);
+}
+
+.photo-box svg {
+  width: 28px;
+  height: 28px;
 }
 
 .img-preview {
   width: min(280px, 100%);
-  aspect-ratio: 4/3;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  border: 2.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--mustard);
-  transform: rotate(0.6deg);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius-sm);
 }
 
 .img-uploaded {
@@ -501,133 +484,72 @@ async function onSubmit(): Promise<void> {
   gap: 0.6rem;
 }
 
-.img-empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  min-height: 108px;
-  border: 2.5px dashed var(--ink);
-  background: var(--bg-cream);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #888;
-}
-
-.img-empty svg {
-  color: #b0aaa0;
-}
-
 .img-error {
   margin: 0;
   font-size: 0.8rem;
   font-weight: 700;
-  color: var(--retro-red);
+  color: var(--accent-2);
 }
 
-.btn-photo {
+.btn-upload {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  min-height: 48px;
-  padding: 0.65rem 1.2rem;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
+  gap: 0.4rem;
+  min-height: 42px;
+  padding: 0 1rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  color: var(--ink);
-  background: var(--paper-cream);
-  border: 2.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--salmon);
-  cursor: pointer;
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
 }
 
-.btn-photo:hover:not(:disabled) {
-  background: var(--salmon);
-  transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 var(--ink);
+.btn-upload svg {
+  width: 15px;
+  height: 15px;
 }
 
-.btn-photo:active:not(:disabled) {
-  transform: translate(2px, 2px) scale(0.98);
-  box-shadow: 1px 1px 0 var(--ink);
-}
-
-.btn-photo:disabled {
+.btn-upload:disabled {
   cursor: wait;
   opacity: 0.6;
-  box-shadow: 2px 2px 0 rgba(29, 30, 44, 0.3);
-}
-
-.btn-photo svg {
-  flex: none;
 }
 
 .btn-img-remove {
   min-height: 36px;
   padding: 0 0.8rem;
-  font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--retro-red);
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap);
+  background: var(--btn-secondary-bg);
+  color: var(--accent-2);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
 }
 
-.btn-img-remove:hover {
-  background: var(--retro-red);
-  color: #fff;
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.btn-submit {
-  width: 100%;
-}
-
-.submit-hint {
-  margin: 0;
-  font-size: 0.78rem;
-  color: #999;
-  text-align: center;
-}
-
-/* ── 定位状态盒 ── */
+/* ── 定位 ── */
 .loc-box {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  min-height: 48px;
-  padding: 0.55rem 0.8rem;
-  border: 2px dashed var(--ink);
-  background: var(--bg-cream);
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #555;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.85rem;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text-2);
 }
 
-.loc-dot {
-  width: 12px;
-  height: 12px;
+.loc-box .dot {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--retro-red);
-  border: 2px solid var(--ink);
+  background: var(--accent);
+  flex: none;
   animation: locPulse 0.9s ease-in-out infinite;
 }
 
 @keyframes locPulse {
-
   0%,
   100% {
     transform: scale(0.7);
@@ -640,105 +562,105 @@ async function onSubmit(): Promise<void> {
   }
 }
 
-.loc-ok {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-  background: var(--olive);
-  color: #fff;
-  border: 2px solid var(--ink);
-  font-size: 0.72rem;
-}
-
-.loc-fail {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-  align-items: center;
-  justify-content: center;
-  background: var(--mustard);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  font-size: 0.72rem;
+.loc-box .ok {
+  color: var(--badge-avail-ink);
   font-weight: 700;
 }
 
-.btn-loc-retry {
+.loc-box .fail {
+  color: var(--badge-arch-ink);
+  font-weight: 700;
+}
+
+.btn-loc {
   margin-left: auto;
-  min-height: 36px;
-  padding: 0 0.7rem;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
+  min-height: 34px;
+  padding: 0 0.8rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
 }
 
-.btn-loc-retry:hover:not(:disabled) {
-  background: var(--mustard);
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
-}
-
-.btn-loc-retry:disabled {
+.btn-loc:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* ── 联系方式类型 radio ── */
-.contact-type-group {
-  display: flex;
-  gap: 0.6rem;
-}
-
-.contact-type-option {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: 44px;
-  border: 2px solid var(--ink);
-  background: var(--paper-cream);
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background var(--ease-snap),
-    color var(--ease-snap),
-    box-shadow 0.15s var(--ease),
-    transform 0.15s var(--ease);
-}
-
-.contact-type-option:hover {
-  box-shadow: 3px 3px 0 var(--ink);
-  transform: translate(-1px, -1px);
-}
-
-.contact-type-option.active {
-  background: var(--ink);
-  color: var(--mustard);
-  box-shadow: none;
-  transform: translate(1px, 1px);
-}
-
-.contact-type-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
+/* ── 提示文字 ── */
 .contact-hint {
   margin: 0;
-  font-size: 0.75rem;
-  color: #999;
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+.rent-hint {
+  font-size: 0.82rem;
+  color: var(--text-3);
+  margin: 0;
+}
+
+/* ── 租金金额行 ── */
+.fee-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fee-row .prefix {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.fee-row .input {
+  max-width: 160px;
+}
+
+.fee-row .suffix {
+  font-size: 0.85rem;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+}
+
+/* ── 提交 ── */
+.btn-submit {
+  width: 100%;
+  min-height: 50px;
+}
+
+.submit-hint {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  text-align: center;
+  margin: 0;
+}
+
+/* ================================================================
+   主题差异化
+   ================================================================ */
+[data-theme="memphis"] .form-shell {
+  transform: rotate(-0.35deg);
+}
+
+[data-theme="memphis"] .hero-tape {
+  display: block;
+}
+
+[data-theme="brutalism"] .hero-tape,
+[data-theme="editorial"] .hero-tape {
+  display: none;
+}
+
+[data-theme="editorial"] .form-shell {
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+}
+
+[data-theme="editorial"] .form-legend {
+  background: var(--accent);
+  border-radius: 4px;
 }
 </style>

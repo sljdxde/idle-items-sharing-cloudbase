@@ -9,7 +9,7 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
 </script>
 
 <template>
-  <footer class="memphis-footer">
+  <footer class="site-footer">
     <div class="footer-top-row">
       <div class="footer-slogan">邻里好物 · 让闲置在邻里间发光发热</div>
       <ul class="footer-links-list">
@@ -26,19 +26,18 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
 </template>
 
 <style scoped>
-.memphis-footer {
+.site-footer {
   margin-top: 3rem;
-  background: var(--ink);
-  color: var(--paper-cream);
-  /* 底部安全区：真机 env()，PC 模拟器注入 --safe-area-inset-* */
-  padding: 2.5rem 1.5rem calc(2rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+  border-top: var(--border-thin);
+  background: var(--topbar-bg);
+  padding: 1.6rem 1rem calc(1.6rem + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
   position: relative;
   z-index: 10;
 }
 
 @media (min-width: 768px) {
-  .memphis-footer {
-    padding: 3.5rem 2.5rem 2.5rem;
+  .site-footer {
+    padding: 2rem 1.5rem 2.2rem;
   }
 }
 
@@ -48,8 +47,8 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px dashed rgba(255, 255, 255, 0.25);
+  padding-bottom: 1.5rem;
+  border-bottom: var(--border-dashed);
 }
 
 @media (min-width: 768px) {
@@ -61,9 +60,10 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
 }
 
 .footer-slogan {
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  color: var(--mustard);
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .footer-links-list {
@@ -75,16 +75,16 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
 
 .footer-links-list a {
   display: inline-block;
-  min-height: 44px;
-  line-height: 2.4;
+  min-height: 40px;
+  line-height: 2.2;
   padding: 0 0.9rem;
-  color: var(--paper-cream);
+  color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  border: 1.5px solid var(--paper-cream);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 2px 2px 0 var(--salmon);
+  border: var(--border-thin);
+  background: var(--surface);
+  box-shadow: 2px 2px 0 var(--accent-5);
   transition:
     background var(--ease-snap),
     color var(--ease-snap),
@@ -92,18 +92,18 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
 }
 
 .footer-links-list a:hover {
-  background: var(--retro-red);
-  color: #fff;
+  background: var(--accent-2);
+  color: var(--accent-ink);
   transform: translate(-2px, -2px);
 }
 
 .footer-bot-row {
   max-width: var(--container-max);
   margin: 0 auto;
-  padding-top: 1.75rem;
+  padding-top: 1.25rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
-  color: #ccc;
+  color: var(--text-2);
 }
 
 .footer-version-row {
@@ -111,7 +111,7 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
   margin: 0.35rem auto 0;
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-3);
   user-select: text;
 }
 
@@ -120,6 +120,6 @@ const buildTime = new Date(__BUILD_TIME__).toLocaleString('zh-CN', { hour12: fal
   margin: 0.15rem auto 0;
   font-family: var(--font-mono);
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-3);
 }
 </style>

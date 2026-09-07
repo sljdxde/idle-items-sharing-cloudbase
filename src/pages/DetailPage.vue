@@ -83,7 +83,7 @@ watch(item, async (it) => {
 </script>
 
 <template>
-  <main class="memphis-container detail-main">
+  <main class="container detail-main">
     <RouterLink to="/" class="back-link">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
         aria-hidden="true">
@@ -94,13 +94,13 @@ watch(item, async (it) => {
 
     <!-- 未找到 -->
     <div v-if="!item" class="missing-box">
-      <h1 class="head-title">没有这件物品</h1>
-      <p class="empty-desc">它可能已被下架，或链接有误。</p>
-      <RouterLink to="/" class="btn-memphis-secondary">回首页逛逛</RouterLink>
+      <h1 class="detail-title">没有这件物品</h1>
+      <p class="detail-desc">它可能已被下架，或链接有误。</p>
+      <RouterLink to="/" class="btn-secondary">回首页逛逛</RouterLink>
     </div>
 
-    <article v-else class="detail-collage">
-      <span class="hero-tape" aria-hidden="true"></span>
+    <article v-else class="detail">
+      <span class="detail-tape" aria-hidden="true"></span>
 
       <div class="photo-side">
         <img v-if="photoUrl && !imgBroken" :src="photoUrl" :alt="item.name" class="detail-photo"
@@ -120,13 +120,13 @@ watch(item, async (it) => {
         </span>
       </div>
 
-      <div class="info-side">
+      <div class="detail-info">
         <p class="meta-mono">
           {{ categoryLabel }} · {{ formatDateShort(item.createTime) }}
           <template v-if="distLabel"> · 距你 {{ distLabel }}</template>
         </p>
-        <h1 class="head-title">{{ item.name }}</h1>
-        <p class="desc-text">{{ item.desc || '（无描述）' }}</p>
+        <h1 class="detail-title">{{ item.name }}</h1>
+        <p class="detail-desc">{{ item.desc || '（无描述）' }}</p>
 
         <dl class="detail-rows">
           <div class="detail-row">
@@ -151,26 +151,26 @@ watch(item, async (it) => {
           </div>
         </dl>
 
-        <div class="action-row">
+        <div class="detail-actions">
           <!-- 物主：管理 + 上下架 -->
           <template v-if="ownerIsMe">
-            <button type="button" class="btn-memphis-primary" @click="manageOpen = true">
+            <button type="button" class="btn-primary" @click="manageOpen = true">
               管理此物品
             </button>
-            <button type="button" class="btn-memphis-secondary" :disabled="store.writing"
+            <button type="button" class="btn-secondary" :disabled="store.writing"
               @click="store.setArchived(item.id, !item.archived)">
               {{ item.archived ? '重新上架' : '下架' }}
             </button>
           </template>
 
           <!-- 借阅人本人：归还 -->
-          <button v-else-if="mineLent" type="button" class="btn-memphis-primary" :disabled="store.writing"
+          <button v-else-if="mineLent" type="button" class="btn-primary" :disabled="store.writing"
             @click="store.returnBack(item.id)">
             我要归还
           </button>
 
           <!-- 其他人：借用（未登录也允许点击，弹窗内提供登录，与首页卡片行为一致） -->
-          <button v-else type="button" class="btn-memphis-primary"
+          <button v-else type="button" class="btn-primary"
             :disabled="item.status === 'lent' || item.archived || store.writing"
             @click="borrowOpen = true">
             {{ item.status === 'lent' ? '已借出' : item.archived ? '已下架' : '我想借' }}
@@ -189,6 +189,7 @@ watch(item, async (it) => {
   padding-top: 0.75rem;
 }
 
+/* ── 返回链接 ── */
 .back-link {
   display: inline-flex;
   align-items: center;
@@ -198,47 +199,57 @@ watch(item, async (it) => {
   font-weight: 700;
   min-height: 44px;
   padding: 0 0.4rem;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+
+.back-link svg {
+  width: 14px;
+  height: 14px;
 }
 
 .back-link:hover {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  color: var(--accent);
 }
 
+/* ── 未找到 ── */
 .missing-box {
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 6px 6px 0 var(--salmon);
+  background: var(--surface);
+  border: var(--border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
   padding: 3rem 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
   text-align: center;
-  transform: rotate(-0.4deg);
 }
 
-.detail-collage {
+/* ── 详情容器 ── */
+.detail {
   position: relative;
-  margin-top: 0.75rem;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 8px 8px 0 var(--retro-purple);
-  padding: clamp(1.2rem, 3vw, 2rem);
-  transform: rotate(-0.4deg);
   display: grid;
+  grid-template-columns: 1fr;
   gap: 1.5rem;
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
+  padding: 1.2rem;
 }
 
-@media (min-width: 800px) {
-  .detail-collage {
-    grid-template-columns: minmax(280px, 420px) 1fr;
-    align-items: start;
+@media (min-width: 860px) {
+  .detail {
+    grid-template-columns: 1.05fr 1fr;
+    gap: 2rem;
+    padding: 2rem;
   }
 }
 
-.hero-tape {
+/* 胶带装饰（默认隐藏，memphis 主题显示） */
+.detail-tape {
+  display: none;
   position: absolute;
   top: -12px;
   left: 50%;
@@ -250,6 +261,7 @@ watch(item, async (it) => {
   z-index: 5;
 }
 
+/* ── 图片区 ── */
 .photo-side {
   position: relative;
 }
@@ -258,9 +270,8 @@ watch(item, async (it) => {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border: 2.5px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--mustard);
-  transform: rotate(0.8deg);
+  border-radius: var(--radius);
+  background: var(--photo-bg);
 }
 
 .detail-photo.placeholder {
@@ -269,86 +280,153 @@ watch(item, async (it) => {
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  background: #f1ece1;
-  color: var(--ink);
+  color: var(--text-3);
 }
 
 .detail-photo.placeholder span {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  border: 1.5px solid var(--ink);
-  background: var(--paper-cream);
+  border: var(--border-thin);
+  background: var(--surface);
   padding: 0.2rem 0.6rem;
+  color: var(--ink);
 }
 
 .float-badge {
   position: absolute;
-  top: -10px;
-  left: -8px;
+  top: 0.8rem;
+  left: 0.8rem;
   z-index: 6;
-  transform: rotate(-4deg);
+}
+
+/* ── 信息区 ── */
+.detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
 .meta-mono {
   font-family: var(--font-mono);
   font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--royal-blue);
-  margin-bottom: 0.4rem;
+  color: var(--text-3);
 }
 
-.head-title {
-  font-family: var(--font-serif);
-  font-size: clamp(1.7rem, 4vw, 2.4rem);
-  line-height: 1.2;
+.detail-title {
+  font-family: var(--font-head);
+  font-size: clamp(1.5rem, 3.5vw, 2.1rem);
+  font-weight: 900;
+  line-height: 1.25;
+  color: var(--ink);
   text-wrap: balance;
-  margin-bottom: 0.7rem;
 }
 
-.desc-text {
-  max-width: 36em;
-  color: #333;
+.detail-desc {
+  color: var(--text-2);
   line-height: 1.8;
-  margin-bottom: 1.2rem;
 }
 
+/* ── 信息行 ── */
 .detail-rows {
-  border-top: 2px dashed var(--ink);
-  margin-bottom: 1.4rem;
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
 .detail-row {
   display: flex;
-  justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem 0.15rem;
-  border-bottom: 1.5px dashed rgba(29, 30, 44, 0.25);
+  padding: 0.7rem 0.9rem;
+  border-bottom: var(--border-thin);
+  font-size: 0.9rem;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
 }
 
 .detail-row dt {
+  flex: none;
+  width: 5.5em;
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #777;
+  color: var(--text-3);
+  padding-top: 0.15rem;
 }
 
-.action-row {
+.detail-row dd {
+  color: var(--ink);
+  word-break: break-all;
+}
+
+/* ── 操作按钮区 ── */
+.detail-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.8rem;
-}
-
-@media (max-width: 640px) {
-  .action-row .btn-memphis-primary,
-  .action-row .btn-memphis-secondary {
-    flex: 1 1 100%;
-  }
+  gap: 0.7rem;
+  margin-top: 0.3rem;
 }
 
 /* 联系方式保持可选中，供长按手动复制 */
 .selectable {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* ================================================================
+   主题一：memphis
+   ================================================================ */
+[data-theme="memphis"] .detail {
+  transform: rotate(-0.3deg);
+}
+
+[data-theme="memphis"] .detail-tape {
+  display: block;
+}
+
+[data-theme="memphis"] .detail-photo {
+  border: var(--border-thin);
+  border-color: var(--ink);
+  box-shadow: 5px 5px 0 var(--accent-3);
+  transform: rotate(0.8deg);
+}
+
+[data-theme="memphis"] .float-badge {
+  top: -10px;
+  left: -8px;
+  transform: rotate(-4deg);
+}
+
+[data-theme="memphis"] .missing-box {
+  transform: rotate(-0.4deg);
+  box-shadow: 6px 6px 0 var(--accent-5);
+}
+
+/* ================================================================
+   主题二：brutalism
+   ================================================================ */
+[data-theme="brutalism"] .detail-photo {
+  border: 1px solid var(--border);
+}
+
+/* ================================================================
+   主题三：editorial
+   ================================================================ */
+[data-theme="editorial"] .detail {
+  border-radius: 14px;
+}
+
+[data-theme="editorial"] .missing-box {
+  border-radius: 14px;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 640px) {
+  .detail-actions .btn-primary,
+  .detail-actions .btn-secondary {
+    flex: 1 1 100%;
+  }
 }
 </style>

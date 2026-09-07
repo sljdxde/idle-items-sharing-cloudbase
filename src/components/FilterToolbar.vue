@@ -111,15 +111,17 @@ async function onLocate(): Promise<void> {
 </template>
 
 <style scoped>
+/* ── 默认（memphis）工具栏样式 ── */
 .memphis-toolbar {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--olive);
-  padding: 0.9rem;
-  margin-bottom: 2rem;
+  gap: 0.9rem;
+  background: var(--toolbar-bg);
+  border: var(--toolbar-border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  margin-bottom: 2.5rem;
 }
 
 .tool-row {
@@ -142,18 +144,19 @@ async function onLocate(): Promise<void> {
   min-height: 44px;
   min-width: 0;
   padding: 0 0.7rem;
-  border: 2px solid var(--ink);
-  background: #fff;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--radius-sm);
   transition: box-shadow 0.2s var(--ease);
 }
 
 .search-box:focus-within {
-  box-shadow: 4px 4px 0 var(--retro-purple);
+  box-shadow: 3px 3px 0 var(--accent);
 }
 
 .search-box svg {
   flex: none;
-  color: #888;
+  color: var(--text-3);
 }
 
 .search-input {
@@ -164,6 +167,7 @@ async function onLocate(): Promise<void> {
   font-size: 0.92rem;
   line-height: 1.6;
   min-height: auto;
+  color: var(--ink);
 }
 
 /* 计数 */
@@ -172,10 +176,10 @@ async function onLocate(): Promise<void> {
   font-size: 0.78rem;
   font-weight: 700;
   white-space: nowrap;
-  background: var(--royal-blue);
-  color: #fff;
-  border: 2px solid var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
   padding: 0.45rem 0.7rem;
 }
 
@@ -189,60 +193,57 @@ async function onLocate(): Promise<void> {
 .btn-tool-refresh {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  min-height: 44px;
+  gap: 0.4rem;
+  min-height: 40px;
   padding: 0 0.85rem;
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--retro-red);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
   transition:
-    transform 0.2s var(--ease),
-    box-shadow 0.2s var(--ease),
-    background var(--ease-snap);
+    background 0.15s,
+    box-shadow 0.15s;
 }
 
 .btn-tool-refresh:hover {
-  background: var(--mustard);
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--retro-red);
+  background: var(--hover-bg);
+  box-shadow: 2px 2px 0 var(--accent);
 }
 
 /* chips 组 */
 .filter-btn-group {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.5rem;
 }
 
 .filter-chip {
-  min-height: 40px;
-  padding: 0 0.75rem;
+  min-height: 38px;
+  padding: 0 0.9rem;
+  white-space: nowrap;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--chip-bg);
   color: var(--ink);
+  border: var(--chip-border);
+  border-radius: var(--radius-sm);
   transition:
-    transform 0.15s var(--ease),
-    box-shadow 0.15s var(--ease),
-    background var(--ease-snap),
-    color var(--ease-snap);
+    background 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
 }
 
 .filter-chip:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--ink);
+  box-shadow: 2px 2px 0 var(--accent);
 }
 
 .filter-chip.active {
-  background: var(--ink);
-  color: var(--mustard);
-  transform: translate(1px, 1px);
-  box-shadow: none;
+  background: var(--chip-active-bg);
+  color: var(--chip-active-ink);
 }
 
 /* 分类色点（激活态左侧小方块，孟菲斯撞色索引） */
@@ -254,15 +255,15 @@ async function onLocate(): Promise<void> {
   background: transparent;
 }
 
-.cat-home.cat-chip.active::before { background: var(--salmon); }
-.cat-electronics.cat-chip.active::before { background: var(--royal-blue); }
-.cat-kids.cat-chip.active::before { background: var(--retro-red); }
-.cat-outdoor.cat-chip.active::before { background: var(--olive); }
-.cat-tools.cat-chip.active::before { background: var(--mustard); }
-.cat-books.cat-chip.active::before { background: var(--retro-purple); }
-.cat-clothing.cat-chip.active::before { background: var(--retro-red); }
+.cat-home.cat-chip.active::before { background: var(--accent-5); }
+.cat-electronics.cat-chip.active::before { background: var(--accent-4); }
+.cat-kids.cat-chip.active::before { background: var(--accent-2); }
+.cat-outdoor.cat-chip.active::before { background: var(--accent-6); }
+.cat-tools.cat-chip.active::before { background: var(--accent-3); }
+.cat-books.cat-chip.active::before { background: var(--accent); }
+.cat-clothing.cat-chip.active::before { background: var(--accent-2); }
 .cat-other.cat-chip.active::before,
-.cat-all.cat-chip.active::before { background: var(--paper-cream); }
+.cat-all.cat-chip.active::before { background: var(--surface); }
 
 /* 距离下拉 */
 .radius-select-box {
@@ -275,13 +276,19 @@ async function onLocate(): Promise<void> {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #555;
+  color: var(--text-2);
 }
 
 .radius-select {
   min-height: 40px;
   min-width: 120px;
+  padding: 0 0.7rem;
+  background: var(--input-bg);
+  color: var(--ink);
+  border: var(--input-border);
+  border-radius: var(--radius-sm);
   font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .loc-chip,
@@ -291,24 +298,142 @@ async function onLocate(): Promise<void> {
   gap: 0.3rem;
 }
 
-.loc-chip.active {
-  background: var(--royal-blue);
-  color: #fff;
-}
-
-.lent-chip.active {
-  background: var(--salmon);
-  color: var(--ink);
-}
-
 /* 未定位提示 */
 .loc-hint {
   margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+/* ── brutalism 主题覆盖 ── */
+[data-theme="brutalism"] .memphis-toolbar {
+  border: none;
+  box-shadow: none;
+  padding: 0.8rem 0;
+  border-bottom: var(--border);
+  border-radius: 0;
+  margin-bottom: 1.6rem;
+}
+
+[data-theme="brutalism"] .search-box {
+  border: var(--border);
+}
+
+[data-theme="brutalism"] .search-box:focus-within {
+  box-shadow: none;
+  border-color: var(--ink);
+}
+
+[data-theme="brutalism"] .count-chip {
+  background: transparent;
+  color: var(--text-2);
+  border: none;
+  padding: 0;
+  font-size: 13px;
+}
+
+[data-theme="brutalism"] .btn-tool-refresh {
+  border: var(--border);
+  font-size: 12px;
+}
+
+[data-theme="brutalism"] .btn-tool-refresh:hover {
+  background: var(--surface-2);
+  box-shadow: none;
+  border-color: var(--ink);
+}
+
+[data-theme="brutalism"] .filter-btn-group {
+  border: var(--border);
+  background: #fff;
+  gap: 0;
+}
+
+[data-theme="brutalism"] .filter-chip {
+  border: none;
+  border-right: var(--border);
+  border-radius: 0;
+  min-height: 36px;
+  font-size: 12px;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+[data-theme="brutalism"] .filter-chip:last-child {
+  border-right: none;
+}
+
+[data-theme="brutalism"] .filter-chip:hover {
+  box-shadow: none;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+[data-theme="brutalism"] .filter-chip.active {
+  background: var(--ink);
+  color: #fff;
   font-weight: 700;
-  color: #777;
-  border-left: 3px solid var(--mustard);
-  padding-left: 0.6rem;
+}
+
+[data-theme="brutalism"] .radius-select {
+  border: var(--border);
+  min-height: 36px;
+  font-size: 12px;
+}
+
+[data-theme="brutalism"] .loc-hint {
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ── editorial 主题覆盖 ── */
+[data-theme="editorial"] .memphis-toolbar {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(43, 38, 34, 0.04);
+  padding: 1.2rem 1.4rem;
+}
+
+[data-theme="editorial"] .search-box {
+  border-radius: 8px;
+}
+
+[data-theme="editorial"] .search-box:focus-within {
+  box-shadow: 0 0 0 2px var(--accent-4);
+}
+
+[data-theme="editorial"] .count-chip {
+  background: transparent;
+  color: var(--text-3);
+  border: none;
+  font-family: var(--font-head);
+  padding: 0;
+  font-size: 0.88rem;
+}
+
+[data-theme="editorial"] .btn-tool-refresh {
+  border-radius: 6px;
+}
+
+[data-theme="editorial"] .filter-chip {
+  border-radius: 6px;
+  min-height: 40px;
+  font-size: 0.875rem;
+}
+
+[data-theme="editorial"] .filter-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 4%, transparent);
+  box-shadow: none;
+}
+
+[data-theme="editorial"] .filter-chip.active {
+  box-shadow: 0 2px 6px rgba(204, 120, 92, 0.25);
+}
+
+[data-theme="editorial"] .radius-select {
+  border-radius: 6px;
+  min-height: 40px;
 }
 </style>

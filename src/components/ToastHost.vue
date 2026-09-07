@@ -47,25 +47,27 @@ const { toasts, dismiss } = useToast()
   align-items: flex-start;
   gap: 0.7rem;
   padding: 0.75rem 0.85rem;
-  background: var(--paper-cream);
-  border: 2.5px solid var(--ink);
-  box-shadow: 4px 4px 0 var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
 }
 
 .toast.success {
-  box-shadow: 4px 4px 0 var(--olive);
+  box-shadow: 4px 4px 0 var(--accent-6);
 }
 
 .toast.error {
-  box-shadow: 4px 4px 0 var(--retro-red);
+  box-shadow: 4px 4px 0 var(--accent-2);
 }
 
 .toast.warning {
-  box-shadow: 4px 4px 0 var(--salmon);
+  box-shadow: 4px 4px 0 var(--accent-5);
 }
 
 .toast.info {
-  box-shadow: 4px 4px 0 var(--royal-blue);
+  box-shadow: 4px 4px 0 var(--accent-4);
 }
 
 .t-close {
@@ -77,14 +79,17 @@ const { toasts, dismiss } = useToast()
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--ink);
-  background: var(--paper-cream);
-  color: var(--ink);
+  border: var(--border-thin);
+  border-color: var(--surface);
+  background: transparent;
+  color: var(--surface);
   transition: background var(--ease-snap);
 }
 
 .t-close:hover {
-  background: var(--mustard);
+  background: var(--accent-3);
+  color: var(--ink);
+  border-color: var(--accent-3);
 }
 
 .t-body {
@@ -96,11 +101,12 @@ const { toasts, dismiss } = useToast()
   font-family: var(--font-mono);
   font-size: 0.88rem;
   font-weight: 700;
+  color: var(--surface);
 }
 
 .t-msg {
   font-size: 0.82rem;
-  color: #555;
+  color: var(--surface-2);
   line-height: 1.55;
 }
 

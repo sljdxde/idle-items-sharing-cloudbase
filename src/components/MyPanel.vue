@@ -44,31 +44,26 @@ const borrowedCountText = computed(() => formatCount(borrowedCount.value))
 .memphis-mypanel {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.7rem;
-  margin-bottom: 1.2rem;
+  gap: 0.875rem;
+  margin-bottom: 2rem;
 }
 
 .mycard {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   text-align: left;
-  background: var(--paper-cream);
-  border: 3px solid var(--ink);
-  padding: 0.75rem 0.85rem;
-  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
-}
-
-.mycard.mine {
-  box-shadow: 5px 5px 0 var(--olive);
-}
-
-.mycard.borrowed {
-  box-shadow: 5px 5px 0 var(--retro-red);
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .mycard:hover {
-  transform: translate(-1px, -1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-1);
 }
 
 .mycard:active {
@@ -83,9 +78,10 @@ const borrowedCountText = computed(() => formatCount(borrowedCount.value))
 }
 
 .mycard-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.02rem;
   font-weight: 700;
+  color: var(--ink);
   white-space: nowrap;
 }
 
@@ -93,26 +89,35 @@ const borrowedCountText = computed(() => formatCount(borrowedCount.value))
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.6rem;
-  height: 1.6rem;
+  min-width: 1.7rem;
+  height: 1.7rem;
   padding: 0 0.35rem;
   font-family: var(--font-mono);
   font-size: 0.82rem;
   font-weight: 700;
-  border: 2px solid var(--ink);
-  background: var(--mustard);
-  color: var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: var(--border-thin);
 }
 
 .mycard-desc {
-  font-size: 0.72rem;
-  color: #888;
+  font-size: 0.74rem;
+  color: var(--text-3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-@media (max-width: 360px) {
+@media (max-width: 640px) {
+  .memphis-mypanel {
+    gap: 0.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .mycard {
+    padding: 0.7rem 0.8rem;
+  }
+
   .mycard-desc {
     display: none;
   }

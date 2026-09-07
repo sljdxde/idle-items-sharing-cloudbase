@@ -71,7 +71,7 @@ async function onReturn(): Promise<void> {
       <template v-else-if="item.status === 'lent'">
         <p v-if="mineLent" class="lent-tip">你已借走这件物品，用完记得归还哦。</p>
         <p v-else class="lent-tip">这件物品已被邻居借走，晚点再来看看吧。</p>
-        <button v-if="mineLent" type="button" class="btn-memphis-primary btn-block" @click="onReturn">
+        <button v-if="mineLent" type="button" class="btn-primary btn-block" @click="onReturn">
           我要归还
         </button>
       </template>
@@ -96,7 +96,7 @@ async function onReturn(): Promise<void> {
 
         <button
           type="button"
-          class="btn-memphis-primary btn-block"
+          class="btn-primary btn-block"
           :disabled="!borrowable || store.writing"
           @click="onConfirmBorrow"
         >
@@ -127,27 +127,28 @@ async function onReturn(): Promise<void> {
   height: 44px;
   align-items: center;
   justify-content: center;
-  background: var(--mustard);
-  border: 2.5px solid var(--ink);
-  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: var(--border-thin);
 }
 
 .head-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-head);
   font-size: 1.2rem;
+  color: var(--ink);
   text-wrap: balance;
 }
 
 .head-sub {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: #777;
+  color: var(--text-3);
 }
 
 .contact-card {
-  border: 2px solid var(--ink);
-  background: var(--bg-cream);
-  box-shadow: 3px 3px 0 var(--ink);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -158,13 +159,19 @@ async function onReturn(): Promise<void> {
   align-items: baseline;
   gap: 1rem;
   padding: 0.7rem 0.9rem;
+  border-bottom: var(--border-thin);
+  font-size: 0.9rem;
+}
+
+.contact-row:last-child {
+  border-bottom: none;
 }
 
 .contact-row .k {
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
-  color: #777;
+  color: var(--text-3);
 }
 
 .contact-row .v {
@@ -183,7 +190,7 @@ async function onReturn(): Promise<void> {
   margin: 0;
   font-size: 0.9rem;
   line-height: 1.7;
-  color: #555;
+  color: var(--text-2);
 }
 
 .btn-block {
@@ -191,20 +198,24 @@ async function onReturn(): Promise<void> {
 }
 
 .privacy-tip {
-  font-size: 0.75rem;
-  color: #999;
+  font-size: 0.78rem;
+  color: var(--text-3);
   text-align: center;
   margin: 0;
 }
 
 .rent-hint {
   font-size: 0.82rem;
-  color: #5a4a9e;
-  background: rgba(197, 167, 232, 0.18);
-  border: 1.5px solid var(--ink);
-  border-radius: 8px;
-  padding: 0.6rem 0.7rem;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border: var(--border-thin);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
   margin: 0 0 0.7rem;
   line-height: 1.5;
+}
+
+.rent-hint b {
+  color: var(--accent);
 }
 </style>
