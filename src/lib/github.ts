@@ -32,8 +32,8 @@ interface DataBlock {
   contact?: unknown
   imgUrl?: unknown
   category?: unknown
-  ownerPhone?: unknown
-  borrowedBy?: unknown
+  ownerHash?: unknown
+  borrowerHash?: unknown
   borrowedAt?: unknown
   lat?: unknown
   lng?: unknown
@@ -79,8 +79,8 @@ export function parseIssue(issue: IssueLike): Item {
     contact: typeof data.contact === 'string' ? data.contact : '',
     imgUrl: typeof data.imgUrl === 'string' ? safeImgUrl(data.imgUrl) : '',
     status: isLent ? 'lent' : 'available',
-    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : undefined,
-    borrowedBy: typeof data.borrowedBy === 'string' ? data.borrowedBy : undefined,
+    ownerHash: typeof data.ownerHash === 'string' ? data.ownerHash : undefined,
+    borrowerHash: typeof data.borrowerHash === 'string' ? data.borrowerHash : undefined,
     borrowedAt: typeof data.borrowedAt === 'string' ? data.borrowedAt : undefined,
     lat: roundCoord(data.lat),
     lng: roundCoord(data.lng),

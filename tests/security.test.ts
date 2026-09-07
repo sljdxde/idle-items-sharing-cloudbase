@@ -26,7 +26,7 @@ describe('safeImgUrl', () => {
 })
 
 describe('toPublicItem / clampLatLng', () => {
-  it('公开面保留登录匹配用手机号，去掉口令哈希与非法图片', () => {
+  it('公开面保留身份哈希，去掉口令哈希与非法图片', () => {
     const pub = toPublicItem({
       id: 1,
       name: '电钻',
@@ -35,8 +35,8 @@ describe('toPublicItem / clampLatLng', () => {
       contact: '13800000001',
       imgUrl: 'javascript:alert(1)',
       status: 'lent',
-      ownerPhone: '13800000001',
-      borrowedBy: '13900000002',
+      ownerHash: 'hash-13800000001',
+      borrowerHash: 'hash-13900000002',
       pinHmac: 'def',
       receiptHmac: 'ghi',
       lat: 30.27451,
@@ -47,8 +47,8 @@ describe('toPublicItem / clampLatLng', () => {
       createTime: '2026-08-20T00:00:00.000Z',
       archived: false,
     })
-    expect(pub.ownerPhone).toBe('13800000001')
-    expect(pub.borrowedBy).toBe('13900000002')
+    expect(pub.ownerHash).toBe('hash-13800000001')
+    expect(pub.borrowerHash).toBe('hash-13900000002')
     expect(pub.pinHmac).toBeUndefined()
     expect(pub.imgUrl).toBe('')
     expect(pub.lat).toBe(30.275)

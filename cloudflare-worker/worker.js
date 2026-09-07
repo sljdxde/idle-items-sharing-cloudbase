@@ -1,7 +1,7 @@
 // ================================================
 // cloudflare-worker/worker.js — 邻里好物 薄代理（ADR-0001）
 // 持有 GitHub Token（env secret），浏览器只调 /api/*，Token 永不进客户端。
-// 鉴权：登录手机号作为写凭证（operatorPhone ↔ ownerPhone / borrowedBy）。
+// 鉴权：ADR-0005 手机号+PIN 登录 → JWT（7天）→ 写操作带 Authorization header。
 // 护栏：Origin 白名单、item 标签、字段白名单、图片 URL 白名单、分路由限流。
 // ================================================
 
@@ -11,15 +11,23 @@ import {
   DESC_MAX,
   IMG_DATA_MAX,
   NAME_MAX,
+  authFromRequest,
   clampLatLng,
+  generateSalt,
   hasItemLabel,
+  hashPhone,
+  hashPin,
   isAllowedOrigin,
+  isWeakPin,
   isValidPhone,
+  maskPhone,
   normalizeCategory,
   requirePhone,
   safeImgUrl,
   sanitizeText,
+  signJwt,
   toPublicItem,
+  verifyPin,
 } from './security.js'
 import { checkImageDataUrl, moderateText } from './moderation.js'
 import { createAuditor } from './imageAudit.js'
@@ -36,7 +44,7 @@ function corsHeaders(origin) {
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, x-site-key',
+    'Access-Control-Allow-Headers': 'Content-Type, x-site-key, Authorization',
     'Access-Control-Max-Age': '600',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
@@ -112,8 +120,9 @@ function toItem(issue) {
     contact: typeof d.contact === 'string' ? d.contact : '',
     imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
     status: isLent ? 'lent' : 'available',
-    ownerPhone: requirePhone(d.ownerPhone),
-    borrowedBy: requirePhone(d.borrowedBy),
+    // ADR-0005: 身份哈希字段
+    ownerHash: typeof d.ownerHash === 'string' && d.ownerHash ? d.ownerHash : '',
+    borrowerHash: typeof d.borrowerHash === 'string' && d.borrowerHash ? d.borrowerHash : '',
     borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
     lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
     lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
@@ -209,16 +218,24 @@ async function readJson(request) {
   }
 }
 
-function isOwner(data, phone) {
-  return !!phone && requirePhone(data.ownerPhone) === phone
+/**
+ * 判断是否物主（ADR-0005：phoneHash 比对）
+ * @param {object} data - Issue 数据块
+ * @param {string} phoneHash - 当前用户的 phoneHash
+ */
+function isOwner(data, phoneHash) {
+  return !!phoneHash && !!data.ownerHash && data.ownerHash === phoneHash
 }
 
-function isBorrower(data, phone) {
-  return !!phone && requirePhone(data.borrowedBy) === phone
+/**
+ * 判断是否借阅人（ADR-0005：phoneHash 比对）
+ */
+function isBorrower(data, phoneHash) {
+  return !!phoneHash && !!data.borrowerHash && data.borrowerHash === phoneHash
 }
 
 function isLentIssue(issue, data) {
-  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowedBy
+  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowerHash
 }
 
 async function handle(request, env) {
@@ -228,6 +245,12 @@ async function handle(request, env) {
   })
   const expectedSiteKey = env.SITE_KEY || SITE_KEY_DEFAULT
   const origin = request.headers.get('origin') || ''
+
+  // ADR-0005: 账号体系环境变量
+  const HASH_PEPPER = env.HASH_PEPPER || ''
+  const JWT_SECRET = env.JWT_SECRET || ''
+  const ADMIN_TOKEN = env.ADMIN_TOKEN || ''
+  const USERS_KV = env.USERS_KV || null // Cloudflare KV 命名空间，存储 phoneHash → {pinHash, salt, createdAt}
 
   if (request.method === 'OPTIONS') {
     if (origin && !isAllowedOrigin(origin)) return json(403, { error: '来源不被允许' }, origin)
@@ -247,6 +270,96 @@ async function handle(request, env) {
   let m
 
   try {
+    // ─── ADR-0005: 注册 ───
+    if (request.method === 'POST' && p === '/api/register') {
+      if (!USERS_KV || !HASH_PEPPER || !JWT_SECRET) {
+        return json(500, { error: '账号服务未配置，请联系站长' }, origin)
+      }
+      if (!rateOk(request, 5, 60 * 60 * 1000)) {
+        return json(429, { error: '注册过于频繁，请一小时后再试' }, origin)
+      }
+      const parsed = await readJson(request)
+      if (parsed.tooLarge || parsed.bad || !parsed.body) return json(400, { error: '请求内容无法解析' }, origin)
+      const phone = String(parsed.body.phone || '').trim()
+      const pin = String(parsed.body.pin || '').trim()
+      if (!isValidPhone(phone)) return json(400, { error: '手机号格式不正确' }, origin)
+      if (!/^\d{6}$/.test(pin)) return json(400, { error: '管理口令需为 6 位数字' }, origin)
+      if (isWeakPin(pin)) return json(400, { error: '管理口令过于简单（如 123456、连续数字），请换一个' }, origin)
+
+      const pHash = await hashPhone(phone, HASH_PEPPER)
+      // 检查是否已注册
+      const existing = await USERS_KV.get(pHash)
+      if (existing) return json(409, { error: '该手机号已注册，请直接登录' }, origin)
+
+      const salt = generateSalt()
+      const pinH = await hashPin(pin, salt)
+      await USERS_KV.put(pHash, JSON.stringify({ pinHash: pinH, salt, createdAt: new Date().toISOString() }))
+
+      const token = await signJwt({ phoneHash: pHash }, JWT_SECRET)
+      return json(200, { ok: true, token, phone: maskPhone(phone) }, origin)
+    }
+
+    // ─── ADR-0005: 登录 ───
+    if (request.method === 'POST' && p === '/api/login') {
+      if (!USERS_KV || !HASH_PEPPER || !JWT_SECRET) {
+        return json(500, { error: '账号服务未配置，请联系站长' }, origin)
+      }
+      if (!rateOk(request, 10, 60 * 1000)) {
+        return json(429, { error: '登录尝试过于频繁，请稍后再试' }, origin)
+      }
+      const parsed = await readJson(request)
+      if (parsed.tooLarge || parsed.bad || !parsed.body) return json(400, { error: '请求内容无法解析' }, origin)
+      const phone = String(parsed.body.phone || '').trim()
+      const pin = String(parsed.body.pin || '').trim()
+      if (!isValidPhone(phone)) return json(400, { error: '手机号或管理口令错误' }, origin)
+      if (!/^\d{6}$/.test(pin)) return json(400, { error: '手机号或管理口令错误' }, origin)
+
+      const pHash = await hashPhone(phone, HASH_PEPPER)
+      const userStr = await USERS_KV.get(pHash)
+      if (!userStr) return json(401, { error: '手机号或管理口令错误' }, origin)
+      let user
+      try {
+        user = JSON.parse(userStr)
+      } catch {
+        return json(500, { error: '账号数据异常，请联系站长' }, origin)
+      }
+      const pinOk = await verifyPin(pin, user.pinHash, user.salt)
+      if (!pinOk) return json(401, { error: '手机号或管理口令错误' }, origin)
+
+      const token = await signJwt({ phoneHash: pHash }, JWT_SECRET)
+      return json(200, { ok: true, token, phone: maskPhone(phone) }, origin)
+    }
+
+    // ─── ADR-0005: 管理员重置口令 ───
+    if (request.method === 'POST' && p === '/api/admin/reset-pin') {
+      if (!ADMIN_TOKEN) return json(404, { error: '未找到接口' }, origin) // 隐藏管理员接口
+      if (request.headers.get('x-admin-token') !== ADMIN_TOKEN) {
+        return json(403, { error: '管理员令牌错误' }, origin)
+      }
+      if (!USERS_KV || !HASH_PEPPER) return json(500, { error: '账号服务未配置' }, origin)
+      const parsed = await readJson(request)
+      if (parsed.tooLarge || parsed.bad || !parsed.body) return json(400, { error: '请求内容无法解析' }, origin)
+      const phone = String(parsed.body.phone || '').trim()
+      const newPin = String(parsed.body.newPin || '').trim()
+      if (!isValidPhone(phone)) return json(400, { error: '手机号格式不正确' }, origin)
+      const pinToSet = newPin && /^\d{6}$/.test(newPin) ? newPin : String(Math.floor(100000 + Math.random() * 900000))
+      const pHash = await hashPhone(phone, HASH_PEPPER)
+      const userStr = await USERS_KV.get(pHash)
+      if (!userStr) return json(404, { error: '该手机号未注册' }, origin)
+      let user
+      try {
+        user = JSON.parse(userStr)
+      } catch {
+        return json(500, { error: '账号数据异常' }, origin)
+      }
+      const salt = generateSalt()
+      user.pinHash = await hashPin(pinToSet, salt)
+      user.salt = salt
+      user.resetAt = new Date().toISOString()
+      await USERS_KV.put(pHash, JSON.stringify(user))
+      return json(200, { ok: true, phone: maskPhone(phone), temporaryPin: pinToSet }, origin)
+    }
+
     if (request.method === 'GET' && p === '/api/items') {
       try {
         return json(200, await getList(), origin)
@@ -257,21 +370,24 @@ async function handle(request, env) {
 
     if (request.method !== 'POST') return json(405, { error: '仅支持 GET/POST' }, origin)
 
-    // ─── 发布 ───
+    // ─── 发布（ADR-0005：JWT 鉴权 + ownerHash） ───
     if (p === '/api/items') {
       if (!rateOk(request, 12, 60 * 60 * 1000)) {
         return json(429, { error: '发布过于频繁，请一小时后再试' }, origin)
       }
+      // ADR-0005: JWT 鉴权
+      const authPayload = await authFromRequest(request, JWT_SECRET)
+      const phoneHash = authPayload?.phoneHash || ''
+      if (!phoneHash) return json(401, { error: '请先登录' }, origin)
+
       const parsed = await readJson(request)
       if (parsed.tooLarge) return json(413, { error: '内容过大，请压缩图片后重试' }, origin)
       if (parsed.bad || !parsed.body) return json(400, { error: '请求内容无法解析，请重试' }, origin)
       const b = parsed.body
       const name = sanitizeText(b.name, NAME_MAX)
       const desc = sanitizeText(b.desc, DESC_MAX)
-      const ownerPhone = String(b.ownerPhone || '').trim()
       if (!name) return json(400, { error: '缺少物品名称' }, origin)
       if (!desc) return json(400, { error: '缺少物品描述' }, origin)
-      if (!isValidPhone(ownerPhone)) return json(400, { error: '发布者手机号格式不正确' }, origin)
       const contactType = b.contactType === 'building' ? 'building' : 'phone'
       const contact = sanitizeText(b.contact, CONTACT_MAX)
       if (!contact) return json(400, { error: '缺少联系方式' }, origin)
@@ -318,7 +434,7 @@ async function handle(request, env) {
         contact,
         imgUrl,
         category: normalizeCategory(b.category),
-        ownerPhone,
+        ownerHash: phoneHash,
         lat,
         lng,
         rentType,
@@ -337,20 +453,20 @@ async function handle(request, env) {
       return json(200, { ok: true, id: created.number }, origin)
     }
 
-    // ─── 借用 ───
+    // ─── 借用（ADR-0005：JWT 鉴权 + borrowerHash） ───
     if ((m = p.match(/^\/api\/items\/(\d+)\/borrow$/))) {
       const { issue, missing, error } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
-      const parsed = await readJson(request)
-      if (parsed.tooLarge || parsed.bad) return json(400, { error: '请求内容无法解析，请重试' }, origin)
-      const phone = requirePhone(parsed.body?.operatorPhone)
-      if (!phone) return json(400, { error: '手机号格式不正确' }, origin)
+      // ADR-0005: JWT 鉴权
+      const authPayload = await authFromRequest(request, JWT_SECRET)
+      const phoneHash = authPayload?.phoneHash || ''
+      if (!phoneHash) return json(401, { error: '请先登录' }, origin)
       if (issue.state !== 'open') return json(409, { error: '该物品已下架' }, origin)
       const data = extractData(issue.body)
       if (isLentIssue(issue, data)) return json(409, { error: '该物品当前不可借用' }, origin)
-      if (isOwner(data, phone)) return json(409, { error: '不能借用自己发布的物品' }, origin)
-      data.borrowedBy = phone
+      if (isOwner(data, phoneHash)) return json(409, { error: '不能借用自己发布的物品' }, origin)
+      data.borrowerHash = phoneHash
       data.borrowedAt = new Date().toISOString()
       delete data.receiptHmac
       delete data.pinHmac
@@ -361,18 +477,18 @@ async function handle(request, env) {
       return json(200, { ok: true }, origin)
     }
 
-    // ─── 归还 ───
+    // ─── 归还（ADR-0005：JWT 鉴权） ───
     if ((m = p.match(/^\/api\/items\/(\d+)\/return$/))) {
       const { issue, missing, error } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
-      const parsed = await readJson(request)
-      if (parsed.tooLarge || parsed.bad) return json(400, { error: '请求内容无法解析，请重试' }, origin)
-      const phone = requirePhone(parsed.body?.operatorPhone)
-      if (!phone) return json(400, { error: '手机号格式不正确' }, origin)
+      // ADR-0005: JWT 鉴权
+      const authPayload = await authFromRequest(request, JWT_SECRET)
+      const phoneHash = authPayload?.phoneHash || ''
+      if (!phoneHash) return json(401, { error: '请先登录' }, origin)
       const data = extractData(issue.body)
       if (!isLentIssue(issue, data)) return json(409, { error: '该物品当前未借出' }, origin)
-      if (!isBorrower(data, phone)) return json(403, { error: '只有借阅人可以归还' }, origin)
+      if (!isBorrower(data, phoneHash)) return json(403, { error: '只有借阅人可以归还' }, origin)
       // ─── 租金结算：记录归还时间，按天/按次写入历史结算记录（免费不计）───
       if (data.borrowedAt) {
         const returnedAt = new Date().toISOString()
@@ -395,13 +511,13 @@ async function handle(request, env) {
             returnedAt,
             days,
             fee: amount,
-            borrower: data.borrowedBy,
+            borrowerHash: data.borrowerHash,
           })
           data.rentRecords = records
         }
       }
-      delete data.borrowedBy
       delete data.borrowedAt
+      delete data.borrowerHash
       delete data.receiptHmac
       const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
       if (!patch.ok) return json(502, { error: '归还失败，请稍后再试' }, origin)
@@ -410,35 +526,35 @@ async function handle(request, env) {
       return json(200, { ok: true }, origin)
     }
 
-    // ─── 下架 / 上架（已借出也可下架，不影响进行中的借用）───
+    // ─── 下架 / 上架（ADR-0005：JWT 鉴权；已借出也可下架，不影响进行中的借用）───
     if ((m = p.match(/^\/api\/items\/(\d+)\/(archive|unarchive)$/))) {
       const wantClosed = m[2] === 'archive'
       const { issue, missing, error } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
-      const parsed = await readJson(request)
-      if (parsed.tooLarge || parsed.bad) return json(400, { error: '请求内容无法解析，请重试' }, origin)
-      const phone = requirePhone(parsed.body?.operatorPhone)
-      if (!phone) return json(400, { error: '手机号格式不正确' }, origin)
+      // ADR-0005: JWT 鉴权
+      const authPayload = await authFromRequest(request, JWT_SECRET)
+      const phoneHash = authPayload?.phoneHash || ''
+      if (!phoneHash) return json(401, { error: '请先登录' }, origin)
       const data = extractData(issue.body)
-      if (!isOwner(data, phone)) return json(403, { error: '只有发布者可以管理这件物品' }, origin)
+      if (!isOwner(data, phoneHash)) return json(403, { error: '只有发布者可以管理这件物品' }, origin)
       const patch = await ghWrite(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
       if (!patch.ok) return json(502, { error: '操作失败，请稍后再试' }, origin)
       invalidateList()
       return json(200, { ok: true }, origin)
     }
 
-    // ─── 删除（已借出不可删）───
+    // ─── 删除（ADR-0005：JWT 鉴权；已借出不可删）───
     if ((m = p.match(/^\/api\/items\/(\d+)\/delete$/))) {
       const { issue, missing, error } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
-      const parsed = await readJson(request)
-      if (parsed.tooLarge || parsed.bad) return json(400, { error: '请求内容无法解析，请重试' }, origin)
-      const phone = requirePhone(parsed.body?.operatorPhone)
-      if (!phone) return json(400, { error: '手机号格式不正确' }, origin)
+      // ADR-0005: JWT 鉴权
+      const authPayload = await authFromRequest(request, JWT_SECRET)
+      const phoneHash = authPayload?.phoneHash || ''
+      if (!phoneHash) return json(401, { error: '请先登录' }, origin)
       const data = extractData(issue.body)
-      if (!isOwner(data, phone)) return json(403, { error: '只有发布者可以删除这件物品' }, origin)
+      if (!isOwner(data, phoneHash)) return json(403, { error: '只有发布者可以删除这件物品' }, origin)
       if (isLentIssue(issue, data)) return json(409, { error: '物品借出中，请先收回再删除' }, origin)
       await ghWrite(`/${issue.number}/labels/item`, 'DELETE')
       await ghWrite(`/${issue.number}`, 'PATCH', { state: 'closed' })

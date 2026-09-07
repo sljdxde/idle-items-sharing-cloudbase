@@ -1,8 +1,9 @@
 // ================================================
-// server/proxy-server.mjs — 自建服务器版代理（与 cloudflare-worker/worker.js 同契约）
+// server/proxy-server.mjs — 自建服务器版代理（ADR-0005 手机号+PIN 账号体系）
 // Node 原生 http 实现：/api/* 走 GitHub 代理；其余路径服务 ./dist 静态站。
 // 监听 127.0.0.1:8087，由 nginx 80 端口转发（无需 root 跑本进程）。
 // Token 从环境变量 GITHUB_TOKEN 或同目录 .token 文件读取（chmod 600）。
+// 用户凭证（phoneHash → {pinHash, salt, createdAt}）存 ./data/users.json。
 // ================================================
 
 import { createServer } from 'node:http'
@@ -16,22 +17,37 @@ import {
   DESC_MAX,
   IMG_DATA_MAX,
   NAME_MAX,
+  authFromRequest,
   clampLatLng,
+  generateSalt,
   hasItemLabel,
+  hashPhone,
+  hashPin,
+  isAllowedOrigin,
+  isWeakPin,
   isValidPhone,
+  maskPhone,
   normalizeCategory,
-  requirePhone,
   safeImgUrl,
   sanitizeText,
+  signJwt,
   toPublicItem,
+  verifyPin,
 } from '../cloudflare-worker/security.js'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const DIST = join(ROOT, 'dist')
 const UPLOADS = join(ROOT, 'uploads')
+const DATA_DIR = join(ROOT, 'data')
+const USERS_FILE = join(DATA_DIR, 'users.json')
 const PORT = Number(process.env.PORT || 8087)
 const HOST = '127.0.0.1'
 const SITE_KEY = process.env.SITE_KEY || 'neighborhood-share-2026'
+
+// ADR-0005: 安全密钥（从环境变量读取，未配置时注册/登录返回 500）
+const HASH_PEPPER = process.env.HASH_PEPPER || ''
+const JWT_SECRET = process.env.JWT_SECRET || ''
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || ''
 
 const OWNER = 'sljdxde'
 const REPO = 'idle-items-sharing-cloudbase'
@@ -43,6 +59,41 @@ if (!GH_TOKEN) {
   try { GH_TOKEN = (await readFile(join(ROOT, '.token'), 'utf8')).trim() } catch { /* env 兜底 */ }
 }
 
+// ---------- 用户凭证存储（JSON 文件，替代 Cloudflare KV） ----------
+let usersCache = null
+let usersDirty = false
+
+async function loadUsers() {
+  if (usersCache) return usersCache
+  try {
+    const raw = await readFile(USERS_FILE, 'utf8')
+    usersCache = JSON.parse(raw)
+  } catch {
+    usersCache = {}
+  }
+  return usersCache
+}
+
+async function saveUsers() {
+  if (!usersDirty) return
+  await mkdir(DATA_DIR, { recursive: true })
+  await writeFile(USERS_FILE, JSON.stringify(usersCache, null, 2), 'utf8')
+  usersDirty = false
+}
+
+async function getUser(phoneHash) {
+  const users = await loadUsers()
+  return users[phoneHash] || null
+}
+
+async function putUser(phoneHash, data) {
+  const users = await loadUsers()
+  users[phoneHash] = data
+  usersDirty = true
+  await saveUsers()
+}
+
+// ---------- MIME / 安全头 ----------
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -64,6 +115,7 @@ const SECURITY_HEADERS = {
     "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
 }
 
+// ---------- GitHub API ----------
 async function gh(path, method = 'GET', body) {
   return fetch(`${API}${path}`, {
     method,
@@ -102,8 +154,8 @@ function toItem(issue) {
     contact: typeof d.contact === 'string' ? d.contact : '',
     imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
     status: isLent ? 'lent' : 'available',
-    ownerPhone: requirePhone(d.ownerPhone),
-    borrowedBy: requirePhone(d.borrowedBy),
+    ownerHash: typeof d.ownerHash === 'string' ? d.ownerHash : '',
+    borrowerHash: typeof d.borrowerHash === 'string' ? d.borrowerHash : '',
     borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
     lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
     lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
@@ -177,6 +229,7 @@ async function ghWrite(path, method, body) {
   }
 }
 
+// ---------- 限流 ----------
 const hits = new Map()
 function rateOk(ip, limit, windowMs) {
   const key = `${ip}|${limit}|${windowMs}`
@@ -187,6 +240,7 @@ function rateOk(ip, limit, windowMs) {
   return true
 }
 
+// ---------- 工具 ----------
 function json(res, status, obj) {
   const body = JSON.stringify(obj)
   res.writeHead(status, {
@@ -237,24 +291,91 @@ async function saveUploadedImage(dataUri) {
   return `/uploads/${name}`
 }
 
-function isOwner(data, phone) {
-  return !!phone && requirePhone(data.ownerPhone) === phone
+// ---------- ADR-0005: 身份匹配（哈希） ----------
+function isOwner(data, phoneHash) {
+  return !!phoneHash && !!data.ownerHash && data.ownerHash === phoneHash
 }
 
-function isBorrower(data, phone) {
-  return !!phone && requirePhone(data.borrowedBy) === phone
+function isBorrower(data, phoneHash) {
+  return !!phoneHash && !!data.borrowerHash && data.borrowerHash === phoneHash
 }
 
 function isLentIssue(issue, data) {
-  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowedBy
+  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowerHash
 }
 
+// ---------- API 路由 ----------
 async function handleApi(req, res, pathname) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'anon'
   const isWrite = req.method === 'POST'
   if (!rateOk(ip, isWrite ? 40 : 120, 10 * 60 * 1000)) return json(res, 429, { error: '请求过于频繁，请稍后再试' })
   let m
 
+  // ─── 注册（ADR-0005） ───
+  if (req.method === 'POST' && pathname === '/api/register') {
+    if (!HASH_PEPPER || !JWT_SECRET) return json(res, 500, { error: '账号服务未配置，请联系管理员' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad || !parsed.body) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = String(parsed.body.phone || '').trim()
+    const pin = String(parsed.body.pin || '').trim()
+    if (!isValidPhone(phone)) return json(res, 400, { error: '手机号格式不正确' })
+    if (!/^\d{6}$/.test(pin)) return json(res, 400, { error: '管理口令需为 6 位数字' })
+    if (isWeakPin(pin)) return json(res, 400, { error: '管理口令过于简单（如 123456、连续数字），请换一个' })
+
+    const pHash = await hashPhone(phone, HASH_PEPPER)
+    const existing = await getUser(pHash)
+    if (existing) return json(res, 409, { error: '该手机号已注册，请直接登录' })
+
+    const salt = generateSalt()
+    const pinH = await hashPin(pin, salt)
+    await putUser(pHash, { pinHash: pinH, salt, createdAt: new Date().toISOString() })
+
+    const token = await signJwt({ phoneHash: pHash }, JWT_SECRET)
+    return json(res, 200, { ok: true, token, phone: maskPhone(phone) })
+  }
+
+  // ─── 登录（ADR-0005） ───
+  if (req.method === 'POST' && pathname === '/api/login') {
+    if (!HASH_PEPPER || !JWT_SECRET) return json(res, 500, { error: '账号服务未配置，请联系管理员' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad || !parsed.body) return json(res, 400, { error: '请求内容无法解析，请重试' })
+    const phone = String(parsed.body.phone || '').trim()
+    const pin = String(parsed.body.pin || '').trim()
+    if (!isValidPhone(phone) || !/^\d{6}$/.test(pin)) {
+      return json(res, 401, { error: '手机号或管理口令错误' })
+    }
+    const pHash = await hashPhone(phone, HASH_PEPPER)
+    const user = await getUser(pHash)
+    if (!user) return json(res, 401, { error: '手机号或管理口令错误' })
+    const pinOk = await verifyPin(pin, user.pinHash, user.salt)
+    if (!pinOk) return json(res, 401, { error: '手机号或管理口令错误' })
+
+    const token = await signJwt({ phoneHash: pHash }, JWT_SECRET)
+    return json(res, 200, { ok: true, token, phone: maskPhone(phone) })
+  }
+
+  // ─── 管理员重置 PIN（ADR-0005，隐藏接口） ───
+  if (req.method === 'POST' && pathname === '/api/admin/reset-pin') {
+    if (!ADMIN_TOKEN || !HASH_PEPPER) return json(res, 404, { error: '未找到接口' })
+    if (req.headers['x-admin-token'] !== ADMIN_TOKEN) return json(res, 404, { error: '未找到接口' })
+    const parsed = await readBody(req)
+    if (parsed.tooLarge || parsed.bad || !parsed.body) return json(res, 400, { error: '请求内容无法解析' })
+    const phone = String(parsed.body.phone || '').trim()
+    if (!isValidPhone(phone)) return json(res, 400, { error: '手机号格式不正确' })
+    const pHash = await hashPhone(phone, HASH_PEPPER)
+    const user = await getUser(pHash)
+    if (!user) return json(res, 404, { error: '该手机号未注册' })
+
+    const newPin = String(parsed.body.newPin || '').trim()
+    const pinToSet = newPin && /^\d{6}$/.test(newPin) ? newPin : String(Math.floor(100000 + Math.random() * 900000))
+    const salt = generateSalt()
+    user.pinHash = await hashPin(pinToSet, salt)
+    user.salt = salt
+    await putUser(pHash, user)
+    return json(res, 200, { ok: true, phone: maskPhone(phone), temporaryPin: pinToSet })
+  }
+
+  // ─── 列表读取 ───
   if (req.method === 'GET' && pathname === '/api/items') {
     try {
       return json(res, 200, await getList())
@@ -265,18 +386,22 @@ async function handleApi(req, res, pathname) {
 
   if (req.method !== 'POST') return json(res, 405, { error: '仅支持 GET/POST' })
 
+  // ─── 从 JWT 提取当前用户身份（所有写接口共用） ───
+  const authPayload = await authFromRequest(req, JWT_SECRET)
+  const phoneHash = authPayload?.phoneHash || ''
+
+  // ─── 发布 ───
   if (pathname === '/api/items') {
     if (!rateOk(ip, 12, 60 * 60 * 1000)) return json(res, 429, { error: '发布过于频繁，请一小时后再试' })
+    if (!phoneHash) return json(res, 401, { error: '请先登录' })
     const parsed = await readBody(req)
     if (parsed.tooLarge) return json(res, 413, { error: '内容过大，请压缩图片后重试' })
     if (parsed.bad || !parsed.body) return json(res, 400, { error: '请求内容无法解析，请重试' })
     const b = parsed.body
     const name = sanitizeText(b.name, NAME_MAX)
     const desc = sanitizeText(b.desc, DESC_MAX)
-    const ownerPhone = String(b.ownerPhone || '').trim()
     if (!name) return json(res, 400, { error: '缺少物品名称' })
     if (!desc) return json(res, 400, { error: '缺少物品描述' })
-    if (!isValidPhone(ownerPhone)) return json(res, 400, { error: '发布者手机号格式不正确' })
     const contactType = b.contactType === 'building' ? 'building' : 'phone'
     const contact = sanitizeText(b.contact, CONTACT_MAX)
     if (!contact) return json(res, 400, { error: '缺少联系方式' })
@@ -302,9 +427,11 @@ async function handleApi(req, res, pathname) {
       contact,
       imgUrl,
       category: normalizeCategory(b.category),
-      ownerPhone,
+      ownerHash: phoneHash,
       lat,
       lng,
+      rentType: b.rentType === 'daily' || b.rentType === 'perUse' ? b.rentType : 'free',
+      rentFee: Number(b.rentFee) || 0,
       createTime: new Date().toISOString(),
     }
     const body = withDataBlock('', data)
@@ -319,19 +446,17 @@ async function handleApi(req, res, pathname) {
     return json(res, 200, { ok: true, id: created.number })
   }
 
+  // ─── 借用 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/borrow$/))) {
+    if (!phoneHash) return json(res, 401, { error: '请先登录' })
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
-    const parsed = await readBody(req)
-    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
-    const phone = requirePhone(parsed.body?.operatorPhone)
-    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     if (issue.state !== 'open') return json(res, 409, { error: '该物品已下架' })
     const data = extractData(issue.body)
     if (isLentIssue(issue, data)) return json(res, 409, { error: '该物品当前不可借用' })
-    if (isOwner(data, phone)) return json(res, 409, { error: '不能借用自己发布的物品' })
-    data.borrowedBy = phone
+    if (isOwner(data, phoneHash)) return json(res, 409, { error: '不能借用自己发布的物品' })
+    data.borrowerHash = phoneHash
     data.borrowedAt = new Date().toISOString()
     delete data.receiptHmac
     delete data.pinHmac
@@ -342,19 +467,38 @@ async function handleApi(req, res, pathname) {
     return json(res, 200, { ok: true })
   }
 
+  // ─── 归还 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/return$/))) {
+    if (!phoneHash) return json(res, 401, { error: '请先登录' })
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
-    const parsed = await readBody(req)
-    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
-    const phone = requirePhone(parsed.body?.operatorPhone)
-    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
     if (!isLentIssue(issue, data)) return json(res, 409, { error: '该物品当前未借出' })
-    if (!isBorrower(data, phone)) return json(res, 403, { error: '只有借阅人可以归还' })
-    delete data.borrowedBy
+    if (!isBorrower(data, phoneHash)) return json(res, 403, { error: '只有借阅人可以归还' })
+    // 租金结算
+    if (data.borrowedAt) {
+      const returnedAt = new Date().toISOString()
+      const rentType = data.rentType === 'daily' || data.rentType === 'perUse' ? data.rentType : 'free'
+      if (rentType !== 'free') {
+        const start = Date.parse(data.borrowedAt)
+        const end = Date.parse(returnedAt)
+        const fee = Number(data.rentFee)
+        let amount = 0
+        let days
+        if (rentType === 'daily' && Number.isFinite(start) && Number.isFinite(end)) {
+          days = Math.max(1, Math.ceil(Math.max(end - start, 0) / 86400000))
+          amount = (Number.isFinite(fee) ? fee : 0) * days
+        } else if (rentType === 'perUse') {
+          amount = Number.isFinite(fee) ? fee : 0
+        }
+        const records = Array.isArray(data.rentRecords) ? data.rentRecords : []
+        records.push({ borrowedAt: data.borrowedAt, returnedAt, days, fee: amount, borrowerHash: data.borrowerHash })
+        data.rentRecords = records
+      }
+    }
     delete data.borrowedAt
+    delete data.borrowerHash
     delete data.receiptHmac
     const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
     if (!patch.ok) return json(res, 502, { error: '归还失败，请稍后再试' })
@@ -363,33 +507,29 @@ async function handleApi(req, res, pathname) {
     return json(res, 200, { ok: true })
   }
 
+  // ─── 上下架 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/(archive|unarchive)$/))) {
+    if (!phoneHash) return json(res, 401, { error: '请先登录' })
     const wantClosed = m[2] === 'archive'
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
-    const parsed = await readBody(req)
-    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
-    const phone = requirePhone(parsed.body?.operatorPhone)
-    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
-    if (!isOwner(data, phone)) return json(res, 403, { error: '只有发布者可以管理这件物品' })
+    if (!isOwner(data, phoneHash)) return json(res, 403, { error: '只有发布者可以管理这件物品' })
     const patch = await ghWrite(`/${issue.number}`, 'PATCH', { state: wantClosed ? 'closed' : 'open' })
     if (!patch.ok) return json(res, 502, { error: '操作失败，请稍后再试' })
     invalidateList()
     return json(res, 200, { ok: true })
   }
 
+  // ─── 删除 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/delete$/))) {
+    if (!phoneHash) return json(res, 401, { error: '请先登录' })
     const { issue, missing, error } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
-    const parsed = await readBody(req)
-    if (parsed.tooLarge || parsed.bad) return json(res, 400, { error: '请求内容无法解析，请重试' })
-    const phone = requirePhone(parsed.body?.operatorPhone)
-    if (!phone) return json(res, 400, { error: '手机号格式不正确' })
     const data = extractData(issue.body)
-    if (!isOwner(data, phone)) return json(res, 403, { error: '只有发布者可以删除这件物品' })
+    if (!isOwner(data, phoneHash)) return json(res, 403, { error: '只有发布者可以删除这件物品' })
     if (isLentIssue(issue, data)) return json(res, 409, { error: '物品借出中，请先收回再删除' })
     await ghWrite(`/${issue.number}/labels/item`, 'DELETE')
     await ghWrite(`/${issue.number}`, 'PATCH', { state: 'closed' })
@@ -400,6 +540,7 @@ async function handleApi(req, res, pathname) {
   return json(res, 404, { error: '未找到接口' })
 }
 
+// ---------- 静态文件服务 ----------
 async function serveStatic(res, pathname) {
   let rel = decodeURIComponent(pathname)
   if (rel === '/' || rel === '') rel = '/index.html'
@@ -440,6 +581,7 @@ async function serveUpload(res, pathname) {
   } catch { res.writeHead(404, SECURITY_HEADERS); res.end('not found') }
 }
 
+// ---------- 启动 ----------
 createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://x').pathname
   try {
@@ -454,4 +596,7 @@ createServer(async (req, res) => {
   }
 }).listen(PORT, HOST, () => {
   console.log(`linli proxy+static on http://${HOST}:${PORT}`)
+  if (!HASH_PEPPER || !JWT_SECRET) {
+    console.warn('⚠️  HASH_PEPPER / JWT_SECRET 未配置，注册/登录接口将返回 500')
+  }
 })

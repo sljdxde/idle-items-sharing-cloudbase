@@ -42,7 +42,7 @@ function onLogout(): void {
 
       <!-- 登录态 -->
       <template v-if="auth.isLoggedIn">
-        <span class="user-chip" :title="`当前登录：${auth.phone}`">
+        <span class="user-chip" :title="`当前登录：${auth.maskedPhone}`">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
             aria-hidden="true">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>

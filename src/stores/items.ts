@@ -199,30 +199,30 @@ export const useItemsStore = defineStore('items', () => {
       }),
   )
 
-  /** 「我的发布」页：登录手机号与发布者一致的物品（含已下架），最新在前 */
+  /** 「我的发布」页：当前用户身份哈希与发布者一致的物品（含已下架），最新在前 */
   const myItems = computed(() =>
     items.value
-      .filter((it) => isOwner(it, auth.phone))
+      .filter((it) => isOwner(it, auth.phoneHash))
       .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
   )
 
-  /** 「我的借用」页：登录手机号与借阅人一致的物品，最新在前 */
+  /** 「我的借用」页：当前用户身份哈希与借阅人一致的物品，最新在前 */
   const borrowedItems = computed(() =>
     items.value
-      .filter((it) => canReturn(it, auth.phone))
+      .filter((it) => canReturn(it, auth.phoneHash))
       .sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
   )
 
   function owns(item: Item): boolean {
-    return isOwner(item, auth.phone)
+    return isOwner(item, auth.phoneHash)
   }
 
   function holds(item: Item): boolean {
-    return canReturn(item, auth.phone)
+    return canReturn(item, auth.phoneHash)
   }
 
   function borrowable(item: Item): boolean {
-    return canBorrow(item, auth.phone)
+    return canBorrow(item, auth.phoneHash)
   }
 
   function itemById(id: number): Item | undefined {
@@ -248,13 +248,12 @@ export const useItemsStore = defineStore('items', () => {
     rentType: 'free' | 'daily' | 'perUse'
     rentFee: number
   }): Promise<boolean> {
-    if (!auth.phone) {
+    if (!auth.isLoggedIn) {
       toast.error('请先登录', '发布闲置需要先登录')
       return false
     }
     if (writing.value) return false
     writing.value = true
-    const phone = auth.phone
     try {
       const { id } = await api.publish({
         name: draft.name,
@@ -263,7 +262,6 @@ export const useItemsStore = defineStore('items', () => {
         contact: draft.contact,
         imgUrl: draft.imgUrl,
         category: draft.category,
-        ownerPhone: phone,
         lat: draft.position?.lat ?? null,
         lng: draft.position?.lng ?? null,
         rentType: draft.rentType,
@@ -280,7 +278,7 @@ export const useItemsStore = defineStore('items', () => {
           contact: draft.contact.trim(),
           imgUrl: draft.imgUrl,
           status: 'available',
-          ownerPhone: phone,
+          ownerHash: auth.phoneHash,
           lat: draft.position?.lat ?? null,
           lng: draft.position?.lng ?? null,
           category: draft.category,
@@ -306,20 +304,23 @@ export const useItemsStore = defineStore('items', () => {
   async function borrow(id: number): Promise<boolean> {
     const it = requireItem(id)
     if (!it) return false
-    if (!auth.phone) {
-      toast.error('请先登录', '借用前请先用手机号登录')
+    if (!auth.isLoggedIn) {
+      toast.error('请先登录', '借用前请先登录')
       return false
     }
-    const phone = auth.phone
-    if (!canBorrow(it, phone)) {
+    if (!canBorrow(it, auth.phoneHash)) {
       toast.warning('暂时借不了', '该物品当前不可借用')
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      await api.borrow(id, phone)
-      applyWrite(id, borrowItem(it, phone), (s) => s.status === 'lent' && s.borrowedBy === phone)
+      await api.borrow(id)
+      applyWrite(
+        id,
+        borrowItem(it, auth.phoneHash),
+        (s) => s.status === 'lent' && s.borrowerHash === auth.phoneHash,
+      )
       toast.success('借用成功', '用完记得归还，让好物继续流转')
       void reconcile()
       return true
@@ -334,14 +335,14 @@ export const useItemsStore = defineStore('items', () => {
   async function returnBack(id: number): Promise<boolean> {
     const it = requireItem(id)
     if (!it) return false
-    if (!canReturn(it, auth.phone)) {
+    if (!canReturn(it, auth.phoneHash)) {
       toast.error('无法归还', '只有借阅人可以归还这件物品')
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      await api.returnBack(id, auth.phone!)
+      await api.returnBack(id)
       applyWrite(id, returnItem(it), (s) => s.status === 'available')
       toast.success('归还成功', '物品已恢复「可借」，感谢分享')
       void reconcile()
@@ -357,15 +358,15 @@ export const useItemsStore = defineStore('items', () => {
   async function setArchived(id: number, archived: boolean): Promise<boolean> {
     const it = requireItem(id)
     if (!it) return false
-    if (!canArchive(it, auth.phone)) {
+    if (!canArchive(it, auth.phoneHash)) {
       toast.error('无权操作', '只有发布者可以上下架这件物品')
       return false
     }
     if (writing.value) return false
     writing.value = true
     try {
-      if (archived) await api.archive(id, auth.phone!)
-      else await api.unarchive(id, auth.phone!)
+      if (archived) await api.archive(id)
+      else await api.unarchive(id)
       applyWrite(id, { ...it, archived }, (s) => !!s.archived === archived)
       toast.success(archived ? '已下架' : '已上架', archived ? '物品已从公开列表隐藏' : '物品已重新对邻居可见')
       void reconcile()
@@ -395,8 +396,8 @@ export const useItemsStore = defineStore('items', () => {
   async function remove(id: number): Promise<boolean> {
     const it = requireItem(id)
     if (!it) return false
-    if (!canDelete(it, auth.phone)) {
-      const mine = isOwner(it, auth.phone)
+    if (!canDelete(it, auth.phoneHash)) {
+      const mine = isOwner(it, auth.phoneHash)
       toast.error(
         !mine ? '无权操作' : '无法删除',
         !mine
@@ -408,7 +409,7 @@ export const useItemsStore = defineStore('items', () => {
     if (writing.value) return false
     writing.value = true
     try {
-      await api.remove(id, auth.phone!)
+      await api.remove(id)
       applyWrite(id, null, () => false)
       toast.success('已删除', '物品已从社区列表彻底移除')
       void reconcile()

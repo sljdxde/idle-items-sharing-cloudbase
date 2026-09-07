@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>邻里好物 · 登录样例</title>
+<style>
+  /* ========== 设计 Tokens（与项目 src/styles/tokens.css 一致） ========== */
+  :root {
+    --bg-cream: #f7f2e7;
+    --paper-cream: #fffdf9;
+    --retro-red: #e63946;
+    --mustard: #e9c46a;
+    --royal-blue: #2a6f97;
+    --retro-purple: #7209b7;
+    --olive: #264653;
+    --salmon: #f4a261;
+    --ink: #1d1e2c;
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Courier New', monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+      'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background-color: var(--bg-cream);
+    background-image:
+      radial-gradient(var(--salmon) 1.5px, transparent 1.5px),
+      radial-gradient(var(--royal-blue) 1.5px, transparent 1.5px);
+    background-size: 36px 36px, 72px 72px;
+    background-position: 0 0, 18px 18px;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    overflow-x: clip;
+  }
+
+  /* ========== 装饰几何元素（孟菲斯风格） ========== */
+  .deco {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .deco-circle {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: var(--mustard);
+    border: 3px solid var(--ink);
+    top: 8%; left: 6%;
+    transform: rotate(-12deg);
+    box-shadow: 6px 6px 0 var(--retro-red);
+  }
+  .deco-triangle {
+    width: 0; height: 0;
+    border-left: 55px solid transparent;
+    border-right: 55px solid transparent;
+    border-bottom: 95px solid var(--royal-blue);
+    bottom: 10%; right: 8%;
+    transform: rotate(15deg);
+    filter: drop-shadow(5px 5px 0 var(--ink));
+  }
+  .deco-square {
+    width: 80px; height: 80px;
+    background: var(--retro-purple);
+    border: 3px solid var(--ink);
+    top: 15%; right: 12%;
+    transform: rotate(20deg);
+    box-shadow: 5px 5px 0 var(--mustard);
+  }
+  .deco-zigzag {
+    bottom: 12%; left: 10%;
+    font-family: var(--font-mono);
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--retro-red);
+    transform: rotate(-8deg);
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+
+  /* ========== 主卡片 ========== */
+  .login-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    background: var(--paper-cream);
+    border: 3px dashed var(--ink);
+    padding: 0;
+    box-shadow: 8px 8px 0 var(--retro-purple);
+  }
+
+  /* 卡片顶部色带 */
+  .card-header {
+    background: var(--retro-purple);
+    color: #fff;
+    padding: 1.2rem 1.5rem 1rem;
+    border-bottom: 3px solid var(--ink);
+    position: relative;
+  }
+  .card-header::after {
+    content: '';
+    position: absolute;
+    bottom: -8px; left: 0; right: 0;
+    height: 5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--retro-red) 0, var(--retro-red) 12px,
+      var(--mustard) 12px, var(--mustard) 24px,
+      var(--royal-blue) 24px, var(--royal-blue) 36px
+    );
+  }
+  .brand {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    opacity: 0.85;
+    text-transform: uppercase;
+  }
+  .card-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    margin-top: 0.2rem;
+    letter-spacing: 0.02em;
+  }
+  .card-subtitle {
+    font-size: 0.82rem;
+    opacity: 0.8;
+    margin-top: 0.15rem;
+  }
+
+  /* ========== Tab 切换 ========== */
+  .tabs {
+    display: flex;
+    border-bottom: 3px solid var(--ink);
+    background: var(--bg-cream);
+  }
+  .tab {
+    flex: 1;
+    padding: 0.85rem 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    position: relative;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tab:first-child { border-right: 2px solid var(--ink); }
+  .tab:hover { background: var(--mustard); }
+  .tab.active {
+    background: var(--paper-cream);
+    color: var(--retro-purple);
+  }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -3px; left: 0; right: 0;
+    height: 3px;
+    background: var(--paper-cream);
+  }
+  .tab-num {
+    display: inline-block;
+    width: 20px; height: 20px;
+    line-height: 18px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
+
+  /* ========== 表单区域 ========== */
+  .form-body {
+    padding: 1.5rem;
+  }
+
+  .form-panel { display: none; }
+  .form-panel.active { display: block; animation: slideIn 0.3s var(--ease); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-tip {
+    font-size: 0.82rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 1.2rem;
+    padding: 0.6rem 0.8rem;
+    background: var(--bg-cream);
+    border-left: 4px solid var(--mustard);
+  }
+
+  .field {
+    margin-bottom: 1rem;
+  }
+  .field-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+    letter-spacing: 0.03em;
+  }
+  .field-label .required {
+    color: var(--retro-red);
+    margin-left: 2px;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+  .memphis-input {
+    width: 100%;
+    min-height: 48px;
+    padding: 0.7rem 0.9rem;
+    padding-right: 3rem;
+    background: var(--paper-cream);
+    border: 2.5px solid var(--ink);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    transition: box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+  .memphis-input:hover { box-shadow: 3px 3px 0 var(--mustard); }
+  .memphis-input:focus {
+    outline: none;
+    box-shadow: 4px 4px 0 var(--royal-blue);
+  }
+  .memphis-input.error {
+    border-color: var(--retro-red);
+    box-shadow: 3px 3px 0 rgba(230, 57, 70, 0.35);
+  }
+  .memphis-input::placeholder { color: #aaa; }
+
+  /* PIN 输入：6格样式 */
+  .pin-inputs {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .pin-box {
+    flex: 1;
+    min-width: 0;
+    height: 52px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: var(--paper-cream);
+    border: 2.5px solid var(--ink);
+    color: var(--ink);
+    transition: box-shadow 0.2s var(--ease), background 0.15s ease;
+  }
+  .pin-box:hover { box-shadow: 2px 2px 0 var(--mustard); }
+  .pin-box:focus {
+    outline: none;
+    box-shadow: 3px 3px 0 var(--royal-blue);
+    background: #fff;
+  }
+  .pin-box.filled {
+    background: var(--mustard);
+  }
+  .pin-box.error {
+    border-color: var(--retro-red);
+    background: rgba(230, 57, 70, 0.1);
+  }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 0.3rem;
+    font-family: var(--font-mono);
+  }
+
+  .error-msg {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--retro-red);
+    margin-top: 0.3rem;
+    min-height: 1.2em;
+    font-family: var(--font-mono);
+  }
+
+  /* ========== 按钮 ========== */
+  .btn-primary {
+    width: 100%;
+    min-height: 52px;
+    padding: 0.7rem 1.4rem;
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    border: 2.5px solid var(--ink);
+    background: var(--retro-purple);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 4px 4px 0 var(--retro-red);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease),
+      background 0.15s ease;
+    margin-top: 0.5rem;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--retro-red);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: translate(2px, 2px) scale(0.98);
+    box-shadow: 1px 1px 0 var(--ink);
+  }
+  .btn-primary:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    box-shadow: 2px 2px 0 rgba(29, 30, 44, 0.3);
+  }
+
+  .btn-secondary {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 2px solid var(--ink);
+    background: var(--paper-cream);
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--royal-blue);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease),
+      background 0.15s ease;
+    margin-top: 0.6rem;
+  }
+  .btn-secondary:hover {
+    background: var(--mustard);
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  /* ========== 底部辅助链接 ========== */
+  .card-footer {
+    padding: 0.8rem 1.5rem 1.2rem;
+    border-top: 2px dashed var(--ink);
+    background: var(--bg-cream);
+    text-align: center;
+  }
+  .footer-text {
+    font-size: 0.78rem;
+    color: #666;
+    line-height: 1.6;
+  }
+  .footer-link {
+    color: var(--royal-blue);
+    font-weight: 700;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .footer-link:hover { color: var(--retro-red); }
+
+  /* ========== 成功提示 ========== */
+  .success-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: var(--paper-cream);
+    z-index: 10;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+  .success-overlay.show { display: flex; animation: popIn 0.4s var(--ease); }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .success-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--mustard);
+    border: 3px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--ink);
+    box-shadow: 4px 4px 0 var(--retro-red);
+    margin-bottom: 1rem;
+  }
+  .success-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+  .success-desc {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.6;
+  }
+  .success-phone {
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--retro-purple);
+    margin: 0.5rem 0;
+  }
+
+  /* ========== 响应式 ========== */
+  @media (max-width: 480px) {
+    .deco { display: none; }
+    .login-card { box-shadow: 5px 5px 0 var(--retro-purple); }
+    .card-title { font-size: 1.35rem; }
+    .pin-box { height: 46px; font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 孟菲斯装饰元素 -->
+<div class="deco deco-circle"></div>
+<div class="deco deco-triangle"></div>
+<div class="deco deco-square"></div>
+<div class="deco deco-zigzag">~</div>
+
+<!-- 登录卡片 -->
+<div class="login-card" id="loginCard">
+  <!-- 头部 -->
+  <div class="card-header">
+    <div class="brand">LINLI HAOWU · 邻里好物</div>
+    <div class="card-title">欢迎来到邻里互助</div>
+    <div class="card-subtitle">登录后即可发布闲置、借用邻居好物</div>
+  </div>
+
+  <!-- Tab 切换 -->
+  <div class="tabs">
+    <button class="tab active" data-tab="login" onclick="switchTab('login')">
+      <span class="tab-num">1</span>登录
+    </button>
+    <button class="tab" data-tab="register" onclick="switchTab('register')">
+      <span class="tab-num">2</span>注册
+    </button>
+  </div>
+
+  <!-- 表单体 -->
+  <div class="form-body">
+    <!-- 登录面板 -->
+    <div class="form-panel active" id="panel-login">
+      <div class="form-tip">
+        使用注册时的手机号和管理口令登录。换设备后重新登录即可继续管理你的物品。
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="login-phone">手机号<span class="required">*</span></label>
+        <div class="input-wrap">
+          <input
+            type="tel"
+            id="login-phone"
+            class="memphis-input"
+            placeholder="请输入 11 位手机号"
+            maxlength="11"
+            inputmode="numeric"
+            autocomplete="tel"
+            oninput="clearError('login')"
+          />
+        </div>
+        <div class="error-msg" id="login-phone-error"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">管理口令<span class="required">*</span></label>
+        <div class="pin-inputs" id="login-pin">
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="0" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="1" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="2" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="3" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="4" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="5" />
+        </div>
+        <div class="field-hint">6 位数字，注册时自行设置</div>
+        <div class="error-msg" id="login-pin-error"></div>
+      </div>
+
+      <button class="btn-primary" onclick="handleLogin()">登 录</button>
+    </div>
+
+    <!-- 注册面板 -->
+    <div class="form-panel" id="panel-register">
+      <div class="form-tip">
+        首次使用请注册。管理口令用于保护你的物品不被他人操作，请牢记（遗忘后可联系管理员重置）。
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="reg-phone">手机号<span class="required">*</span></label>
+        <div class="input-wrap">
+          <input
+            type="tel"
+            id="reg-phone"
+            class="memphis-input"
+            placeholder="请输入 11 位手机号"
+            maxlength="11"
+            inputmode="numeric"
+            autocomplete="tel"
+            oninput="clearError('register')"
+          />
+        </div>
+        <div class="field-hint">用于登录和账号恢复，不会公开显示</div>
+        <div class="error-msg" id="reg-phone-error"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">设置管理口令<span class="required">*</span></label>
+        <div class="pin-inputs" id="reg-pin">
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="0" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="1" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="2" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="3" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="4" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="5" />
+        </div>
+        <div class="field-hint">6 位数字，用于发布/删除/借阅等操作鉴权</div>
+        <div class="error-msg" id="reg-pin-error"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">确认管理口令<span class="required">*</span></label>
+        <div class="pin-inputs" id="reg-pin2">
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="0" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="1" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="2" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="3" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="4" />
+          <input class="pin-box" type="password" maxlength="1" inputmode="numeric" data-index="5" />
+        </div>
+        <div class="error-msg" id="reg-pin2-error"></div>
+      </div>
+
+      <button class="btn-primary" onclick="handleRegister()">注 册</button>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <div class="card-footer">
+    <div class="footer-text">
+      忘记管理口令？<span class="footer-link" onclick="showResetTip()">联系管理员重置</span>
+      <br />
+      管理员可通过后台接口重置任意用户的口令
+    </div>
+  </div>
+
+  <!-- 成功遮罩 -->
+  <div class="success-overlay" id="successOverlay">
+    <div class="success-icon">✓</div>
+    <div class="success-title" id="successTitle">登录成功</div>
+    <div class="success-desc">欢迎回来</div>
+    <div class="success-phone" id="successPhone"></div>
+    <div class="success-desc" id="successExtra"></div>
+    <button class="btn-secondary" style="margin-top:1.2rem; max-width:200px;" onclick="hideSuccess()">继续</button>
+  </div>
+</div>
+
+<script>
+  // ========== Tab 切换 ==========
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + tab).classList.add('active');
+    clearAllErrors();
+  }
+
+  // ========== PIN 输入框联动 ==========
+  function setupPinInputs(containerId) {
+    const container = document.getElementById(containerId);
+    const boxes = container.querySelectorAll('.pin-box');
+    boxes.forEach((box, i) => {
+      box.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/\D/g, '');
+        e.target.value = val;
+        if (val) {
+          e.target.classList.add('filled');
+          if (i < boxes.length - 1) boxes[i + 1].focus();
+        } else {
+          e.target.classList.remove('filled');
+        }
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+          boxes[i - 1].focus();
+          boxes[i - 1].value = '';
+          boxes[i - 1].classList.remove('filled');
+        }
+      });
+      box.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+        pasted.split('').forEach((ch, idx) => {
+          if (boxes[idx]) {
+            boxes[idx].value = ch;
+            boxes[idx].classList.add('filled');
+          }
+        });
+        if (pasted.length < 6) boxes[pasted.length]?.focus();
+        else boxes[5].blur();
+      });
+    });
+  }
+
+  setupPinInputs('login-pin');
+  setupPinInputs('reg-pin');
+  setupPinInputs('reg-pin2');
+
+  // ========== 工具函数 ==========
+  function getPin(containerId) {
+    return Array.from(document.querySelectorAll('#' + containerId + ' .pin-box'))
+      .map(b => b.value).join('');
+  }
+
+  function clearPin(containerId) {
+    document.querySelectorAll('#' + containerId + ' .pin-box').forEach(b => {
+      b.value = '';
+      b.classList.remove('filled', 'error');
+    });
+  }
+
+  function isValidPhone(p) {
+    return /^1[3-9]\d{9}$/.test(p);
+  }
+
+  function maskPhone(p) {
+    return p.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2');
+  }
+
+  function setError(fieldId, msg) {
+    const el = document.getElementById(fieldId);
+    if (el) el.textContent = msg;
+    // 给输入框加 error 样式
+    const inputMap = {
+      'login-phone-error': 'login-phone',
+      'reg-phone-error': 'reg-phone',
+    };
+    if (inputMap[fieldId]) {
+      document.getElementById(inputMap[fieldId])?.classList.add('error');
+    }
+  }
+
+  function clearError(panel) {
+    if (panel === 'login') {
+      document.getElementById('login-phone-error').textContent = '';
+      document.getElementById('login-pin-error').textContent = '';
+      document.getElementById('login-phone').classList.remove('error');
+      document.querySelectorAll('#login-pin .pin-box').forEach(b => b.classList.remove('error'));
+    } else {
+      document.getElementById('reg-phone-error').textContent = '';
+      document.getElementById('reg-pin-error').textContent = '';
+      document.getElementById('reg-pin2-error').textContent = '';
+      document.getElementById('reg-phone').classList.remove('error');
+      document.querySelectorAll('#reg-pin .pin-box, #reg-pin2 .pin-box').forEach(b => b.classList.remove('error'));
+    }
+  }
+
+  function clearAllErrors() {
+    clearError('login');
+    clearError('register');
+  }
+
+  // ========== 登录（模拟） ==========
+  function handleLogin() {
+    clearError('login');
+    const phone = document.getElementById('login-phone').value.trim();
+    const pin = getPin('login-pin');
+
+    if (!phone) {
+      setError('login-phone-error', '请输入手机号');
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setError('login-phone-error', '手机号格式不正确');
+      return;
+    }
+    if (pin.length < 6) {
+      setError('login-pin-error', '请输入完整的 6 位管理口令');
+      document.querySelectorAll('#login-pin .pin-box').forEach(b => {
+        if (!b.value) b.classList.add('error');
+      });
+      return;
+    }
+
+    // 模拟：任意合法手机号 + 任意6位PIN都算登录成功（实际应由Worker校验）
+    showSuccess('登录成功', '欢迎回来', maskPhone(phone), '现在可以发布闲置、借用好物了');
+    clearPin('login-pin');
+  }
+
+  // ========== 注册（模拟） ==========
+  function handleRegister() {
+    clearError('register');
+    const phone = document.getElementById('reg-phone').value.trim();
+    const pin = getPin('reg-pin');
+    const pin2 = getPin('reg-pin2');
+
+    if (!phone) {
+      setError('reg-phone-error', '请输入手机号');
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setError('reg-phone-error', '手机号格式不正确');
+      return;
+    }
+    if (pin.length < 6) {
+      setError('reg-pin-error', '请设置 6 位管理口令');
+      return;
+    }
+    if (/^(\d)\1{5}$/.test(pin)) {
+      setError('reg-pin-error', '口令不能是 6 个相同数字');
+      return;
+    }
+    if (pin2.length < 6) {
+      setError('reg-pin2-error', '请再次输入管理口令');
+      return;
+    }
+    if (pin !== pin2) {
+      setError('reg-pin2-error', '两次输入的口令不一致');
+      document.querySelectorAll('#reg-pin2 .pin-box').forEach(b => b.classList.add('error'));
+      return;
+    }
+
+    // 模拟注册成功
+    showSuccess('注册成功', '账号已创建', maskPhone(phone), '请牢记你的管理口令，遗忘后需联系管理员重置');
+    clearPin('reg-pin');
+    clearPin('reg-pin2');
+    document.getElementById('reg-phone').value = '';
+  }
+
+  // ========== 成功提示 ==========
+  function showSuccess(title, desc, phone, extra) {
+    document.getElementById('successTitle').textContent = title;
+    document.querySelector('#successOverlay .success-desc').textContent = desc;
+    document.getElementById('successPhone').textContent = phone;
+    document.getElementById('successExtra').textContent = extra;
+    document.getElementById('successOverlay').classList.add('show');
+  }
+
+  function hideSuccess() {
+    document.getElementById('successOverlay').classList.remove('show');
+  }
+
+  // ========== 重置口令提示 ==========
+  function showResetTip() {
+    alert('忘记管理口令？\n\n请联系社区管理员，提供你的手机号后，管理员可通过后台接口为你重置口令。\n\n（这是样例页面，实际项目中管理员接口受 ADMIN_TOKEN 保护）');
+  }
+
+  // 回车提交
+  document.getElementById('login-phone').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.querySelector('#login-pin .pin-box').focus();
+  });
+  document.getElementById('reg-phone').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.querySelector('#reg-pin .pin-box').focus();
+  });
+</script>
+
+</body>
+</html>

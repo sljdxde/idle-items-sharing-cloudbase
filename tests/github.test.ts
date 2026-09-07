@@ -24,8 +24,7 @@ const BLOCK = `${DATA_START}\n${JSON.stringify({
   contact: '3栋1801',
   imgUrl: '',
   category: 'electronics',
-  ownerPhone: '13800000001',
-  borrowedBy: undefined,
+  ownerHash: 'hash-13800000001',
   lat: 30.2745,
   lng: 120.14,
   rentType: 'free',
@@ -55,8 +54,7 @@ describe('parseIssue（Issue → Item）', () => {
     expect(item.lat).toBe(30.275)
     expect(item.lng).toBe(120.14)
     expect(item.category).toBe('electronics')
-    expect(item.ownerPhone).toBe('13800000001')
-    expect(item.borrowedBy).toBeUndefined()
+    expect(item.ownerHash).toBe('hash-13800000001')
     expect(item.status).toBe('available')
     expect(item.archived).toBe(false)
   })

@@ -40,7 +40,16 @@ import ManageModal from '@/components/ManageModal.vue'
 
 const apiMock = vi.mocked(api)
 const OWNER = '13800000001'
+const OWNER_HASH = 'hash-13800000001'
 const BORROWER = '13800000009'
+const BORROWER_HASH = 'hash-13800000009'
+
+/** 构造测试用 JWT（auth store 只检查过期和提取 phoneHash，不验证签名） */
+function makeJwt(phoneHash: string): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = btoa(JSON.stringify({ phoneHash, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 }))
+  return `${header}.${payload}.test-signature`
+}
 
 function makeItem(partial: Partial<Item> = {}): Item {
   return {
@@ -51,7 +60,7 @@ function makeItem(partial: Partial<Item> = {}): Item {
     contact: OWNER,
     imgUrl: '',
     status: 'available',
-    ownerPhone: OWNER,
+    ownerHash: OWNER_HASH,
     lat: null,
     lng: null,
     category: 'electronics',
@@ -74,7 +83,11 @@ let server: Item[] = [makeItem()]
 
 function loginAs(phone: string | null): void {
   localStorage.clear()
-  if (phone) localStorage.setItem('linli_haowu_user_v1', phone)
+  if (phone) {
+    const hash = phone === OWNER ? OWNER_HASH : phone === BORROWER ? BORROWER_HASH : `hash-${phone}`
+    localStorage.setItem('linli_haowu_token_v2', makeJwt(hash))
+    localStorage.setItem('linli_haowu_phone_v2', phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2'))
+  }
 }
 
 beforeEach(() => {
@@ -155,13 +168,13 @@ describe('详情页「我想借」按钮', () => {
     expect(disabledOf(btn)).toBe(false)
 
     await btn.trigger('click')
-    expect(w.text()).toContain('使用手机号登录')
+    expect(w.text()).toContain('管理口令')
     expect(apiMock.borrow).not.toHaveBeenCalled()
   })
 
   it('已借出：按钮禁用且文案写明原因', async () => {
     const w = await mountDetail(
-      makeItem({ status: 'lent', borrowedBy: '13800000003' }),
+      makeItem({ status: 'lent', borrowerHash: 'hash-13800000003' }),
       BORROWER,
     )
     expect(disabledOf(btnByText(w, '已借出')!)).toBe(true)
@@ -174,7 +187,7 @@ describe('详情页「我想借」按钮', () => {
 
   it('借阅人本人：显示「我要归还」，点击后发出归还请求', async () => {
     const w = await mountDetail(
-      makeItem({ status: 'lent', borrowedBy: BORROWER, borrowedAt: '2026-09-01T00:00:00.000Z' }),
+      makeItem({ status: 'lent', borrowerHash: BORROWER_HASH, borrowedAt: '2026-09-01T00:00:00.000Z' }),
       BORROWER,
     )
     const btn = btnByText(w, '我要归还')!
@@ -182,7 +195,7 @@ describe('详情页「我想借」按钮', () => {
 
     await btn.trigger('click')
     await flushPromises()
-    expect(apiMock.returnBack).toHaveBeenCalledWith(1, BORROWER)
+    expect(apiMock.returnBack).toHaveBeenCalledWith(1)
     expect(useItemsStore().itemById(1)?.status).toBe('available')
   })
 
@@ -192,7 +205,7 @@ describe('详情页「我想借」按钮', () => {
 
     await btnByText(w, '下架')!.trigger('click')
     await flushPromises()
-    expect(apiMock.archive).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.archive).toHaveBeenCalledWith(1)
     expect(useItemsStore().itemById(1)?.archived).toBe(true)
   })
 
@@ -258,9 +271,9 @@ describe('首页卡片按钮', () => {
   })
 
   it('借阅人：卡片上是「我要归还」，点击发出归还请求', async () => {
-    const w = await mountCard(makeItem({ status: 'lent', borrowedBy: BORROWER }), BORROWER)
+    const w = await mountCard(makeItem({ status: 'lent', borrowerHash: BORROWER_HASH }), BORROWER)
     await btnByText(w, '我要归还')!.trigger('click')
-    expect(apiMock.returnBack).toHaveBeenCalledWith(1, BORROWER)
+    expect(apiMock.returnBack).toHaveBeenCalledWith(1)
   })
 
   it('物主：卡片上是管理与上下架，点击各走自己的通道', async () => {
@@ -269,14 +282,14 @@ describe('首页卡片按钮', () => {
     expect(w.emitted('manage')?.[0]?.[0]).toMatchObject({ id: 1 })
 
     await btnByText(w, '下架')!.trigger('click')
-    expect(apiMock.archive).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.archive).toHaveBeenCalledWith(1)
   })
 })
 
 describe('借用弹窗', () => {
   it('未登录：只给登录表单，不给「确认借用」（避免点了不生效）', async () => {
     const w = await mountModal(makeItem(), null)
-    expect(w.text()).toContain('使用手机号登录')
+    expect(w.text()).toContain('管理口令')
     expect(btnByText(w, '确认借用')).toBeUndefined()
   })
 
@@ -287,7 +300,7 @@ describe('借用弹窗', () => {
 
     await btn.trigger('click')
     await flushPromises()
-    expect(apiMock.borrow).toHaveBeenCalledWith(1, BORROWER)
+    expect(apiMock.borrow).toHaveBeenCalledWith(1)
     expect(w.emitted('close')).toBeTruthy()
     expect(useItemsStore().itemById(1)?.status).toBe('lent')
   })
@@ -304,7 +317,7 @@ describe('借用弹窗', () => {
 
   it('物品已被别人借走：无确认按钮，只有说明文案', async () => {
     const w = await mountModal(
-      makeItem({ status: 'lent', borrowedBy: '13800000003' }),
+      makeItem({ status: 'lent', borrowerHash: 'hash-13800000003' }),
       BORROWER,
     )
     expect(btnByText(w, '确认借用')).toBeUndefined()
@@ -332,7 +345,7 @@ describe('跨页导航（首页集体变「可借」的回归）', () => {
   })
 
   it('借用页归还后回首页：卡片恢复「我想借」，不会停在已借出', async () => {
-    const lent = makeItem({ status: 'lent', borrowedBy: BORROWER })
+    const lent = makeItem({ status: 'lent', borrowerHash: BORROWER_HASH })
     const w = await mountPage(BorrowsPage, lent, BORROWER)
     await btnByText(w, '我要归还')!.trigger('click')
     await flushPromises()
@@ -348,7 +361,7 @@ describe('我的发布页', () => {
   it('借出中的物品：删除按钮禁用且文案写明原因，点了不会静默无反应', async () => {
     const w = await mountPage(
       MinePage,
-      makeItem({ status: 'lent', borrowedBy: BORROWER }),
+      makeItem({ status: 'lent', borrowerHash: BORROWER_HASH }),
       OWNER,
     )
     const del = btnByText(w, '借出中不可删')!
@@ -367,7 +380,7 @@ describe('我的发布页', () => {
     expect(disabledOf(arm)).toBe(false)
     await arm.trigger('click')
     await flushPromises()
-    expect(apiMock.remove).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.remove).toHaveBeenCalledWith(1)
     expect(useItemsStore().itemById(1)).toBeUndefined()
   })
 
@@ -391,7 +404,7 @@ describe('我的发布页', () => {
     const w = await mountPage(MinePage, makeItem(), OWNER)
     await btnByText(w, '下架')!.trigger('click')
     await flushPromises()
-    expect(apiMock.archive).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.archive).toHaveBeenCalledWith(1)
     const store = useItemsStore()
     expect(store.itemById(1)?.archived).toBe(true)
     expect(store.visibleItems).toHaveLength(0)
@@ -408,7 +421,7 @@ describe('我的发布页', () => {
 
 describe('我的借用页', () => {
   const lentMine = () =>
-    makeItem({ status: 'lent', borrowedBy: BORROWER, borrowedAt: '2026-09-01T00:00:00.000Z' })
+    makeItem({ status: 'lent', borrowerHash: BORROWER_HASH, borrowedAt: '2026-09-01T00:00:00.000Z' })
 
   it('归还：按钮可点，成功后这件借用从列表消失', async () => {
     const w = await mountPage(BorrowsPage, lentMine(), BORROWER)
@@ -417,7 +430,7 @@ describe('我的借用页', () => {
 
     await btn.trigger('click')
     await flushPromises()
-    expect(apiMock.returnBack).toHaveBeenCalledWith(1, BORROWER)
+    expect(apiMock.returnBack).toHaveBeenCalledWith(1)
     expect(w.text()).toContain('你还没有借用的物品')
   })
 
@@ -454,7 +467,7 @@ describe('物主管理弹窗', () => {
     const w = await mountManage(makeItem(), OWNER)
     await btnByText(w, '下架')!.trigger('click')
     await flushPromises()
-    expect(apiMock.archive).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.archive).toHaveBeenCalledWith(1)
     expect(w.emitted('close')).toBeTruthy()
   })
 
@@ -472,7 +485,7 @@ describe('物主管理弹窗', () => {
     const w = await mountManage(makeItem({ archived: true }), OWNER)
     await btnByText(w, '重新上架')!.trigger('click')
     await flushPromises()
-    expect(apiMock.unarchive).toHaveBeenCalledWith(1, OWNER)
+    expect(apiMock.unarchive).toHaveBeenCalledWith(1)
     expect(useItemsStore().itemById(1)?.archived).toBe(false)
   })
 })

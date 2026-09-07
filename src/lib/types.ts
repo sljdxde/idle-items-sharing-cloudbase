@@ -1,5 +1,5 @@
 // ================================================
-// src/lib/types.ts — 领域类型（本地数据层 + 定位 + 手机号用户体系）
+// src/lib/types.ts — 领域类型（本地数据层 + 定位 + 手机号+PIN 用户体系 ADR-0005）
 // 状态机：available(可借) ⇄ lent(已借出)；archived 为物主的上下架标记
 // ================================================
 
@@ -32,8 +32,8 @@ export interface RentRecord {
   days?: number
   /** 本次结算金额（元） */
   fee: number
-  /** 借阅人手机号 */
-  borrower?: string
+  /** 借阅人身份哈希（ADR-0005） */
+  borrowerHash?: string
 }
 
 export interface Item {
@@ -49,12 +49,12 @@ export interface Item {
   imgUrl: string
   /** 借阅状态：available=可借，lent=已借出 */
   status: ItemStatus
-  /** 借阅者手机号：登录后用来匹配「我的借用」 */
-  borrowedBy?: string
+  /** 借阅者身份哈希（ADR-0005）：登录后用来匹配「我的借用」 */
+  borrowerHash?: string
   /** 借出时间（ISO）；status=lent 时有值 */
   borrowedAt?: string
-  /** 发布者手机号：登录后用来匹配「我的发布」与写操作鉴权 */
-  ownerPhone?: string
+  /** 发布者身份哈希（ADR-0005）：登录后用来匹配「我的发布」与写操作鉴权 */
+  ownerHash?: string
   /** 发布时自动获取的定位（纬度）；获取失败为 null */
   lat: number | null
   /** 发布时自动获取的定位（经度）；获取失败为 null */

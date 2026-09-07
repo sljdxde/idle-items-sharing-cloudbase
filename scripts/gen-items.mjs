@@ -68,8 +68,9 @@ function parseIssue(issue) {
     contact: typeof data.contact === 'string' ? String(data.contact).slice(0, 40) : '',
     imgUrl: typeof data.imgUrl === 'string' ? safeImgUrl(data.imgUrl) : '',
     status: isLent ? 'lent' : 'available',
-    ownerPhone: typeof data.ownerPhone === 'string' ? data.ownerPhone : undefined,
-    borrowedBy: typeof data.borrowedBy === 'string' ? data.borrowedBy : undefined,
+    // ADR-0005：身份哈希字段
+    ownerHash: typeof data.ownerHash === 'string' ? data.ownerHash : undefined,
+    borrowerHash: typeof data.borrowerHash === 'string' ? data.borrowerHash : undefined,
     borrowedAt: typeof data.borrowedAt === 'string' ? data.borrowedAt : undefined,
     lat: roundCoord(data.lat),
     lng: roundCoord(data.lng),

@@ -71,12 +71,12 @@ describe('settleRent：一次归还的结算记录', () => {
     const rec = settleRent(
       { rentType: 'daily', rentFee: 2 },
       '2026-09-01T10:00:00Z',
-      '13900000001',
+      'hash-13900000001',
       '2026-09-02T12:00:00Z',
     )
     expect(rec.days).toBe(2)
     expect(rec.fee).toBe(4)
-    expect(rec.borrower).toBe('13900000001')
+    expect(rec.borrowerHash).toBe('hash-13900000001')
     expect(rec.borrowedAt).toBe('2026-09-01T10:00:00Z')
     expect(rec.returnedAt).toBe('2026-09-02T12:00:00Z')
   })
@@ -84,7 +84,7 @@ describe('settleRent：一次归还的结算记录', () => {
     const rec = settleRent(
       { rentType: 'perUse', rentFee: 5 },
       '2026-09-01T10:00:00Z',
-      '13900000001',
+      'hash-13900000001',
       '2026-09-03T10:00:00Z',
     )
     expect(rec.days).toBeUndefined()
@@ -94,7 +94,7 @@ describe('settleRent：一次归还的结算记录', () => {
     const rec = settleRent(
       { rentType: 'free', rentFee: 0 },
       '2026-09-01T10:00:00Z',
-      '13900000001',
+      'hash-13900000001',
       '2026-09-03T10:00:00Z',
     )
     expect(rec.fee).toBe(0)

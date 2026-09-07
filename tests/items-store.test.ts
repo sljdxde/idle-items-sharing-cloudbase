@@ -37,7 +37,16 @@ const toast = useToast()
 const toastTitles = () => toast.toasts.map((t) => t.title)
 
 const OWNER = '13800000001'
+const OWNER_HASH = 'hash-13800000001'
 const BORROWER = '13800000009'
+const BORROWER_HASH = 'hash-13800000009'
+
+/** 构造测试用 JWT（auth store 只检查过期和提取 phoneHash，不验证签名） */
+function makeJwt(phoneHash: string): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
+  const payload = btoa(JSON.stringify({ phoneHash, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 }))
+  return `${header}.${payload}.test-signature`
+}
 
 function makeItem(partial: Partial<Item> = {}): Item {
   return {
@@ -48,6 +57,7 @@ function makeItem(partial: Partial<Item> = {}): Item {
     contact: OWNER,
     imgUrl: '',
     status: 'available',
+    ownerHash: OWNER_HASH,
     ownerPhone: OWNER,
     lat: null,
     lng: null,
@@ -70,7 +80,11 @@ let server: Item[]
 
 async function mountStore(phone: string) {
   localStorage.clear()
-  localStorage.setItem('linli_haowu_user_v1', phone)
+  if (phone) {
+    const hash = phone === OWNER ? OWNER_HASH : phone === BORROWER ? BORROWER_HASH : `hash-${phone}`
+    localStorage.setItem('linli_haowu_token_v2', makeJwt(hash))
+    localStorage.setItem('linli_haowu_phone_v2', phone.replace(/^(\d{3})\d{4}(\d{4})$/, '$1****$2'))
+  }
   setActivePinia(createPinia())
   const store = useItemsStore()
   await flushAsync()
@@ -153,14 +167,14 @@ describe('借用 / 归还：本地立即生效，滞后读取不回退', () => {
     const store = await mountStore(BORROWER)
     expect(await store.borrow(1)).toBe(true)
     expect(store.itemById(1)?.status).toBe('lent')
-    expect(store.itemById(1)?.borrowedBy).toBe(BORROWER)
+    expect(store.itemById(1)?.borrowerHash).toBe(BORROWER_HASH)
 
     // 第一次后台对账：服务端未追上，返回旧的 available
     await flushAsync()
     expect(store.itemById(1)?.status).toBe('lent')
 
     // 服务端追上后，第二次对账收敛并交还服务端真相
-    server = [makeItem({ status: 'lent', borrowedBy: BORROWER, borrowedAt: '2026-09-01T00:00:00.000Z' })]
+    server = [makeItem({ status: 'lent', borrowerHash: BORROWER_HASH, borrowedAt: '2026-09-01T00:00:00.000Z' })]
     await vi.advanceTimersByTimeAsync(2000)
     expect(store.itemById(1)?.status).toBe('lent')
 
@@ -171,7 +185,7 @@ describe('借用 / 归还：本地立即生效，滞后读取不回退', () => {
   })
 
   it('归还后立即恢复「可借」，不必等列表读取', async () => {
-    server = [makeItem({ status: 'lent', borrowedBy: BORROWER })]
+    server = [makeItem({ status: 'lent', borrowerHash: BORROWER_HASH })]
     const store = await mountStore(BORROWER)
     expect(await store.returnBack(1)).toBe(true)
     expect(store.itemById(1)?.status).toBe('available')
@@ -195,7 +209,7 @@ describe('发布 / 删除：乐观补位与乐观隐藏', () => {
     const created = store.itemById(99)
     expect(created?.name).toBe('露营灯')
     expect(created?.status).toBe('available')
-    expect(created?.ownerPhone).toBe(OWNER)
+    expect(created?.ownerHash).toBe(OWNER_HASH)
     expect(store.visibleItems.some((it) => it.id === 99)).toBe(true)
   })
 

@@ -44,7 +44,7 @@ export function rentAmount(
 export function settleRent(
   item: Pick<Item, 'rentType' | 'rentFee'>,
   borrowedAt: string,
-  borrower: string | undefined,
+  borrowerHash: string | undefined,
   returnedAt: string,
 ): RentRecord {
   const rentType = normalizeRentType(item.rentType)
@@ -54,7 +54,7 @@ export function settleRent(
     returnedAt,
     days: rentType === 'daily' ? rentDays(borrowedAt, returnedAt) : undefined,
     fee,
-    borrower,
+    borrowerHash,
   }
 }
 
