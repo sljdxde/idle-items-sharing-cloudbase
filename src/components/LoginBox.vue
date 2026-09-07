@@ -4,10 +4,17 @@
 // 登录/注册双 Tab，6 格 PIN 输入；JWT 会话由 auth store 管理。
 // ================================================
 
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 import { isValidPhone, isWeakPin, weakPinHint } from '@/lib/validate'
+import {
+  handlePinInput,
+  handlePinKeydown,
+  handlePinPaste,
+  pinToString,
+  clearPinArray,
+} from '@/lib/pinInput'
 
 const emit = defineEmits<{ loggedIn: [phone: string] }>()
 
@@ -36,51 +43,46 @@ function switchTab(tab: Tab): void {
   regError.value = ''
 }
 
-// PIN 输入框联动
+// PIN 输入框联动（使用 pinInput 纯函数，便于单元测试）
 function onPinInput(pinArr: string[], index: number, event: Event): void {
   const input = event.target as HTMLInputElement
-  const val = input.value.replace(/\D/g, '')
-  pinArr[index] = val
-  input.value = val
-  if (val && index < 5) {
-    const next = input.parentElement?.children[index + 1] as HTMLInputElement
-    next?.focus()
+  const result = handlePinInput(pinArr, index, input.value)
+  if (result.shouldFocusNext) {
+    nextTick(() => {
+      const next = input.parentElement?.children[index + 1] as HTMLInputElement
+      next?.focus()
+    })
   }
 }
 
 function onPinKeydown(pinArr: string[], index: number, event: KeyboardEvent): void {
-  if (event.key === 'Backspace' && !pinArr[index] && index > 0) {
+  const result = handlePinKeydown(pinArr, index, event.key)
+  if (result.shouldFocusPrev) {
     const prev = (event.target as HTMLInputElement).parentElement?.children[index - 1] as HTMLInputElement
-    pinArr[index - 1] = ''
-    if (prev) {
-      prev.value = ''
-      prev.focus()
-    }
+    nextTick(() => {
+      if (prev) {
+        prev.value = ''
+        prev.focus()
+      }
+    })
   }
 }
 
 function onPinPaste(pinArr: string[], event: ClipboardEvent): void {
   event.preventDefault()
-  const text = (event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6)
-  const container = (event.target as HTMLInputElement).parentElement
-  if (!container) return
-  text.split('').forEach((ch, i) => {
-    pinArr[i] = ch
-    const input = container.children[i] as HTMLInputElement
-    if (input) input.value = ch
-  })
-  if (text.length < 6) {
-    const next = container.children[text.length] as HTMLInputElement
-    next?.focus()
+  const text = event.clipboardData?.getData('text') || ''
+  const result = handlePinPaste(pinArr, text)
+  if (result.shouldFocusIndex !== null) {
+    const container = (event.target as HTMLInputElement).parentElement
+    nextTick(() => {
+      const next = container?.children[result.shouldFocusIndex as number] as HTMLInputElement
+      next?.focus()
+    })
   }
 }
 
-function pinToString(pinArr: string[]): string {
-  return pinArr.join('')
-}
-
 function clearPin(pinArr: string[]): void {
-  for (let i = 0; i < 6; i++) pinArr[i] = ''
+  clearPinArray(pinArr)
   // 清空 DOM
   setTimeout(() => {
     document.querySelectorAll<HTMLInputElement>('.pin-box').forEach((el) => {

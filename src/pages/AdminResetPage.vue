@@ -4,9 +4,16 @@
 // 安全设计：令牌不硬编码，由管理员手动输入，存 sessionStorage（关闭标签页失效）
 // ================================================
 
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { isValidPhone } from '@/lib/validate'
+import {
+  handlePinInput,
+  handlePinKeydown,
+  handlePinPaste,
+  pinToString,
+  clearPinArray,
+} from '@/lib/pinInput'
 
 const toast = useToast()
 
@@ -51,51 +58,46 @@ function logout(): void {
   resultMsg.value = ''
 }
 
-// PIN 输入框联动
+// PIN 输入框联动（使用 pinInput 纯函数，便于单元测试）
 function onPinInput(index: number, event: Event): void {
   const input = event.target as HTMLInputElement
-  const val = input.value.replace(/\D/g, '')
-  pin.value[index] = val
-  input.value = val
-  if (val && index < 5) {
-    const next = input.parentElement?.children[index + 1] as HTMLInputElement
-    next?.focus()
+  const result = handlePinInput(pin.value, index, input.value)
+  if (result.shouldFocusNext) {
+    nextTick(() => {
+      const next = input.parentElement?.children[index + 1] as HTMLInputElement
+      next?.focus()
+    })
   }
 }
 
 function onPinKeydown(index: number, event: KeyboardEvent): void {
-  if (event.key === 'Backspace' && !pin.value[index] && index > 0) {
+  const result = handlePinKeydown(pin.value, index, event.key)
+  if (result.shouldFocusPrev) {
     const prev = (event.target as HTMLInputElement).parentElement?.children[index - 1] as HTMLInputElement
-    pin.value[index - 1] = ''
-    if (prev) {
-      prev.value = ''
-      prev.focus()
-    }
+    nextTick(() => {
+      if (prev) {
+        prev.value = ''
+        prev.focus()
+      }
+    })
   }
 }
 
 function onPinPaste(event: ClipboardEvent): void {
   event.preventDefault()
-  const text = (event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6)
-  const container = (event.target as HTMLInputElement).parentElement
-  if (!container) return
-  text.split('').forEach((ch, i) => {
-    pin.value[i] = ch
-    const input = container.children[i] as HTMLInputElement
-    if (input) input.value = ch
-  })
-  if (text.length < 6) {
-    const next = container.children[text.length] as HTMLInputElement
-    next?.focus()
+  const text = event.clipboardData?.getData('text') || ''
+  const result = handlePinPaste(pin.value, text)
+  if (result.shouldFocusIndex !== null) {
+    const container = (event.target as HTMLInputElement).parentElement
+    nextTick(() => {
+      const next = container?.children[result.shouldFocusIndex as number] as HTMLInputElement
+      next?.focus()
+    })
   }
 }
 
-function pinToString(): string {
-  return pin.value.join('')
-}
-
 function clearPin(): void {
-  for (let i = 0; i < 6; i++) pin.value[i] = ''
+  clearPinArray(pin.value)
   setTimeout(() => {
     document.querySelectorAll<HTMLInputElement>('.admin-pin-box').forEach((el) => {
       el.value = ''
@@ -109,7 +111,7 @@ async function handleReset(): Promise<void> {
   resultMsg.value = ''
 
   const p = phone.value.trim()
-  const newPin = pinToString()
+  const newPin = pinToString(pin.value)
 
   if (!p) {
     phoneError.value = '请输入手机号'
