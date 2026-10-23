@@ -15,7 +15,9 @@
     "hooks:install": "node scripts/install-hooks.mjs",
     "version:status": "node scripts/version.mjs status",
     "version:set": "node scripts/version.mjs set",
-    "version:release": "node scripts/version.mjs release"
+    "version:release": "node scripts/version.mjs release",
+    "version:publish": "node scripts/version.mjs publish",
+    "version:doctor": "node scripts/version.mjs doctor"
   },
   "dependencies": {
     "pinia": "^3.0.3",
