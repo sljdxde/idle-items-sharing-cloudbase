@@ -126,7 +126,9 @@ export const api = {
    * 写后的后台对账必须用它，否则三次对账全落在同一份缓存上（等于只问了一次）。
    */
   listItems(fresh = false): Promise<Item[]> {
-    return request<Item[]>(`/api/items${fresh ? '?fresh=1' : ''}`, { auth: false })
+    // 带上身份（若已登录）：服务端据此决定「已下架物品的联系方式」要不要回给你。
+    // 未登录时 request 不会附 Authorization，等价于匿名读取。
+    return request<Item[]>(`/api/items${fresh ? '?fresh=1' : ''}`)
   },
 
   // ─── ADR-0005: 账号体系接口 ───

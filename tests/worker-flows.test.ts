@@ -30,12 +30,23 @@ interface GhState {
   issue: Record<string, unknown>
   log: string[]
   failLabelWrites: boolean
+  etag: string
+  /** 模拟「读完之后被别人改了」：带 If-Match 的 PATCH 一律 412 */
+  staleOnPatch: boolean
+  /** 每个写请求带的 If-Match 值 */
+  ifMatch: Array<string | null>
 }
 
-function makeGhStub(data: Record<string, unknown>, opts: { failLabelWrites?: boolean } = {}) {
+function makeGhStub(
+  data: Record<string, unknown>,
+  opts: { failLabelWrites?: boolean; staleOnPatch?: boolean } = {},
+) {
   const state: GhState = {
     log: [],
     failLabelWrites: !!opts.failLabelWrites,
+    etag: 'W/"v1"',
+    staleOnPatch: !!(opts as { staleOnPatch?: boolean }).staleOnPatch,
+    ifMatch: [],
     issue: {
       number: 12,
       title: '[闲置物品] 冲击钻',
@@ -46,10 +57,10 @@ function makeGhStub(data: Record<string, unknown>, opts: { failLabelWrites?: boo
     },
   }
 
-  const json = (body: unknown, status = 200) =>
+  const json = (body: unknown, status = 200, etag = '') =>
     new Response(JSON.stringify(body), {
       status,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(etag ? { ETag: etag } : {}) },
     })
 
   ;(globalThis as any).fetch = async (rawUrl: string, init: RequestInit = {}) => {
@@ -60,12 +71,20 @@ function makeGhStub(data: Record<string, unknown>, opts: { failLabelWrites?: boo
     // 列表
     if (url.pathname.endsWith('/issues') && method === 'GET') return json([state.issue])
     // 单条
-    if (/\/issues\/\d+$/.test(url.pathname) && method === 'GET') return json(state.issue)
+    if (/\/issues\/\d+$/.test(url.pathname) && method === 'GET') {
+      return json(state.issue, 200, state.etag)
+    }
     // 改 body / state
     if (/\/issues\/\d+$/.test(url.pathname) && method === 'PATCH') {
+      const headers = (init.headers || {}) as Record<string, string>
+      const ifMatch = headers['If-Match'] ?? null
+      state.ifMatch.push(ifMatch)
+      if (state.staleOnPatch && ifMatch) return json({ message: 'stale' }, 412)
+      if (ifMatch && ifMatch !== state.etag) return json({ message: 'stale' }, 412)
       const patch = JSON.parse(String(init.body || '{}'))
       state.issue = { ...state.issue, ...patch }
-      return json(state.issue)
+      state.etag = `W/"v${Number(state.etag.replace(/\D/g, '')) + 1}"`
+      return json(state.issue, 200, state.etag)
     }
     // 加标签
     if (/\/issues\/\d+\/labels$/.test(url.pathname) && method === 'POST') {
@@ -207,5 +226,70 @@ describe('列表缓存与 fresh', () => {
 
     await getFresh()
     expect(listCalls()).toBeGreaterThan(afterFresh) // 真的又问了上游
+  })
+})
+
+describe('借用并发：If-Match 保护', () => {
+  it('写请求带上 If-Match（值为刚读到的 etag）', async () => {
+    const state = makeGhStub({ name: '冲击钻', ownerHash: OWNER_HASH })
+    const res = await post('/api/items/12/borrow', BORROWER_HASH)
+    expect(res.status).toBe(200)
+    expect(state.ifMatch[0]).toBe('W/"v1"')
+  })
+
+  it('读完之后被别人改过（412）→ 409 且不覆盖对方', async () => {
+    const state = makeGhStub({ name: '冲击钻', ownerHash: OWNER_HASH }, { staleOnPatch: true })
+    const res = await post('/api/items/12/borrow', BORROWER_HASH)
+    expect(res.status).toBe(409)
+    const body = await res.json()
+    expect(body.error).toContain('手慢了')
+    // 关键：没有把 borrowerHash 写进去
+    expect(dataOf(state).borrowerHash).toBeUndefined()
+  })
+})
+
+describe('列表：已下架物品的联系方式按身份裁剪', () => {
+  async function getListAs(phoneHash?: string) {
+    const token = phoneHash ? await tokenFor(phoneHash) : ''
+    const res = await handle(
+      new Request('http://localhost/api/items?fresh=1', {
+        headers: {
+          'x-site-key': SITE_KEY,
+          origin: 'https://x.github.io',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }),
+      ENV,
+    )
+    return { status: res.status, list: (await res.json()) as Array<Record<string, unknown>> }
+  }
+
+  it('游客看不到已下架物品的联系方式，物主自己能看到', async () => {
+    const state = makeGhStub({
+      name: '冲击钻',
+      contactType: 'phone',
+      contact: '13800000001',
+      ownerHash: OWNER_HASH,
+    })
+    state.issue.state = 'closed'
+
+    const anon = await getListAs()
+    expect(anon.status).toBe(200)
+    expect(anon.list[0].archived).toBe(true)
+    expect(anon.list[0].contact).toBe('')
+
+    // 别人也看不到
+    const other = await getListAs('hash-stranger')
+    expect(other.list[0].contact).toBe('')
+
+    // 物主能看到
+    const owner = await getListAs(OWNER_HASH)
+    expect(owner.list[0].contact).toBe('13800000001')
+  })
+
+  it('在架物品的联系方式对所有人可见（不受影响）', async () => {
+    makeGhStub({ name: '冲击钻', contactType: 'phone', contact: '13800000001', ownerHash: OWNER_HASH })
+    const anon = await getListAs()
+    expect(anon.list[0].contact).toBe('13800000001')
   })
 })

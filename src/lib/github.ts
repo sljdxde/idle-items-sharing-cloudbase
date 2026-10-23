@@ -67,10 +67,16 @@ function roundCoord(n: unknown): number | null {
   return Math.round(n * 1000) / 1000
 }
 
-/** Issue → Item（lent 标签→已借出；closed→已下架） */
+/**
+ * Issue → Item（已借出 = lent 标签 或 数据块有 borrowerHash；closed → 已下架）
+ *
+ * 注：正式读路径是「items.json 快照 / 代理 JSON」，不走这个函数；
+ * 它的口径必须与 cloudflare-worker/items.js 的 toItem 保持一致，
+ * 否则一旦有人接回来用就是隐形 bug（标签写失败时状态会判错）。
+ */
 export function parseIssue(issue: IssueLike): Item {
   const data = extractDataBlock(issue.body ?? '') ?? {}
-  const isLent = !!issue.labels?.some((l) => l.name === 'lent')
+  const isLent = !!issue.labels?.some((l) => l.name === 'lent') || !!data.borrowerHash
   return {
     id: issue.number,
     name: typeof data.name === 'string' && data.name.trim() ? data.name : cleanTitle(issue.title),

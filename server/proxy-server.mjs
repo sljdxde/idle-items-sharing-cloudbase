@@ -37,10 +37,12 @@ import {
 import {
   extractData,
   isLentIssue,
+  redactListForCaller,
   toItem,
   withDataBlock,
   withRentRecord,
 } from '../cloudflare-worker/items.js'
+import { createRateLimiter } from '../cloudflare-worker/rateLimit.js'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const DIST = join(ROOT, 'dist')
@@ -123,7 +125,7 @@ const SECURITY_HEADERS = {
 }
 
 // ---------- GitHub API ----------
-async function gh(path, method = 'GET', body) {
+async function gh(path, method = 'GET', body, extraHeaders) {
   return fetch(`${API}${path}`, {
     method,
     headers: {
@@ -131,9 +133,15 @@ async function gh(path, method = 'GET', body) {
       Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
       'User-Agent': 'neighborhood-proxy',
+      ...extraHeaders,
     },
     body: body ? JSON.stringify(body) : undefined,
   })
+}
+
+/** etag 为空时不发 If-Match（GitHub 对空值判 422） */
+function etagHeader(etag) {
+  return etag ? { 'If-Match': etag } : undefined
 }
 
 // extractData / toItem / withDataBlock / isLentIssue 统一从
@@ -146,7 +154,8 @@ async function readIssue(num) {
   if (!res.ok) return { error: true }
   const issue = await res.json()
   if (!hasItemLabel(issue)) return { missing: true }
-  return { issue }
+  // etag 用于 PATCH 的 If-Match：读-判断-写之间被别人改过 → 412
+  return { issue, etag: res.headers.get('etag') || '' }
 }
 
 async function listAllIssues() {
@@ -214,14 +223,10 @@ async function setLentLabel(num, on) {
 }
 
 // ---------- 限流 ----------
-const hits = new Map()
+// 与 Worker 共用一份实现：过期 key 定期清理，避免只增不减
+const limiter = createRateLimiter()
 function rateOk(ip, limit, windowMs) {
-  const key = `${ip}|${limit}|${windowMs}`
-  const now = Date.now()
-  const arr = (hits.get(key) || []).filter((t) => now - t < windowMs)
-  if (arr.length >= limit) { hits.set(key, arr); return false }
-  arr.push(now); hits.set(key, arr)
-  return true
+  return limiter.ok(ip, limit, windowMs)
 }
 
 // ---------- 工具 ----------
@@ -362,8 +367,11 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
 
   // ─── 列表读取 ───
   if (req.method === 'GET' && pathname === '/api/items') {
+    // 可选身份：已下架物品的联系方式只回给物主，其余人拿到空串
+    const viewer = await authFromRequest(req, JWT_SECRET)
     try {
-      return json(res, 200, await getList(searchParams.get('fresh') === '1'))
+      const list = await getList(searchParams.get('fresh') === '1')
+      return json(res, 200, redactListForCaller(list, viewer?.phoneHash || ''))
     } catch {
       return json(res, 502, { error: '读取失败，请稍后再试' })
     }
@@ -434,7 +442,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   // ─── 借用 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/borrow$/))) {
     if (!phoneHash) return json(res, 401, { error: '请先登录' })
-    const { issue, missing, error } = await readIssue(+m[1])
+    const { issue, missing, error, etag } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
     if (issue.state !== 'open') return json(res, 409, { error: '该物品已下架' })
@@ -445,7 +453,16 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     data.borrowedAt = new Date().toISOString()
     delete data.receiptHmac
     delete data.pinHmac
-    const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    // If-Match：读-判断-写之间被别人抢先借走 → 412，不能覆盖对方
+    const patch = await ghWrite(
+      `/${issue.number}`,
+      'PATCH',
+      { body: withDataBlock(issue.body, data) },
+      etagHeader(etag),
+    )
+    if (patch.status === 412) {
+      return json(res, 409, { error: '手慢了，这件物品刚被邻居借走。刷新看看别的吧' })
+    }
     if (!patch.ok) return json(res, 502, { error: '借用失败，请稍后再试' })
     // 标签写失败不影响正确性（isLentIssue 认 borrowerHash），借阅人仍可正常归还
     await setLentLabel(issue.number, true)
@@ -457,7 +474,7 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
   // ─── 归还 ───
   if ((m = pathname.match(/^\/api\/items\/(\d+)\/return$/))) {
     if (!phoneHash) return json(res, 401, { error: '请先登录' })
-    const { issue, missing, error } = await readIssue(+m[1])
+    const { issue, missing, error, etag } = await readIssue(+m[1])
     if (missing) return json(res, 404, { error: '物品不存在' })
     if (error) return json(res, 502, { error: '服务暂时不可用，请稍后再试' })
     const data = extractData(issue.body)
@@ -471,9 +488,15 @@ async function handleApi(req, res, pathname, searchParams = new URLSearchParams(
     delete returned.pinHmac
     // 先摘 lent 标签再清数据块：避免「标签=已借出、数据块=无人借」的死局
     await setLentLabel(issue.number, false)
-    const patch = await ghWrite(`/${issue.number}`, 'PATCH', {
-      body: withDataBlock(issue.body, returned),
-    })
+    const patch = await ghWrite(
+      `/${issue.number}`,
+      'PATCH',
+      { body: withDataBlock(issue.body, returned) },
+      etagHeader(etag),
+    )
+    if (patch.status === 412) {
+      return json(res, 409, { error: '这件物品的状态刚被改过，请刷新后再试' })
+    }
     if (!patch.ok) return json(res, 502, { error: '归还失败，请稍后再试' })
     invalidateList()
     return json(res, 200, { ok: true })

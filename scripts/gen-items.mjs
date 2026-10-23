@@ -1,21 +1,21 @@
 // ================================================
 // scripts/gen-items.mjs — 从 GitHub Issues 生成 public/items.json 静态快照
 // 在 GitHub Actions 中运行（有 GITHUB_TOKEN 时高配额；否则匿名）
-// 规则与 src/lib/github.ts 的 parseIssue 保持一致：
-//   - 带 item 标签的 Issue = 一条物品（含 closed = 已下架）
-//   - lent 标签 → status=lent；closed → archived=true
-//   - body 中 <!--DATA_START ... DATA_END--> 为数据块
+//
+// 映射统一走 cloudflare-worker/items.js 的 toItem（与 Worker / 前端同一份），
+// 这里只做「快照特有的加工」：图片白名单、描述截断、已下架物品打码。
+// 历史教训：本文件曾单独抄一份 parseIssue，漏了 rentType/rentFee/rentRecords，
+// 导致从快照读到的物品全是「免费」、租金统计恒为 0，直到实时校准才纠正。
 // ================================================
 
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { toItem } from '../cloudflare-worker/items.js'
 
 const REPO = 'sljdxde/idle-items-sharing-cloudbase'
 const GH_API = 'https://api.github.com/repos'
 const TOKEN = process.env.GITHUB_TOKEN ?? ''
-const DATA_START = '<!--DATA_START'
-const DATA_END = 'DATA_END-->'
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'items.json')
 
@@ -27,23 +27,6 @@ async function api(path) {
   return res.json()
 }
 
-function extractData(body) {
-  if (!body) return null
-  const start = body.indexOf(DATA_START)
-  const end = body.indexOf(DATA_END)
-  if (start < 0 || end <= start) return null
-  try {
-    const parsed = JSON.parse(body.slice(start + DATA_START.length, end).trim())
-    return parsed && typeof parsed === 'object' ? parsed : null
-  } catch {
-    return null
-  }
-}
-
-function cleanTitle(title) {
-  return String(title ?? '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品'
-}
-
 function safeImgUrl(url) {
   const u = String(url || '').trim()
   if (!u) return ''
@@ -52,34 +35,19 @@ function safeImgUrl(url) {
   return ''
 }
 
-function roundCoord(n) {
-  if (typeof n !== 'number' || !Number.isFinite(n)) return null
-  return Math.round(n * 1000) / 1000
-}
-
-function parseIssue(issue) {
-  const data = extractData(issue.body) ?? {}
-  const isLent = (issue.labels ?? []).some((l) => l.name === 'lent')
+/**
+ * Issue → 快照条目。
+ * 已下架（closed）物品的联系方式在静态快照里一律清空：items.json 是匿名可取的，
+ * 「下架」的语义就是从公开面撤下，联系方式不能还躺在里面。
+ * 物主自己打开详情页时，前端会用带 JWT 的实时接口重新校准，届时能看到自己的联系方式。
+ */
+export function parseIssue(issue) {
+  const item = toItem(issue)
   return {
-    id: issue.number,
-    name: typeof data.name === 'string' && data.name.trim() ? data.name : cleanTitle(issue.title),
-    desc: typeof data.desc === 'string' ? String(data.desc).slice(0, 300) : '',
-    contactType: data.contactType === 'building' ? 'building' : 'phone',
-    contact: typeof data.contact === 'string' ? String(data.contact).slice(0, 40) : '',
-    imgUrl: typeof data.imgUrl === 'string' ? safeImgUrl(data.imgUrl) : '',
-    status: isLent ? 'lent' : 'available',
-    // ADR-0005：身份哈希字段
-    ownerHash: typeof data.ownerHash === 'string' ? data.ownerHash : undefined,
-    borrowerHash: typeof data.borrowerHash === 'string' ? data.borrowerHash : undefined,
-    borrowedAt: typeof data.borrowedAt === 'string' ? data.borrowedAt : undefined,
-    lat: roundCoord(data.lat),
-    lng: roundCoord(data.lng),
-    category: typeof data.category === 'string' ? data.category : 'other',
-    createTime:
-      typeof data.createTime === 'string'
-        ? data.createTime
-        : issue.created_at ?? new Date().toISOString(),
-    archived: issue.state === 'closed',
+    ...item,
+    desc: String(item.desc ?? '').slice(0, 300),
+    imgUrl: safeImgUrl(item.imgUrl),
+    contact: item.archived ? '' : item.contact,
   }
 }
 
@@ -102,4 +70,5 @@ async function main() {
   }
 }
 
-main()
+// 被 import（测试）时不执行主流程
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main()

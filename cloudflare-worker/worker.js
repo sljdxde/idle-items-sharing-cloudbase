@@ -34,10 +34,12 @@ import { createAuditor } from './imageAudit.js'
 import {
   extractData,
   isLentIssue,
+  redactListForCaller,
   toItem,
   withDataBlock,
   withRentRecord,
 } from './items.js'
+import { createRateLimiter } from './rateLimit.js'
 
 let GH_TOKEN = ''
 const OWNER = 'sljdxde'
@@ -69,23 +71,14 @@ function json(status, obj, origin) {
 function preflight(origin) {
   return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
-// 简易限流（内存，冷启动会重置）
-const hits = new Map()
+// 简易限流（内存，冷启动会重置）；过期 key 定期清理，避免 Map 只增不减
+const limiter = createRateLimiter()
 function rateOk(request, limit, windowMs) {
   const ip = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || 'anon'
-  const key = `${ip}|${limit}|${windowMs}`
-  const now = Date.now()
-  const arr = (hits.get(key) || []).filter((t) => now - t < windowMs)
-  if (arr.length >= limit) {
-    hits.set(key, arr)
-    return false
-  }
-  arr.push(now)
-  hits.set(key, arr)
-  return true
+  return limiter.ok(ip, limit, windowMs)
 }
 
-async function gh(path, method = 'GET', body) {
+async function gh(path, method = 'GET', body, extraHeaders) {
   return fetch(`${API}${path}`, {
     method,
     headers: {
@@ -93,9 +86,15 @@ async function gh(path, method = 'GET', body) {
       Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
       'User-Agent': 'neighborhood-proxy',
+      ...extraHeaders,
     },
     body: body ? JSON.stringify(body) : undefined,
   })
+}
+
+/** etag 为空时就不要发 If-Match（GitHub 对空值会判 422） */
+function etagHeader(etag) {
+  return etag ? { 'If-Match': etag } : undefined
 }
 
 async function readIssue(num) {
@@ -105,7 +104,8 @@ async function readIssue(num) {
   if (!res.ok) return { error: true }
   const issue = await res.json()
   if (!hasItemLabel(issue)) return { missing: true }
-  return { issue }
+  // etag 用于 PATCH 的 If-Match：读-判断-写之间若被别人改过，GitHub 会回 412
+  return { issue, etag: res.headers.get('etag') || '' }
 }
 
 // ─── 规模化优化：分页拉取 / 5s 缓存 + single-flight / 写限流退避重试 ───
@@ -165,9 +165,9 @@ async function getList(fresh = false) {
   return listInflight
 }
 
-async function ghWrite(path, method, body) {
+async function ghWrite(path, method, body, extraHeaders) {
   for (let i = 0; ; i++) {
-    const r = await gh(path, method, body)
+    const r = await gh(path, method, body, extraHeaders)
     if ((r.status === 403 || r.status === 429) && i < 2) {
       const e = await r.text().catch(() => '')
       if (/rate limit/i.test(e)) {
@@ -338,8 +338,12 @@ async function handle(request, env) {
 
     if (request.method === 'GET' && p === '/api/items') {
       const fresh = url.searchParams.get('fresh') === '1'
+      // 可选身份：只用于判断「已下架物品的联系方式能不能给自己看」。
+      // 匿名或 token 无效一律按游客处理（匿名接口，不强制登录）。
+      const viewer = await authFromRequest(request, JWT_SECRET)
       try {
-        return json(200, await getList(fresh), origin)
+        const list = await getList(fresh)
+        return json(200, redactListForCaller(list, viewer?.phoneHash || ''), origin)
       } catch {
         return json(502, { error: '读取失败，请稍后再试' }, origin)
       }
@@ -432,7 +436,7 @@ async function handle(request, env) {
 
     // ─── 借用（ADR-0005：JWT 鉴权 + borrowerHash） ───
     if ((m = p.match(/^\/api\/items\/(\d+)\/borrow$/))) {
-      const { issue, missing, error } = await readIssue(+m[1])
+      const { issue, missing, error, etag } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
       // ADR-0005: JWT 鉴权
@@ -447,7 +451,16 @@ async function handle(request, env) {
       data.borrowedAt = new Date().toISOString()
       delete data.receiptHmac
       delete data.pinHmac
-      const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+      // If-Match：读-判断-写之间若被别人抢先借走，GitHub 回 412，不能覆盖对方
+      const patch = await ghWrite(
+        `/${issue.number}`,
+        'PATCH',
+        { body: withDataBlock(issue.body, data) },
+        etagHeader(etag),
+      )
+      if (patch.status === 412) {
+        return json(409, { error: '手慢了，这件物品刚被邻居借走。刷新看看别的吧' }, origin)
+      }
       if (!patch.ok) return json(502, { error: '借用失败，请稍后再试' }, origin)
       // 标签写失败不影响正确性：isLentIssue 看 borrowerHash，物品仍是「已借出」，
       // 借阅人也能正常归还
@@ -458,7 +471,7 @@ async function handle(request, env) {
 
     // ─── 归还（ADR-0005：JWT 鉴权） ───
     if ((m = p.match(/^\/api\/items\/(\d+)\/return$/))) {
-      const { issue, missing, error } = await readIssue(+m[1])
+      const { issue, missing, error, etag } = await readIssue(+m[1])
       if (missing) return json(404, { error: '物品不存在' }, origin)
       if (error) return json(502, { error: '服务暂时不可用，请稍后再试' }, origin)
       // ADR-0005: JWT 鉴权
@@ -479,9 +492,15 @@ async function handle(request, env) {
       // （谁都不能归还，物主也删不掉）。先删标签则最坏情况是数据块没清掉：
       // 借阅人仍能再点一次归还（isLentIssue 与 canReturn 都认 borrowerHash），可重试恢复。
       await setLentLabel(issue.number, false)
-      const patch = await ghWrite(`/${issue.number}`, 'PATCH', {
-        body: withDataBlock(issue.body, returned),
-      })
+      const patch = await ghWrite(
+        `/${issue.number}`,
+        'PATCH',
+        { body: withDataBlock(issue.body, returned) },
+        etagHeader(etag),
+      )
+      if (patch.status === 412) {
+        return json(409, { error: '这件物品的状态刚被改过，请刷新后再试' }, origin)
+      }
       if (!patch.ok) return json(502, { error: '归还失败，请稍后再试' }, origin)
       invalidateList()
       return json(200, { ok: true }, origin)

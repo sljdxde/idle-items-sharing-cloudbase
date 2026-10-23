@@ -83,6 +83,27 @@ export function withDataBlock(_oldBody, data) {
 }
 
 /**
+ * 已下架物品的联系方式只给物主。
+ *
+ * 「下架」的语义是「从公开面撤下」，但列表接口是匿名的、返回全量（含 closed），
+ * 所以只要拿到 id 就能看到撤下物品的手机号/门牌——下架等于没下架。
+ * 这里按调用者身份裁剪：非物主（含未登录）拿到空 contact。
+ *
+ * 注意：不删字段而是置空，前端仍能区分「本来就没填」与「被隐藏」
+ * （前端已按 archived + 归属自行展示「仅发布者可见」）。
+ */
+export function redactArchived(item, callerHash) {
+  if (!item || !item.archived) return item
+  if (callerHash && item.ownerHash && item.ownerHash === callerHash) return item
+  return { ...item, contact: '' }
+}
+
+/** 对列表逐条裁剪（保持原顺序，不改入参） */
+export function redactListForCaller(list, callerHash) {
+  return list.map((it) => redactArchived(it, callerHash))
+}
+
+/**
  * 归还结算：按「按天向上取整、不足 1 天算 1 天 / 按次固定」追加一条结算记录。
  * 入参 data 不被修改，返回新的 data（含新的 rentRecords）。
  */
