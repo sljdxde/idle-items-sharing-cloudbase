@@ -10,7 +10,12 @@
     "test": "vitest run",
     "typecheck": "vue-tsc -b",
     "package": "bash scripts/package.sh",
-    "deploy:pages": "bash scripts/deploy-pages.sh"
+    "deploy:pages": "bash scripts/deploy-pages.sh",
+    "prepare": "node scripts/install-hooks.mjs",
+    "hooks:install": "node scripts/install-hooks.mjs",
+    "version:status": "node scripts/version.mjs status",
+    "version:set": "node scripts/version.mjs set",
+    "version:release": "node scripts/version.mjs release"
   },
   "dependencies": {
     "pinia": "^3.0.3",

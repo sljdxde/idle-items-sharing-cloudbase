@@ -1,0 +1,21 @@
+#!/bin/sh
+# ================================================
+# .githooks/pre-push — 推 master / 推 tag 的版本校验
+# 推 master 必须是 x.y.z；推 tag 必须是 vX.Y.Z 且等于 package.json
+# ================================================
+set -e
+
+ROOT=$(git rev-parse --show-toplevel)
+
+NODE=$(command -v node 2>/dev/null || true)
+[ -n "$NODE" ] || NODE="$HOME/opt/node/bin/node"
+[ -x "$NODE" ] || NODE="/opt/homebrew/bin/node"
+[ -x "$NODE" ] || NODE="/usr/local/bin/node"
+
+if [ ! -x "$NODE" ]; then
+  echo "✖ 找不到 node，无法执行版本规范校验。" >&2
+  echo "  把 node 加进 PATH（例如 \$HOME/opt/node/bin）后重试。" >&2
+  exit 1
+fi
+
+exec "$NODE" "$ROOT/scripts/check-version.mjs" pre-push
