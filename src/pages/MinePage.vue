@@ -85,7 +85,9 @@ const statusClass = (it: Item) => (it.archived ? 'pending' : it.status === 'lent
           <span class="rent-stats-sub">来自 {{ rentStats.chargedCount }} 件收费物品的归还结算（按天/按次）</span>
         </div>
 
-        <ul v-else class="row-list">
+        <!-- 注意：列表与上面的租金统计条是「并列」关系，不能写成 v-else，
+             否则只要名下有收费物品，整个列表（含上下架/删除入口）都会被吞掉 -->
+        <ul class="row-list">
           <li v-for="it in store.myItems" :key="it.id" class="row-card">
             <div class="row-head">
               <RouterLink :to="`/items/${it.id}`" class="row-name">{{ it.name }}</RouterLink>

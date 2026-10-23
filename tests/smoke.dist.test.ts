@@ -29,13 +29,26 @@ async function untilContains(text: string, budgetMs = 3000): Promise<string> {
   return html
 }
 
+/** 构造一个「已登录」的 JWT（前端只检查 exp 与 phoneHash，不验签） */
+function makeJwt(phoneHash: string): string {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '')
+  const now = Math.floor(Date.now() / 1000)
+  return [
+    b64({ alg: 'HS256', typ: 'JWT' }),
+    b64({ phoneHash, iat: now, exp: now + 86400 }),
+    'test-signature',
+  ].join('.')
+}
+
 describe('dist 产物冒烟（模拟浏览器）', () => {
   const html = readFileSync(join(DIST, 'index.html'), 'utf8')
   const js = readFileSync(join(DIST, 'assets', 'app.js'), 'utf8')
 
   beforeAll(() => {
-    // 预置手机号登录态（种子物品的物主是 1380000000x，登录 13812345678 即「非物主」视角）
-    localStorage.setItem('linli_haowu_user_v1', '13812345678')
+    // 预置登录态：ADR-0005 之后是「手机号 + PIN → JWT」，登录凭证在 token 里，
+    // 不再是旧的 linli_haowu_user_v1 明文手机号。
+    localStorage.setItem('linli_haowu_token_v2', makeJwt('hash-13812345678'))
+    localStorage.setItem('linli_haowu_phone_v2', '138****5678')
     // 模拟离线：全局 fetch 立即失败（happy-dom 中 window 与 globalThis 不同步，两处都要设），
     // 使数据层回退到种子兜底（仅验证 UI 渲染，与部署网络无关）
     const offlineFetch = () => Promise.reject(new Error('offline'))

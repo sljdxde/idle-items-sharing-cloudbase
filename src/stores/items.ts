@@ -68,10 +68,26 @@ export const useItemsStore = defineStore('items', () => {
    * 写成功后先把结果乐观落到本地并立即放行交互，后台再确认服务端已追上；
    * 对账期间的滞后读取不得覆盖这些乐观结果。value 为 null 表示该物品应已消失（删除）。
    */
-  const pendingWrites = new Map<number, { value: Item | null; settled: (it: Item) => boolean }>()
+  const pendingWrites = new Map<
+    number,
+    { value: Item | null; settled: (it: Item) => boolean; at: number }
+  >()
+
+  /**
+   * 乐观结果的最长存续时间。超过就该以服务端为准丢弃。
+   * 没有这个上限时会残留：发布类乐观项的 settled 恒为 true，但若服务端列表
+   * 始终没有这个 id（读通道故障 / 只能拿到旧快照），mergePending 会每次都把它
+   * unshift 进列表，永不删除——物品被删了也会被「复活」。
+   */
+  const PENDING_TTL_MS = 60_000
 
   /** 用未对账的乐观结果修正服务端列表：滞后则覆盖，已删除则隐藏，新发布则补上 */
   function mergePending(list: Item[]): Item[] {
+    if (pendingWrites.size === 0) return list
+    const now = Date.now()
+    for (const [id, pw] of pendingWrites) {
+      if (now - pw.at > PENDING_TTL_MS) pendingWrites.delete(id)
+    }
     if (pendingWrites.size === 0) return list
     const out = list.flatMap((it) => {
       const pw = pendingWrites.get(it.id)
@@ -93,7 +109,7 @@ export const useItemsStore = defineStore('items', () => {
 
   /** 乐观落地：本地立即反映写入结果 */
   function applyWrite(id: number, value: Item | null, settled: (it: Item) => boolean): void {
-    pendingWrites.set(id, { value, settled })
+    pendingWrites.set(id, { value, settled, at: Date.now() })
     const cur = items.value
     if (value === null) items.value = cur.filter((it) => it.id !== id)
     else if (cur.some((it) => it.id === id))

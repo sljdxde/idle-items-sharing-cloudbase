@@ -6,6 +6,7 @@
 // ================================================
 
 import type { CategoryId, ContactType, Item } from './types'
+import { getSessionToken } from './session'
 
 /** Cloudflare Worker 地址（github.io 部署时使用；公开信息，非秘密） */
 const WORKER_URL = 'https://neighborhood-share-proxy.neighborhood-share-sljdxde.workers.dev'
@@ -29,13 +30,26 @@ export const IS_SERVER_CHANNEL = !HOST.endsWith('github.io') && !HOST.endsWith('
 /** 与 worker 约定的站点 key（仅挡普通爬虫，非秘密） */
 export const SITE_KEY = 'neighborhood-share-2026'
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  /** HTTP 状态码；0 表示没拿到响应（网络异常/超时） */
+  readonly status: number
+  constructor(message: string, status = 0) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
 
 /** 请求超时：workers.dev 在部分网络被墙时 TCP 会挂住，必须有上限才能给用户明确反馈 */
 const REQUEST_TIMEOUT_MS = 12000
 
-/** 从 localStorage 读取 JWT（auth store 的 TOKEN_KEY，避免循环依赖直接读） */
+/**
+ * 从 localStorage 读取 JWT（auth store 的 TOKEN_KEY，避免循环依赖直接读）。
+ * 隐私模式下写不进 localStorage，此时只存在 session.ts 的内存镜像里 → 必须先看内存。
+ */
 function getToken(): string | null {
+  const mem = getSessionToken()
+  if (mem) return mem
   try {
     return localStorage.getItem('linli_haowu_token_v2')
   } catch {
@@ -45,13 +59,14 @@ function getToken(): string | null {
 
 async function request<T>(
   path: string,
-  init?: { method?: string; body?: unknown; auth?: boolean },
+  init?: { method?: string; body?: unknown; auth?: boolean; headers?: Record<string, string> },
 ): Promise<T> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS)
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-site-key': SITE_KEY,
+    ...init?.headers,
   }
   // ADR-0005：写操作带 JWT
   if (init?.auth !== false) {
@@ -72,7 +87,7 @@ async function request<T>(
     clearTimeout(timer)
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string } & T
-  if (!res.ok) throw new ApiError(data.error || '服务暂时不可用，请稍后再试')
+  if (!res.ok) throw new ApiError(data.error || '服务暂时不可用，请稍后再试', res.status)
   return data
 }
 
@@ -98,9 +113,20 @@ export interface LoginResult {
   error?: string
 }
 
+export interface AdminResetResult {
+  ok: boolean
+  phone?: string
+  temporaryPin?: string
+  error?: string
+}
+
 export const api = {
-  listItems(): Promise<Item[]> {
-    return request<Item[]>('/api/items', { auth: false })
+  /**
+   * 物品列表。fresh=true 表示「绕过代理端 5s 缓存，直接问服端」，
+   * 写后的后台对账必须用它，否则三次对账全落在同一份缓存上（等于只问了一次）。
+   */
+  listItems(fresh = false): Promise<Item[]> {
+    return request<Item[]>(`/api/items${fresh ? '?fresh=1' : ''}`, { auth: false })
   },
 
   // ─── ADR-0005: 账号体系接口 ───
@@ -120,6 +146,20 @@ export const api = {
       method: 'POST',
       body: { phone, pin },
       auth: false,
+    })
+  },
+
+  /**
+   * 管理员重置用户口令。
+   * 必须走 API_PROXY（与其余写操作同一条通道）：GitHub Pages 部署下 /api/* 在
+   * Pages 域名上并不存在，直接 fetch 相对路径会拿到 404 HTML，解析必然失败。
+   */
+  adminReset(phone: string, newPin: string, adminToken: string): Promise<AdminResetResult> {
+    return request<AdminResetResult>('/api/admin/reset-pin', {
+      method: 'POST',
+      body: { phone, newPin },
+      auth: false,
+      headers: { 'x-admin-token': adminToken },
     })
   },
 

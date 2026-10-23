@@ -118,11 +118,13 @@ async function fetchSnapshot(force: boolean): Promise<Item[] | null> {
   }
 }
 
-/** 代理实时读取（写操作后立即刷新用，绕过快照缓存）；失败静默 */
-async function fetchLive(): Promise<Item[] | null> {
+/** 代理实时读取（写操作后立即刷新用，绕过快照缓存）；失败静默返回 null */
+async function fetchLive(fresh: boolean): Promise<Item[] | null> {
   try {
-    const items = await api.listItems()
-    return items.length > 0 ? items : null
+    const items = await api.listItems(fresh)
+    // 空数组是合法结果（社区确实没有物品），不能当成「读取失败」，
+    // 否则会掉回可能已经过期的 items.json 快照，把已删除的物品又显示出来。
+    return Array.isArray(items) ? items : null
   } catch {
     return null
   }
@@ -131,14 +133,17 @@ async function fetchLive(): Promise<Item[] | null> {
 /** 读取物品列表：items.json 快照 → 代理实时 → 种子兜底 */
 export async function listItems(force = false): Promise<Item[]> {
   if (force) {
-    const live = await fetchLive()
+    const live = await fetchLive(true)
     if (live) return live
   }
   const snap = await fetchSnapshot(force)
+  // 快照有货就先用它（首屏最快）；快照是空数组说明这次构建时社区就是空的，
+  // 但仍要问一次服端——快照可能落后于部署后的新发布。
   if (snap && snap.length > 0) return snap
   if (!force) {
-    const live = await fetchLive()
+    const live = await fetchLive(false)
     if (live) return live
   }
-  return SEED_ITEMS
+  // 快照读到了（哪怕是空的）就如实返回空列表；只有完全读不到才用种子兜底
+  return snap ?? SEED_ITEMS
 }

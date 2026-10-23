@@ -34,6 +34,13 @@ import {
   toPublicItem,
   verifyPin,
 } from '../cloudflare-worker/security.js'
+import {
+  extractData,
+  isLentIssue,
+  toItem,
+  withDataBlock,
+  withRentRecord,
+} from '../cloudflare-worker/items.js'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const DIST = join(ROOT, 'dist')
@@ -129,47 +136,8 @@ async function gh(path, method = 'GET', body) {
   })
 }
 
-function extractData(body) {
-  const m = body ? body.match(DATA_RE) : null
-  if (!m || !m[1]) return {}
-  try {
-    const parsed = JSON.parse(m[1].trim())
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function toItem(issue) {
-  const d = extractData(issue.body)
-  const isLent = (issue.labels || []).some((l) => l.name === 'lent')
-  return {
-    id: issue.number,
-    name:
-      typeof d.name === 'string' && d.name.trim()
-        ? d.name
-        : String(issue.title || '').replace(/^\[闲置物品\]\s*/, '').trim() || '未命名物品',
-    desc: typeof d.desc === 'string' ? d.desc : '',
-    contactType: d.contactType === 'building' ? 'building' : 'phone',
-    contact: typeof d.contact === 'string' ? d.contact : '',
-    imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
-    status: isLent ? 'lent' : 'available',
-    ownerHash: typeof d.ownerHash === 'string' ? d.ownerHash : '',
-    borrowerHash: typeof d.borrowerHash === 'string' ? d.borrowerHash : '',
-    borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
-    lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
-    lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
-    category: typeof d.category === 'string' ? d.category : 'other',
-    createTime: typeof d.createTime === 'string' ? d.createTime : (issue.created_at || new Date().toISOString()),
-    archived: issue.state === 'closed',
-  }
-}
-
-function withDataBlock(_oldBody, data) {
-  const publicDesc = sanitizeText(data.desc, DESC_MAX)
-  const block = `<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`
-  return `${publicDesc}\n\n${block}\n\n— 以下为自动生成的数据块，请勿删除 —`
-}
+// extractData / toItem / withDataBlock / isLentIssue 统一从
+// cloudflare-worker/items.js 引入（Worker 与自建代理共用一份实现，避免口径漂移）
 
 async function readIssue(num) {
   if (!Number.isInteger(num) || num < 1 || num > 1_000_000) return { missing: true }
@@ -198,8 +166,9 @@ let listCache = { at: 0, data: null }
 let listInflight = null
 function invalidateList() { listCache.at = 0 }
 
-async function getList() {
-  if (listCache.data && Date.now() - listCache.at < LIST_TTL) return listCache.data
+async function getList(fresh = false) {
+  // fresh=true：绕过 5s 缓存（写后对账用）
+  if (!fresh && listCache.data && Date.now() - listCache.at < LIST_TTL) return listCache.data
   if (!listInflight) {
     listInflight = (async () => {
       try {
@@ -227,6 +196,21 @@ async function ghWrite(path, method, body) {
     }
     return r
   }
+}
+
+/**
+ * 打 / 去 lent 标签（借用与归还的第二步）。失败重试一次；404 视为「本来就没有」。
+ * 标签只是可见性标记，真正的「已借出」以数据块 borrowerHash 为准（items.js isLentIssue）。
+ */
+async function setLentLabel(num, on) {
+  for (let i = 0; i < 2; i++) {
+    const r = on
+      ? await ghWrite(`/${num}/labels`, 'POST', { labels: ['lent'] })
+      : await ghWrite(`/${num}/labels/lent`, 'DELETE')
+    if (r.ok || r.status === 404) return true
+    if (i === 0) await new Promise((r2) => setTimeout(r2, 400))
+  }
+  return false
 }
 
 // ---------- 限流 ----------
@@ -300,12 +284,8 @@ function isBorrower(data, phoneHash) {
   return !!phoneHash && !!data.borrowerHash && data.borrowerHash === phoneHash
 }
 
-function isLentIssue(issue, data) {
-  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowerHash
-}
-
 // ---------- API 路由 ----------
-async function handleApi(req, res, pathname) {
+async function handleApi(req, res, pathname, searchParams = new URLSearchParams()) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'anon'
   const isWrite = req.method === 'POST'
   if (!rateOk(ip, isWrite ? 40 : 120, 10 * 60 * 1000)) return json(res, 429, { error: '请求过于频繁，请稍后再试' })
@@ -367,7 +347,12 @@ async function handleApi(req, res, pathname) {
     if (!user) return json(res, 404, { error: '该手机号未注册' })
 
     const newPin = String(parsed.body.newPin || '').trim()
+    // 与注册同一套弱口令策略（只判格式合法的 6 位数字，格式不对仍自动生成）
+    if (/^\d{6}$/.test(newPin) && isWeakPin(newPin)) {
+      return json(res, 400, { error: '新口令过于简单（如 123456、连续数字），请换一个' })
+    }
     const pinToSet = newPin && /^\d{6}$/.test(newPin) ? newPin : String(Math.floor(100000 + Math.random() * 900000))
+
     const salt = generateSalt()
     user.pinHash = await hashPin(pinToSet, salt)
     user.salt = salt
@@ -378,7 +363,7 @@ async function handleApi(req, res, pathname) {
   // ─── 列表读取 ───
   if (req.method === 'GET' && pathname === '/api/items') {
     try {
-      return json(res, 200, await getList())
+      return json(res, 200, await getList(searchParams.get('fresh') === '1'))
     } catch {
       return json(res, 502, { error: '读取失败，请稍后再试' })
     }
@@ -462,7 +447,9 @@ async function handleApi(req, res, pathname) {
     delete data.pinHmac
     const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
     if (!patch.ok) return json(res, 502, { error: '借用失败，请稍后再试' })
-    await ghWrite(`/${issue.number}/labels`, 'POST', { labels: ['lent'] })
+    // 标签写失败不影响正确性（isLentIssue 认 borrowerHash），借阅人仍可正常归还
+    await setLentLabel(issue.number, true)
+
     invalidateList()
     return json(res, 200, { ok: true })
   }
@@ -476,33 +463,18 @@ async function handleApi(req, res, pathname) {
     const data = extractData(issue.body)
     if (!isLentIssue(issue, data)) return json(res, 409, { error: '该物品当前未借出' })
     if (!isBorrower(data, phoneHash)) return json(res, 403, { error: '只有借阅人可以归还' })
-    // 租金结算
-    if (data.borrowedAt) {
-      const returnedAt = new Date().toISOString()
-      const rentType = data.rentType === 'daily' || data.rentType === 'perUse' ? data.rentType : 'free'
-      if (rentType !== 'free') {
-        const start = Date.parse(data.borrowedAt)
-        const end = Date.parse(returnedAt)
-        const fee = Number(data.rentFee)
-        let amount = 0
-        let days
-        if (rentType === 'daily' && Number.isFinite(start) && Number.isFinite(end)) {
-          days = Math.max(1, Math.ceil(Math.max(end - start, 0) / 86400000))
-          amount = (Number.isFinite(fee) ? fee : 0) * days
-        } else if (rentType === 'perUse') {
-          amount = Number.isFinite(fee) ? fee : 0
-        }
-        const records = Array.isArray(data.rentRecords) ? data.rentRecords : []
-        records.push({ borrowedAt: data.borrowedAt, returnedAt, days, fee: amount, borrowerHash: data.borrowerHash })
-        data.rentRecords = records
-      }
-    }
-    delete data.borrowedAt
-    delete data.borrowerHash
-    delete data.receiptHmac
-    const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+    // 租金结算（按天向上取整 / 按次固定），与 Worker 共用 items.js 的实现
+    const returned = withRentRecord(data)
+    delete returned.borrowedAt
+    delete returned.borrowerHash
+    delete returned.receiptHmac
+    delete returned.pinHmac
+    // 先摘 lent 标签再清数据块：避免「标签=已借出、数据块=无人借」的死局
+    await setLentLabel(issue.number, false)
+    const patch = await ghWrite(`/${issue.number}`, 'PATCH', {
+      body: withDataBlock(issue.body, returned),
+    })
     if (!patch.ok) return json(res, 502, { error: '归还失败，请稍后再试' })
-    await ghWrite(`/${issue.number}/labels/lent`, 'DELETE')
     invalidateList()
     return json(res, 200, { ok: true })
   }
@@ -583,11 +555,12 @@ async function serveUpload(res, pathname) {
 
 // ---------- 启动 ----------
 createServer(async (req, res) => {
-  const pathname = new URL(req.url, 'http://x').pathname
+  const url = new URL(req.url, 'http://x')
+  const pathname = url.pathname
   try {
     if (pathname.startsWith('/api/')) {
       if (req.headers['x-site-key'] !== SITE_KEY) return json(res, 403, { error: '站点密钥错误' })
-      return await handleApi(req, res, pathname)
+      return await handleApi(req, res, pathname, url.searchParams)
     }
     if (pathname.startsWith('/uploads/')) return await serveUpload(res, pathname)
     return await serveStatic(res, pathname)

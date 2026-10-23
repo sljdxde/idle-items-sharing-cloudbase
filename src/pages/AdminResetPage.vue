@@ -6,7 +6,8 @@
 
 import { ref, onMounted, nextTick } from 'vue'
 import { useToast } from '@/composables/useToast'
-import { isValidPhone } from '@/lib/validate'
+import { api, ApiError } from '@/lib/api'
+import { isValidPhone, isWeakPin, weakPinHint } from '@/lib/validate'
 import {
   handlePinInput,
   handlePinKeydown,
@@ -125,39 +126,42 @@ async function handleReset(): Promise<void> {
     pinError.value = '请输入完整的 6 位新口令'
     return
   }
+  // 与服务端同一套弱口令策略（注册时也会拦），避免重置成 123456 这类口令
+  if (isWeakPin(newPin)) {
+    pinError.value = weakPinHint(newPin) || '新口令过于简单，请换一个'
+    return
+  }
 
   submitting.value = true
   try {
-    const res = await fetch('/api/admin/reset-pin', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-site-key': 'neighborhood-share-2026',
-        'x-admin-token': adminToken.value,
-      },
-      body: JSON.stringify({ phone: p, newPin }),
-    })
-    const data = await res.json()
-    if (res.ok && data.ok) {
+    // 走 api 层而不是直接 fetch 相对路径：GitHub Pages 部署下 /api/* 只存在于
+    // Worker 上（API_PROXY），相对路径会落到 Pages 域名拿 404 HTML。
+    const data = await api.adminReset(p, newPin, adminToken.value)
+    if (data.ok) {
       resultMsg.value = `重置成功！用户 ${data.phone} 的新口令为：${data.temporaryPin}`
       toast.success('重置成功', `新口令：${data.temporaryPin}`)
       clearPin()
       phone.value = ''
     } else {
-      const err = data.error || '重置失败'
-      resultMsg.value = `重置失败：${err}`
-      if (res.status === 403 || res.status === 404) {
-        // 令牌错误或接口不存在，清除本地令牌
-        adminToken.value = ''
-        sessionStorage.removeItem(TOKEN_KEY)
-        toast.error('令牌无效', '请重新输入管理员令牌')
-      } else {
-        toast.error('重置失败', err)
-      }
+      resultMsg.value = `重置失败：${data.error || '重置失败'}`
+      toast.error('重置失败', data.error || '重置失败')
     }
-  } catch {
-    resultMsg.value = '网络错误，请稍后重试'
-    toast.error('网络错误', '请检查网络连接')
+  } catch (e) {
+    const status = e instanceof ApiError ? e.status : 0
+    const err = e instanceof Error && e.message ? e.message : '重置失败'
+    if (status === 403 || status === 404) {
+      // 令牌错误或接口不存在，清除本地令牌
+      resultMsg.value = `重置失败：${err}`
+      adminToken.value = ''
+      sessionStorage.removeItem(TOKEN_KEY)
+      toast.error('令牌无效', '请重新输入管理员令牌')
+    } else if (status === 0) {
+      resultMsg.value = '网络错误，请稍后重试'
+      toast.error('网络错误', '请检查网络连接')
+    } else {
+      resultMsg.value = `重置失败：${err}`
+      toast.error('重置失败', err)
+    }
   } finally {
     submitting.value = false
   }

@@ -31,20 +31,26 @@ import {
 } from './security.js'
 import { checkImageDataUrl, moderateText } from './moderation.js'
 import { createAuditor } from './imageAudit.js'
+import {
+  extractData,
+  isLentIssue,
+  toItem,
+  withDataBlock,
+  withRentRecord,
+} from './items.js'
 
 let GH_TOKEN = ''
 const OWNER = 'sljdxde'
 const REPO = 'idle-items-sharing-cloudbase'
 const SITE_KEY_DEFAULT = 'neighborhood-share-2026'
 const API = `https://api.github.com/repos/${OWNER}/${REPO}/issues`
-const DATA_RE = /<!--DATA_START([\s\S]*?)DATA_END-->/
 
 function corsHeaders(origin) {
   const allow = origin && isAllowedOrigin(origin) ? origin : 'null'
   return {
     'Access-Control-Allow-Origin': allow,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, x-site-key, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, x-site-key, Authorization, x-admin-token',
     'Access-Control-Max-Age': '600',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
@@ -63,7 +69,6 @@ function json(status, obj, origin) {
 function preflight(origin) {
   return new Response(null, { status: 204, headers: corsHeaders(origin) })
 }
-
 // 简易限流（内存，冷启动会重置）
 const hits = new Map()
 function rateOk(request, limit, windowMs) {
@@ -91,54 +96,6 @@ async function gh(path, method = 'GET', body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   })
-}
-
-function extractData(body) {
-  const m = body ? body.match(DATA_RE) : null
-  if (!m || !m[1]) return {}
-  try {
-    const parsed = JSON.parse(m[1].trim())
-    return parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    return {}
-  }
-}
-
-function toItem(issue) {
-  const d = extractData(issue.body)
-  const isLent = (issue.labels || []).some((l) => l.name === 'lent')
-  return {
-    id: issue.number,
-    name:
-      typeof d.name === 'string' && d.name.trim()
-        ? d.name
-        : String(issue.title || '')
-            .replace(/^\[闲置物品\]\s*/, '')
-            .trim() || '未命名物品',
-    desc: typeof d.desc === 'string' ? d.desc : '',
-    contactType: d.contactType === 'building' ? 'building' : 'phone',
-    contact: typeof d.contact === 'string' ? d.contact : '',
-    imgUrl: typeof d.imgUrl === 'string' ? d.imgUrl : '',
-    status: isLent ? 'lent' : 'available',
-    // ADR-0005: 身份哈希字段
-    ownerHash: typeof d.ownerHash === 'string' && d.ownerHash ? d.ownerHash : '',
-    borrowerHash: typeof d.borrowerHash === 'string' && d.borrowerHash ? d.borrowerHash : '',
-    borrowedAt: typeof d.borrowedAt === 'string' ? d.borrowedAt : undefined,
-    lat: typeof d.lat === 'number' && Number.isFinite(d.lat) ? d.lat : null,
-    lng: typeof d.lng === 'number' && Number.isFinite(d.lng) ? d.lng : null,
-    category: typeof d.category === 'string' ? d.category : 'other',
-    createTime: typeof d.createTime === 'string' ? d.createTime : issue.created_at || new Date().toISOString(),
-    archived: issue.state === 'closed',
-    rentType: d.rentType === 'daily' || d.rentType === 'perUse' ? d.rentType : 'free',
-    rentFee: typeof d.rentFee === 'number' && Number.isFinite(d.rentFee) && d.rentFee >= 0 ? d.rentFee : 0,
-    rentRecords: Array.isArray(d.rentRecords) ? d.rentRecords : undefined,
-  }
-}
-
-function withDataBlock(_oldBody, data) {
-  const publicDesc = sanitizeText(data.desc, DESC_MAX)
-  const block = `<!--DATA_START\n${JSON.stringify(data)}\nDATA_END-->`
-  return `${publicDesc}\n\n${block}\n\n— 以下为自动生成的数据块，请勿删除 —`
 }
 
 async function readIssue(num) {
@@ -173,8 +130,26 @@ function invalidateList() {
   listCache.at = 0
 }
 
-async function getList() {
-  if (listCache.data && Date.now() - listCache.at < LIST_TTL) return listCache.data
+/**
+ * 打 / 去 lent 标签（借用与归还的第二步）。
+ * 失败重试一次；404 视为「本来就没有」，算成功。
+ * 注意：标签只是加速与外部可见性标记，真正的「已借出」以数据块 borrowerHash 为准
+ * （见 items.js isLentIssue），所以这里失败不会让物品卡死。
+ */
+async function setLentLabel(num, on) {
+  for (let i = 0; i < 2; i++) {
+    const r = on
+      ? await ghWrite(`/${num}/labels`, 'POST', { labels: ['lent'] })
+      : await ghWrite(`/${num}/labels/lent`, 'DELETE')
+    if (r.ok || r.status === 404) return true
+    if (i === 0) await new Promise((r2) => setTimeout(r2, 400))
+  }
+  return false
+}
+
+async function getList(fresh = false) {
+  // fresh=1：绕过 5s 缓存。写后的后台对账必须用它，否则三次对账读的是同一份缓存。
+  if (!fresh && listCache.data && Date.now() - listCache.at < LIST_TTL) return listCache.data
   if (!listInflight) {
     listInflight = (async () => {
       try {
@@ -232,10 +207,6 @@ function isOwner(data, phoneHash) {
  */
 function isBorrower(data, phoneHash) {
   return !!phoneHash && !!data.borrowerHash && data.borrowerHash === phoneHash
-}
-
-function isLentIssue(issue, data) {
-  return (issue.labels || []).some((l) => l.name === 'lent') || !!data.borrowerHash
 }
 
 async function handle(request, env) {
@@ -342,6 +313,11 @@ async function handle(request, env) {
       const phone = String(parsed.body.phone || '').trim()
       const newPin = String(parsed.body.newPin || '').trim()
       if (!isValidPhone(phone)) return json(400, { error: '手机号格式不正确' }, origin)
+      // 与注册同一套弱口令策略（只判格式合法的 6 位数字；
+      // 格式不对时保持原有的「自动生成随机口令」兜底，不静默改成报错）
+      if (/^\d{6}$/.test(newPin) && isWeakPin(newPin)) {
+        return json(400, { error: '新口令过于简单（如 123456、连续数字），请换一个' }, origin)
+      }
       const pinToSet = newPin && /^\d{6}$/.test(newPin) ? newPin : String(Math.floor(100000 + Math.random() * 900000))
       const pHash = await hashPhone(phone, HASH_PEPPER)
       const userStr = await USERS_KV.get(pHash)
@@ -361,8 +337,9 @@ async function handle(request, env) {
     }
 
     if (request.method === 'GET' && p === '/api/items') {
+      const fresh = url.searchParams.get('fresh') === '1'
       try {
-        return json(200, await getList(), origin)
+        return json(200, await getList(fresh), origin)
       } catch {
         return json(502, { error: '读取失败，请稍后再试' }, origin)
       }
@@ -472,7 +449,9 @@ async function handle(request, env) {
       delete data.pinHmac
       const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
       if (!patch.ok) return json(502, { error: '借用失败，请稍后再试' }, origin)
-      await ghWrite(`/${issue.number}/labels`, 'POST', { labels: ['lent'] })
+      // 标签写失败不影响正确性：isLentIssue 看 borrowerHash，物品仍是「已借出」，
+      // 借阅人也能正常归还
+      await setLentLabel(issue.number, true)
       invalidateList()
       return json(200, { ok: true }, origin)
     }
@@ -489,39 +468,21 @@ async function handle(request, env) {
       const data = extractData(issue.body)
       if (!isLentIssue(issue, data)) return json(409, { error: '该物品当前未借出' }, origin)
       if (!isBorrower(data, phoneHash)) return json(403, { error: '只有借阅人可以归还' }, origin)
-      // ─── 租金结算：记录归还时间，按天/按次写入历史结算记录（免费不计）───
-      if (data.borrowedAt) {
-        const returnedAt = new Date().toISOString()
-        const rentType = data.rentType === 'daily' || data.rentType === 'perUse' ? data.rentType : 'free'
-        if (rentType !== 'free') {
-          const start = Date.parse(data.borrowedAt)
-          const end = Date.parse(returnedAt)
-          const fee = Number(data.rentFee)
-          let amount = 0
-          let days
-          if (rentType === 'daily' && Number.isFinite(start) && Number.isFinite(end)) {
-            days = Math.max(1, Math.ceil(Math.max(end - start, 0) / 86400000))
-            amount = (Number.isFinite(fee) ? fee : 0) * days
-          } else if (rentType === 'perUse') {
-            amount = Number.isFinite(fee) ? fee : 0
-          }
-          const records = Array.isArray(data.rentRecords) ? data.rentRecords : []
-          records.push({
-            borrowedAt: data.borrowedAt,
-            returnedAt,
-            days,
-            fee: amount,
-            borrowerHash: data.borrowerHash,
-          })
-          data.rentRecords = records
-        }
-      }
-      delete data.borrowedAt
-      delete data.borrowerHash
-      delete data.receiptHmac
-      const patch = await ghWrite(`/${issue.number}`, 'PATCH', { body: withDataBlock(issue.body, data) })
+      // ─── 租金结算：按天/按次追加一条历史结算记录（免费不计）───
+      const returned = withRentRecord(data)
+      delete returned.borrowedAt
+      delete returned.borrowerHash
+      delete returned.receiptHmac
+      delete returned.pinHmac
+      // 顺序很关键：先去掉 lent 标签，再清数据块。
+      // 反过来的话，标签删除失败会留下「标签=已借出、数据块=无人借」的死局
+      // （谁都不能归还，物主也删不掉）。先删标签则最坏情况是数据块没清掉：
+      // 借阅人仍能再点一次归还（isLentIssue 与 canReturn 都认 borrowerHash），可重试恢复。
+      await setLentLabel(issue.number, false)
+      const patch = await ghWrite(`/${issue.number}`, 'PATCH', {
+        body: withDataBlock(issue.body, returned),
+      })
       if (!patch.ok) return json(502, { error: '归还失败，请稍后再试' }, origin)
-      await ghWrite(`/${issue.number}/labels/lent`, 'DELETE')
       invalidateList()
       return json(200, { ok: true }, origin)
     }
