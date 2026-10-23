@@ -18,11 +18,13 @@ import type { LocateFailReason } from '@/lib/geo'
 import LoginBox from '@/components/LoginBox.vue'
 
 /**
- * 图片体积预算（字节）：
- * - 服务器通道：图片由服务端落盘，上限 100KB（保画质）
- * - pages.dev / github.io：图片内嵌 Issue 正文（上限 64KB），36KB ≈ base64 4.9 万字符
+ * 图片体积预算（字符数，data URI 长度）：
+ * 两条通道最终都是把 `data:image/...;base64` 塞进 POST /api/items 的 JSON 体，
+ * 服务端上限固定在 cloudflare-worker/security.js：IMG_DATA_MAX=56000（图片 data URI）、
+ * BODY_MAX=80000（整包）。所以预算按「字符数」算，并留出 JSON 包裹与文字字段余量，
+ * 不能按原始文件字节数算——base64 会膨胀 4/3，按字节放行必然被服务端拒。
  */
-const IMG_BUDGET_BYTES = IS_SERVER_CHANNEL ? 100 * 1024 : 36 * 1024
+const IMG_BUDGET_CHARS = 52000
 
 const store = useItemsStore()
 const auth = useAuthStore()
@@ -84,11 +86,10 @@ async function onPickImage(e: Event): Promise<void> {
   imgError.value = ''
   compressing.value = true
   try {
-    // 服务器通道预算更宽（100KB），起点尺寸/质量更高以保画质；
-    // 其余通道必须压进内嵌预算，小图原样通过、大图逐步压缩
+    // 服务器通道起点尺寸/质量更高以保画质（预算相同，靠压缩步进收敛）
     const uri = await compressToFit(
       file,
-      IMG_BUDGET_BYTES,
+      IMG_BUDGET_CHARS,
       IS_SERVER_CHANNEL ? { maxSide: 900, quality: 0.75 } : {},
     )
     if (!uri) {

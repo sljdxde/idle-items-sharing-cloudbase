@@ -156,6 +156,28 @@ describe('管理员重置 PIN — 参数校验', () => {
     expect(status).toBe(404)
     expect(body.error).toBe('该手机号未注册')
   })
+
+  it('弱口令被拒绝（与注册同一套策略，不能靠重置绕过）', async () => {
+    const env = makeEnv()
+    const pHash = await registerUser(env)
+    const before = JSON.parse(await env.USERS_KV.get(pHash)).pinHash
+
+    for (const weak of ['123456', '111111', '654321']) {
+      const res = await handle(makeRequest('POST', '/api/admin/reset-pin', {
+        phone: TEST_PHONE,
+        newPin: weak,
+      }, {
+        'x-admin-token': ADMIN_TOKEN,
+      }), env)
+      const { status, body } = await parseJson(res)
+      expect(status, `弱口令 ${weak} 应被拒绝`).toBe(400)
+      expect(body.error).toContain('过于简单')
+    }
+
+    // 被拒绝的重置不能改动用户口令
+    const after = JSON.parse(await env.USERS_KV.get(pHash)).pinHash
+    expect(after).toBe(before)
+  })
 })
 
 describe('管理员重置 PIN — 重置成功', () => {
@@ -304,10 +326,12 @@ describe('管理员重置 PIN — 幂等性与并发', () => {
     const pHash = await hashPhone(TEST_PHONE, HASH_PEPPER)
 
     const hashes = []
+    // 注意：不能再用 11111x 这类弱口令——重置现在与注册共用同一套弱口令策略
+    const pins = ['482913', '739205', '615842']
     for (let i = 0; i < 3; i++) {
       await handle(makeRequest('POST', '/api/admin/reset-pin', {
         phone: TEST_PHONE,
-        newPin: `11111${i}`,
+        newPin: pins[i],
       }, {
         'x-admin-token': ADMIN_TOKEN,
       }), env)
@@ -321,13 +345,13 @@ describe('管理员重置 PIN — 幂等性与并发', () => {
 
   it('重置不影响其他用户', async () => {
     const env = makeEnv()
-    await registerUser(env, '13800000001', '111111')
-    await registerUser(env, '13800000002', '222222')
+    await registerUser(env, '13800000001', '482913')
+    await registerUser(env, '13800000002', '739205')
 
     // 重置用户1
     await handle(makeRequest('POST', '/api/admin/reset-pin', {
       phone: '13800000001',
-      newPin: '333333',
+      newPin: '615842',
     }, {
       'x-admin-token': ADMIN_TOKEN,
     }), env)
@@ -335,14 +359,14 @@ describe('管理员重置 PIN — 幂等性与并发', () => {
     // 用户1用新PIN登录成功
     const login1 = await handle(makeRequest('POST', '/api/login', {
       phone: '13800000001',
-      pin: '333333',
+      pin: '615842',
     }), env)
     expect(login1.status).toBe(200)
 
     // 用户2的PIN不变，仍可用原PIN登录
     const login2 = await handle(makeRequest('POST', '/api/login', {
       phone: '13800000002',
-      pin: '222222',
+      pin: '739205',
     }), env)
     expect(login2.status).toBe(200)
   })

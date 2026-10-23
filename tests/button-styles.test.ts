@@ -83,15 +83,19 @@ describe('可禁用按钮的样式契约', () => {
   })
 
   it('按钮类名组合都被识别（新增禁用按钮时不要漏网）', () => {
+    // 基线类名随「三主题」改造从 btn-memphis-* 收敛为 btn-primary / btn-secondary。
+    // 这里列的是需要自带 :disabled 样式的基座类（btn-block / btn-submit 是纯修饰类，
+    // 由基座类负责禁用态）。新增可禁用按钮时，这个清单要跟着更新。
     expect([...new Set(buttons.flatMap(({ b }) => b.classes))]).toEqual(
       expect.arrayContaining([
-        'btn-memphis-primary',
-        'btn-memphis-secondary',
+        'btn-primary',
+        'btn-secondary',
         'btn-item-borrow',
         'btn-item-manage',
-        'btn-act',
-        'btn-photo',
-        'btn-loc-retry',
+        'btn-return',
+        'btn-sm',
+        'btn-upload',
+        'btn-loc',
       ]),
     )
   })

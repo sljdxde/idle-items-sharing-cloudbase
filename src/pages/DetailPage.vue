@@ -23,8 +23,19 @@ const store = useItemsStore()
 const borrowOpen = ref(false)
 const manageOpen = ref(false)
 
-onMounted(() => {
-  store.load()
+/**
+ * 首屏「先别急着说没有」。
+ * 分享链接 / 刷新 / 新标签直接打开 /items/:id 时，列表还在路上，
+ * 直接渲染「没有这件物品」会误报，所以进入页面先等一次列表加载落定。
+ */
+const settling = ref(true)
+
+onMounted(async () => {
+  try {
+    await store.load()
+  } finally {
+    settling.value = false
+  }
 })
 
 const item = computed<Item | null>(() => {
@@ -49,8 +60,18 @@ const statusText = computed(() => {
   return it.status === 'lent' ? '已借出' : '可借'
 })
 
-/** 联系方式行：楼牌号在前、手机号在后 */
-const contactRowsList = computed(() => (item.value ? contactRows(item.value) : []))
+/**
+ * 联系方式行：楼牌号在前、手机号在后。
+ * 已下架（archived）物品的联系方式只对物主可见——页面既然写着「仅发布者可见」，
+ * 就不能让拿到 id 的陌生人照样看到手机号/门牌。
+ */
+const contactHidden = computed(() => !!item.value?.archived && !ownerIsMe.value)
+const contactRowsList = computed(() => {
+  const it = item.value
+  if (!it || contactHidden.value) return []
+  return contactRows(it)
+})
+
 
 /** 图片加载失败（如跨部署通道路径不可达）时降级为占位图 */
 const imgBroken = ref(false)
@@ -92,8 +113,14 @@ watch(item, async (it) => {
       返回列表
     </RouterLink>
 
+    <!-- 列表还在加载：别把「还没读到」说成「没有这件物品」 -->
+    <div v-if="!item && settling" class="loading-box detail-settling">
+      <span class="loading-dot" aria-hidden="true"></span>
+      正在加载这件物品…
+    </div>
+
     <!-- 未找到 -->
-    <div v-if="!item" class="missing-box">
+    <div v-else-if="!item" class="missing-box">
       <h1 class="detail-title">没有这件物品</h1>
       <p class="detail-desc">它可能已被下架，或链接有误。</p>
       <RouterLink to="/" class="btn-secondary">回首页逛逛</RouterLink>
@@ -137,7 +164,11 @@ watch(item, async (it) => {
             <dt>{{ row.label }}</dt>
             <dd class="selectable">{{ row.value }}</dd>
           </div>
-          <div v-if="contactRowsList.length === 0" class="detail-row">
+          <div v-if="contactHidden" class="detail-row">
+            <dt>联系方式</dt>
+            <dd>已下架，仅发布者可见</dd>
+          </div>
+          <div v-else-if="contactRowsList.length === 0" class="detail-row">
             <dt>联系方式</dt>
             <dd>未填写</dd>
           </div>
@@ -214,6 +245,7 @@ watch(item, async (it) => {
 
 /* ── 未找到 ── */
 .missing-box {
+
   background: var(--surface);
   border: var(--border);
   box-shadow: var(--shadow-soft);
@@ -420,6 +452,39 @@ watch(item, async (it) => {
 
 [data-theme="editorial"] .missing-box {
   border-radius: 14px;
+}
+
+/* ── 加载中（列表还没读到，先别报「没有这件物品」） ── */
+.detail-settling {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 140px;
+  color: var(--text-2);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+}
+
+.detail-settling .loading-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: detailPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes detailPulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* ── 响应式 ── */

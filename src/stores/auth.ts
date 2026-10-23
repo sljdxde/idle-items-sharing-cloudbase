@@ -8,6 +8,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '@/lib/api'
+import { setSessionToken } from '@/lib/session'
 
 const TOKEN_KEY = 'linli_haowu_token_v2'
 const PHONE_KEY = 'linli_haowu_phone_v2'
@@ -57,10 +58,19 @@ export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(readStoredToken())
   const maskedPhone = ref<string>(readStoredPhone())
 
+  // 内存镜像：隐私模式下 localStorage 写不进，api 层要靠它取 token（见 lib/session.ts）
+  setSessionToken(token.value)
+
   const isLoggedIn = computed(() => !!token.value && !isTokenExpired(token.value))
 
-  /** 当前用户的 phoneHash（从 JWT 提取），用于「我的发布/借用」匹配 */
-  const phoneHash = computed(() => (token.value ? extractPhoneHashFromToken(token.value) : ''))
+  /**
+   * 当前用户的 phoneHash（从 JWT 提取），用于「我的发布/借用」匹配。
+   * 过期的 token 不算身份——否则界面会照常显示「管理/归还」按钮，
+   * 点下去必然被服务端 401 拒掉（token 过期但页面没刷新的常见场景）。
+   */
+  const phoneHash = computed(() =>
+    token.value && !isTokenExpired(token.value) ? extractPhoneHashFromToken(token.value) : '',
+  )
 
   async function login(phone: string, pin: string): Promise<{ ok: boolean; error?: string }> {
     try {
@@ -68,6 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.ok && res.token) {
         token.value = res.token
         maskedPhone.value = res.phone || maskPhone(phone)
+        setSessionToken(res.token)
         try {
           localStorage.setItem(TOKEN_KEY, res.token)
           localStorage.setItem(PHONE_KEY, maskedPhone.value)
@@ -88,6 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.ok && res.token) {
         token.value = res.token
         maskedPhone.value = res.phone || maskPhone(phone)
+        setSessionToken(res.token)
         try {
           localStorage.setItem(TOKEN_KEY, res.token)
           localStorage.setItem(PHONE_KEY, maskedPhone.value)
@@ -105,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout(): void {
     token.value = null
     maskedPhone.value = ''
+    setSessionToken(null)
     try {
       localStorage.removeItem(TOKEN_KEY)
       localStorage.removeItem(PHONE_KEY)

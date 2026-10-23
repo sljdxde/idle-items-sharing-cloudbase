@@ -1,6 +1,11 @@
 // ================================================
 // src/lib/image.ts — 图片压缩（上传 → data URI）
 // 上传前把大图压进传输预算，尽量减少体积
+//
+// 预算口径 = **data URI 字符串长度**（字符数），不是原始文件字节数。
+// 原因：图片最终以 `data:image/...;base64,xxx` 塞进 JSON 请求体，
+// 服务端的上限也按字符长度算（security.js: IMG_DATA_MAX / BODY_MAX）。
+// 若按文件字节数预算，base64 膨胀 4/3 会让「客户端放行、服务端必拒」。
 // ================================================
 
 export interface FitOptions {
@@ -10,34 +15,39 @@ export interface FitOptions {
   quality?: number
 }
 
+/** data URI 头部的粗略长度（`data:image/jpeg;base64,`） */
+const DATA_URI_PREFIX = 23
+
+/** 原始文件直通时，等于 data URI 字符数的保守估算 */
+export function estimateDataUriLength(fileSize: number, prefix = DATA_URI_PREFIX): number {
+  return Math.ceil(fileSize / 3) * 4 + prefix
+}
+
 /**
- * 压缩图片到不超过 maxBytes（按 base64 长度估算），返回 data URI。
+ * 压缩图片到 data URI 长度不超过 maxChars（字符数），返回 data URI。
  * - 原图已达标且是浏览器友好的格式：原样返回，不重编码（不损画质）
  * - 超预算：交替降质量 / 缩尺寸，7 步内压进预算；压不进返回空串（调用方提示换图）
  */
 export async function compressToFit(
   file: File,
-  maxBytes: number,
+  maxChars: number,
   opts: FitOptions = {},
 ): Promise<string> {
-  if (file.size <= maxBytes && /^image\/(jpeg|png|webp)$/.test(file.type)) {
+  if (
+    /^image\/(jpeg|png|webp)$/.test(file.type) &&
+    estimateDataUriLength(file.size) <= maxChars
+  ) {
     return readAsDataURL(file)
   }
   let side = opts.maxSide ?? 720
   let quality = opts.quality ?? 0.66
   for (let i = 0; i < 7; i++) {
     const uri = await encode(file, side, quality)
-    if (approxBytes(uri) <= maxBytes) return uri
+    if (uri.length <= maxChars) return uri
     if (i % 2 === 0) quality = Math.max(0.35, quality - 0.1)
     else side = Math.max(240, Math.round(side * 0.75))
   }
   return ''
-}
-
-/** data URI 的近似字节数：base64 主体长度 × 3/4 */
-function approxBytes(dataUri: string): number {
-  const comma = dataUri.indexOf(',')
-  return Math.ceil((dataUri.length - comma - 1) * 0.75)
 }
 
 function readAsDataURL(file: File): Promise<string> {

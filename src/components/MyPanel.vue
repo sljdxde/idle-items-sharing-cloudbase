@@ -21,13 +21,15 @@ const borrowedCountText = computed(() => formatCount(borrowedCount.value))
 </script>
 
 <template>
-  <section v-if="auth.isLoggedIn" class="memphis-mypanel" aria-label="我的">
+  <!-- 游客也展示入口：/mine 与 /borrows 两个页面本身带登录卡，
+       否则未登录用户在任何位置都点不到「我的发布 / 我的借用」（只有登录后首页才出现） -->
+  <section class="memphis-mypanel" aria-label="我的">
     <RouterLink to="/mine" class="mycard mine">
       <span class="mycard-head">
         <span class="mycard-title">我的发布</span>
         <span class="mycard-count" :aria-label="`共 ${mineCount} 件`">{{ mineCountText }}</span>
       </span>
-      <span class="mycard-desc">上架 / 下架 / 删除</span>
+      <span class="mycard-desc">{{ auth.isLoggedIn ? '上架 / 下架 / 删除' : '登录后管理你的物品' }}</span>
     </RouterLink>
 
     <RouterLink to="/borrows" class="mycard borrowed">
@@ -35,7 +37,7 @@ const borrowedCountText = computed(() => formatCount(borrowedCount.value))
         <span class="mycard-title">我的借用</span>
         <span class="mycard-count" :aria-label="`共 ${borrowedCount} 件`">{{ borrowedCountText }}</span>
       </span>
-      <span class="mycard-desc">借来的好物，快速归还</span>
+      <span class="mycard-desc">{{ auth.isLoggedIn ? '借来的好物，快速归还' : '登录后查看借入记录' }}</span>
     </RouterLink>
   </section>
 </template>
